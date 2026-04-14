@@ -20,8 +20,8 @@ updates:
       - dependencies
       - java
     commit-message:
-      # "chore(deps): bump …" → parsed by git-cliff into "⬆️ Dependency Updates"
-      prefix: "chore(deps)"
+      # "deps: bump …" → parsed by git-cliff into "⬆️ Dependency Updates"
+      prefix: "deps"
       include: "scope"
 
     groups:
@@ -91,7 +91,7 @@ updates:
       - dependencies
       - github-actions
     commit-message:
-      prefix: "chore(ci)"
+      prefix: "deps(ci)"
       include: "scope"
     groups:
       actions-core:

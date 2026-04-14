@@ -51,9 +51,8 @@ trim = true
 # ── Git commit parsing ────────────────────────────────────────────────────────
 [git]
 conventional_commits   = true
-# Keep filter_unconventional = false so that Dependabot's non-standard
-# double-scope format "chore(deps)(deps-dev):" (which fails strict CC parsing)
-# still reaches the commit_parsers below rather than being silently dropped.
+# Keep filter_unconventional = false so that any commits that don't strictly
+# follow Conventional Commits still reach the commit_parsers below.
 filter_unconventional  = false
 split_commits          = false
 
@@ -61,15 +60,15 @@ commit_parsers = [
     # ── skip noise ──────────────────────────────────────────────────────────
     { message = "^Merge",                skip = true },   # merge commits
     { message = "^chore\\(release\\)",   skip = true },   # release bot commits
-    { message = "^chore\\(ci\\)",        skip = true },   # CI-only changes
+    { message = "^deps\\(ci\\)",          skip = true },   # CI-only changes
     { message = "^style",                skip = true },   # formatting-only
     { message = "^docs\\(changelog\\)",  skip = true },   # legacy changelog bot commits
 
     # ── Dependabot / deps ────────────────────────────────────────────────────
-    # Dependabot uses "chore(deps)(deps-dev):" / "chore(deps)(deps):" which is
-    # non-standard CC (double scope). Match on prefix without closing paren so
-    # both variants are captured regardless of CC parse success.
-    { message = "^chore\\(deps",         group = "⬆️ Dependency Updates" },
+    # Dependabot uses "deps(scope):" with include: "scope", producing commits
+    # like "deps(kafka): bump org.apache.kafka …". Match on "^deps" so all
+    # package-ecosystem updates are captured in one section.
+    { message = "^deps",                 group = "⬆️ Dependency Updates" },
 
     # ── conventional types → sections ───────────────────────────────────────
     { message = "^feat",               group = "✨ Features"       },
