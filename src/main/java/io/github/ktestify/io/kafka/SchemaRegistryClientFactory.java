@@ -18,11 +18,11 @@
  */
 package io.github.ktestify.io.kafka;
 
-import io.github.ktestify.config.KtestifyConfig;
-import io.github.ktestify.config.SchemaRegistryConfig;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.RestService;
+import io.github.ktestify.config.KtestifyConfig;
+import io.github.ktestify.config.SchemaRegistryConfig;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

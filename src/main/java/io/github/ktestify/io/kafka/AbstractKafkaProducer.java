@@ -18,11 +18,11 @@
  */
 package io.github.ktestify.io.kafka;
 
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.github.ktestify.io.core.AbstractProducer;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.utils.FileUtils;
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
-import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

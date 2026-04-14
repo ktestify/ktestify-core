@@ -18,11 +18,11 @@
  */
 package io.github.ktestify.io.kafka;
 
+import io.confluent.kafka.serializers.KafkaAvroDeserializer;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.github.ktestify.config.KafkaConfig;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.config.SchemaRegistryConfig;
-import io.confluent.kafka.serializers.KafkaAvroDeserializer;
-import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;

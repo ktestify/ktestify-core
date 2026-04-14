@@ -18,12 +18,12 @@
  */
 package io.github.ktestify.io.kafka.impl;
 
+import com.google.gson.JsonObject;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.github.ktestify.io.kafka.AbstractKafkaProducer;
 import io.github.ktestify.io.kafka.ProducerContext;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.utils.serdes.AvroUtils;
-import com.google.gson.JsonObject;
-import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;

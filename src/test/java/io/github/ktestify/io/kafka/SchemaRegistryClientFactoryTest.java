@@ -20,9 +20,9 @@ package io.github.ktestify.io.kafka;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.github.ktestify.config.ConfigBuilder;
 import io.github.ktestify.config.KtestifyConfig;
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;

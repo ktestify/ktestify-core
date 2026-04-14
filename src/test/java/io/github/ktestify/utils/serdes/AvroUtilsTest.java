@@ -20,8 +20,8 @@ package io.github.ktestify.utils.serdes;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.github.ktestify.exceptions.ComparisonException;
 import com.google.gson.*;
+import io.github.ktestify.exceptions.ComparisonException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;

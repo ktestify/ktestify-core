@@ -5,8 +5,8 @@
 # Enriches commits with PR numbers, usernames, and first-time contributor info.
 # Token is supplied at runtime via the GITHUB_TOKEN env variable.
 [remote.github]
-owner = "CGI-FR"
-repo  = "ktestify"
+owner = "ktestify"
+repo  = "ktestify-core"
 
 # ── Changelog layout ──────────────────────────────────────────────────────────
 [changelog]

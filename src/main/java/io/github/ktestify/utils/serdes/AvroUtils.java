@@ -20,10 +20,10 @@ package io.github.ktestify.utils.serdes;
 
 import static io.github.ktestify.constants.LogMessagesConstants.*;
 
-import io.github.ktestify.exceptions.ComparisonException;
-import io.github.ktestify.exceptions.ProducerException;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
+import io.github.ktestify.exceptions.ComparisonException;
+import io.github.ktestify.exceptions.ProducerException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Type;

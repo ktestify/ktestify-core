@@ -29,8 +29,8 @@ package io.github.ktestify.exceptions;
  * <p>Typical causes:
  *
  * <ul>
- *   <li>A required {@link io.github.ktestify.match.MatchContext} field (e.g. {@code matchFilePath}, {@code matchKey}) is
- *       {@code null} or blank.
+ *   <li>A required {@link io.github.ktestify.match.MatchContext} field (e.g. {@code matchFilePath}, {@code matchKey})
+ *       is {@code null} or blank.
  *   <li>A position descriptor passed to {@link io.github.ktestify.match.impl.FieldsRecordMatcher} is malformed.
  *   <li>An expected file cannot be read or parsed.
  * </ul>

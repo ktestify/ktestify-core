@@ -25,8 +25,9 @@ import java.util.List;
 /**
  * Transport-agnostic assertion contract.
  *
- * <p>A {@code RecordMatcher} receives the records that were fetched by a {@link io.github.ktestify.io.core.RecordFetcher}
- * and asserts them against an expected state described by a {@link MatchContext}.
+ * <p>A {@code RecordMatcher} receives the records that were fetched by a
+ * {@link io.github.ktestify.io.core.RecordFetcher} and asserts them against an expected state described by a
+ * {@link MatchContext}.
  *
  * <p>Implementations have <strong>zero dependency</strong> on Kafka, IBM MQ, or any other transport. They only know
  * about {@link ConsumedRecord} — the common currency produced by every fetcher. This means every matcher works
