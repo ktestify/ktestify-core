@@ -244,7 +244,7 @@ jobs:
       # Only runs on pull_request events — skipped on direct pushes.
       - name: 💬 Post CI report to PR
         if: ${{ always() && github.event_name == 'pull_request' }}
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
