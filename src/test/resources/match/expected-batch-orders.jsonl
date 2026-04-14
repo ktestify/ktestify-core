@@ -1,0 +1,5 @@
+{"orderId":"ORD-001","customerId":"CUST-42","amount":99.99,"status":"CREATED"}
+{"orderId":"ORD-002","customerId":"CUST-43","amount":49.99,"status":"PENDING"}
+{"orderId":"ORD-003","customerId":"CUST-44","amount":19.99,"status":"SHIPPED"}
+{"orderId":"ORD-004","customerId":"CUST-45","amount":9.99,"status":"DELIVERED"}
+

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<order>
+    <orderId>ORD-001</orderId>
+    <customerId>CUST-42</customerId>
+    <amount>99.99</amount>
+    <status>CREATED</status>
+</order>

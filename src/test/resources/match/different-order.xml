@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<order>
+    <orderId>ORD-001</orderId>
+    <customerId>CUST-42</customerId>
+    <amount>99.99</amount>
+    <status>DIFFERENT</status>
+    <timestamp>2026-01-01T00:00:00Z</timestamp>
+</order>
