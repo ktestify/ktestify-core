@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package io.github.ktestify.matchch;
+package io.github.ktestify.match;
 
 import lombok.Value;
 
