@@ -25,12 +25,6 @@ updates:
       include: "scope"
 
     groups:
-      # ── Security updates — always immediate, own PR ─────────
-      # applies-to: security-updates → bypasses weekly schedule
-      security:
-        applies-to: security-updates
-        patterns: [ "*" ]
-
       # ── Version-update groups (reduce weekly PR noise) ──────
       kafka:
         applies-to: version-updates
@@ -97,9 +91,6 @@ updates:
       actions-core:
         applies-to: version-updates
         patterns: [ "actions/*" ]
-      actions-security:
-        applies-to: security-updates
-        patterns: [ "*" ]
 
 
 
