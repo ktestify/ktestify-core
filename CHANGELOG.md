@@ -12,9 +12,12 @@ All notable changes to this project will be documented in this file.
 
 - Chore(ci)(deps): bump actions/github-script in the actions-core group — [@dependabot[bot]](https://github.com/dependabot[bot])
 
+- Chore(ci)(deps): bump softprops/action-gh-release from 2 to 3 — [@dependabot[bot]](https://github.com/dependabot[bot])
+
 
 ### 🎉 New Contributors
 
+- @nil-malh made their first contribution in [#2](https://github.com/ktestify/ktestify-corepull/2)
 
 
 
