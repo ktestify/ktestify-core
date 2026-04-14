@@ -173,7 +173,7 @@ jobs:
       # ── GitHub Release ────────────────────────────────────
       - name: Create GitHub Release
         if: inputs.dry-run == 'false'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ inputs.release-version }}
           name: "ktestify ${{ inputs.release-version }}"
