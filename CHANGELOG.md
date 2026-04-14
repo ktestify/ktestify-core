@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file.
 
 - Update commit message prefixes for Dependabot and CI in configuration files — [@nil-malh](https://github.com/nil-malh)
 
+- Update URLs in .github/ISSUE_TEMPLATE/config.yml for discussions, documentation, and security vulnerability reporting — [@nil-malh](https://github.com/nil-malh)
+
+- Remove security update group from dependabot configuration they are already managed by dependabot — [@nil-malh](https://github.com/nil-malh)
+
 
 ### 🔧 Miscellaneous
 
@@ -17,7 +21,6 @@ All notable changes to this project will be documented in this file.
 
 ### 🎉 New Contributors
 
-- @nil-malh made their first contribution in [#2](https://github.com/ktestify/ktestify-corepull/2)
 
 
 
