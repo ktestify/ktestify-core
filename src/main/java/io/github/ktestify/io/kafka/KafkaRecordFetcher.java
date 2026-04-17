@@ -284,20 +284,21 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
                     log.info(MESSAGE_CONSUMER_GOT_RECORD_WITH_KEY_AND_VALUE, record.key(), record.value());
                     registerAsMatched(consumed);
                     accumulated.add(consumed);
-                }
 
-                // In single mode return immediately once we have at least one candidate.
-                // In batch mode keep accumulating until targetSize is reached.
-                if (!batchMode && !accumulated.isEmpty()) {
-                    return Collections.unmodifiableList(accumulated);
-                }
-                if (batchMode && accumulated.size() >= targetSize) {
-                    log.info(
-                            "Batch complete — collected {} / {} records from topic '{}'.",
-                            accumulated.size(),
-                            targetSize,
-                            namespacedTopic);
-                    return Collections.unmodifiableList(accumulated);
+                    // In SINGLE mode return immediately on the first passing record.
+                    // In BATCH mode stop as soon as targetSize is reached — do NOT
+                    // continue draining the current poll batch beyond the target.
+                    if (!batchMode) {
+                        return Collections.unmodifiableList(accumulated);
+                    }
+                    if (accumulated.size() >= targetSize) {
+                        log.info(
+                                "Batch complete — collected {} / {} records from topic '{}'.",
+                                accumulated.size(),
+                                targetSize,
+                                namespacedTopic);
+                        return Collections.unmodifiableList(accumulated);
+                    }
                 }
             }
         }
