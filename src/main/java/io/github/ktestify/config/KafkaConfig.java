@@ -47,6 +47,7 @@ public final class KafkaConfig {
     // Common settings
     private final String bootstrapServers;
     private final String securityProtocol;
+    private final Optional<String> topicNamespace;
 
     // Producer defaults
     private final String producerAcks;
@@ -82,6 +83,7 @@ public final class KafkaConfig {
         // Common
         this.bootstrapServers = config.getString("bootstrap-servers");
         this.securityProtocol = config.getString("security-protocol");
+        this.topicNamespace = getOptionalString(config, "topic-namespace");
 
         // Producer
         Config producerConfig = config.getConfig("producer");

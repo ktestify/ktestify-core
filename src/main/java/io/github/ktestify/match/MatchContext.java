@@ -34,7 +34,7 @@ import lombok.Value;
  *
  * <pre>
  * MatchContext ctx = MatchContext.builder()
- *     .matchFilePath("src/test/resources/expected/order-created.json")
+ *     .matchFilePaths(List.of("src/test/resources/expected/order-created.json"))
  *     .excludedFields(List.of("timestamp", "correlationId"))
  *     .strictMatching(true)
  *     .build();
@@ -53,10 +53,11 @@ public class MatchContext {
     String matchMethod;
 
     /**
-     * Path to the file containing the expected record content. Interpreted relative to the configured assets directory
-     * when set.
+     * Paths to the files containing the expected record content. Single-record matchers use {@code get(0)}, batch
+     * matchers iterate by index. Interpreted relative to the configured assets directory when set.
      */
-    String matchFilePath;
+    @Builder.Default
+    List<String> matchFilePaths = Collections.emptyList();
 
     /** Fields / keys to exclude from the comparison. Useful for volatile fields such as timestamps or generated IDs. */
     @Builder.Default
@@ -73,4 +74,27 @@ public class MatchContext {
 
     /** Expected value for {@link #matchKey}. */
     String matchValue;
+
+    /**
+     * Convenience accessor for single-record matchers. Returns the first element of {@link #matchFilePaths}, or
+     * {@code null} if the list is empty.
+     */
+    public String getMatchFilePath() {
+        return matchFilePaths != null && !matchFilePaths.isEmpty() ? matchFilePaths.get(0) : null;
+    }
+
+    /**
+     * Extends the Lombok-generated builder with a single-path convenience setter. Callers that set only one expected
+     * file can use {@code .matchFilePath("path/to/file")} instead of {@code .matchFilePaths(List.of(...))}.
+     */
+    public static class MatchContextBuilder {
+
+        /**
+         * Convenience setter for single-record matchers. Wraps {@code path} in an immutable single-element list and
+         * delegates to {@link #matchFilePaths(List)}.
+         */
+        public MatchContextBuilder matchFilePath(String path) {
+            return matchFilePaths(path != null ? List.of(path) : Collections.emptyList());
+        }
+    }
 }

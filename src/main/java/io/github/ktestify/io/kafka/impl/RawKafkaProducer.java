@@ -59,13 +59,16 @@ public class RawKafkaProducer extends AbstractKafkaProducer<String, String> {
     protected void produce() {
         try {
             String payload = resolvePayload();
-            ProducerRecord<String, String> record = buildRecord(null, payload);
+            String key = context.getRecordKey();
+            ProducerRecord<String, String> record = buildRecord(key, payload);
             RecordMetadata metadata = producer.send(record).get();
             logger.info(
-                    "Produced raw record to {} partition {} offset {}",
+                    "Produced raw record to {} with key={} partition {} offset {} and timestamp {}",
                     metadata.topic(),
+                    record.key(),
                     metadata.partition(),
-                    metadata.offset());
+                    metadata.offset(),
+                    metadata.timestamp());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted while producing raw message", e);

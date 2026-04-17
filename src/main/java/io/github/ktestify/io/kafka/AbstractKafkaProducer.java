@@ -98,20 +98,8 @@ public abstract class AbstractKafkaProducer<K, V> extends AbstractProducer {
         return context.getTopic();
     }
 
-    protected Map<String, String> getProducerProperties() {
-        return context.getProperties();
-    }
-
-    protected Producer<K, V> getKafkaProducer() {
-        return producer;
-    }
-
-    protected File getPayloadFile() {
-        return payloadFile;
-    }
-
     protected ProducerRecord<K, V> buildRecord(K key, V value) {
-        var record = new ProducerRecord<>(getTopic().getTopicName(), key, value);
+        var record = new ProducerRecord<>(getTopic().getNamespacedTopic(), key, value);
         if (!headers.isEmpty()) {
             for (Header header : headers.entrySet().stream()
                     .map(e -> (Header) new RecordHeader(e.getKey(), e.getValue().getBytes(StandardCharsets.UTF_8)))
