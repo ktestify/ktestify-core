@@ -3,6 +3,17 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### ✨ Features
+
+- Added topic namespace configuration to KafkaConfig and reference.conf — [@nil-malh](https://github.com/nil-malh)
+
+- Migrated to Log4j2 update dependencies — [@nil-malh](https://github.com/nil-malh)
+
+- Enhance logging in AvroKafkaProducer and RawKafkaProducer for better traceability — [@nil-malh](https://github.com/nil-malh)
+
+- Enhance XmlRecordMatcher to support automatic exclusion of elements marked as EXCLUDED in XML templates — [@nil-malh](https://github.com/nil-malh)
+
+
 ### 🐛 Bug Fixes
 
 - Update commit message prefixes for Dependabot and CI in configuration files — [@nil-malh](https://github.com/nil-malh)
@@ -11,6 +22,14 @@ All notable changes to this project will be documented in this file.
 
 - Remove security update group from dependabot configuration they are already managed by dependabot — [@nil-malh](https://github.com/nil-malh)
 
+- Update ProducerRecord.buildRecord to use namespaced topic in AbstractKafkaProducer — [@nil-malh](https://github.com/nil-malh)
+
+- Update buildMatchContext to use matchFilePaths and excludedFields — [@nil-malh](https://github.com/nil-malh)
+
+- Refactor ConsumerContext to support multiple match file paths and excluded fields — [@nil-malh](https://github.com/nil-malh)
+
+- Refactor record fetching logic to improve handling of single and batch modes — [@nil-malh](https://github.com/nil-malh)
+
 
 ### 🔧 Miscellaneous
 
@@ -18,9 +37,12 @@ All notable changes to this project will be documented in this file.
 
 - Chore(ci)(deps): bump softprops/action-gh-release from 2 to 3 — [@dependabot[bot]](https://github.com/dependabot[bot])
 
+- Cleanup some unused dependencies — [@nil-malh](https://github.com/nil-malh)
+
 
 ### 🎉 New Contributors
 
+- @nil-malh made their first contribution in [#3](https://github.com/ktestify/ktestify-corepull/3)
 
 
 
