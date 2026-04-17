@@ -140,7 +140,8 @@ public abstract class AbstractKafkaConsumer<K, V> extends AbstractConsumer {
     protected MatchContext buildMatchContext() {
         return MatchContext.builder()
                 .matchMethod(context.getMatchMethod())
-                .matchFilePath(context.getMatchFilePath())
+                .matchFilePaths(context.getMatchFilePaths())
+                .excludedFields(context.getExcludedFields())
                 .strictMatching(false)
                 .build();
     }
