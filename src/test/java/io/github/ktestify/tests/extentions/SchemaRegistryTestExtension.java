@@ -21,7 +21,7 @@ package io.github.ktestify.tests.extentions;
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import java.util.Map;
-import org.apache.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -49,10 +49,10 @@ import org.testcontainers.utility.DockerImageName;
  * <p><strong>Important:</strong> When using this extension, you must also use {@link KafkaTestExtension} and ensure it
  * is listed first in the @ExtendWith annotation so that the Kafka container starts before Schema Registry.
  */
+@Slf4j
 public class SchemaRegistryTestExtension
         implements BeforeAllCallback, AfterAllCallback, ExtensionContext.Store.CloseableResource {
 
-    private static final Logger LOGGER = Logger.getLogger(SchemaRegistryTestExtension.class);
     // -----------------------------------------------------------------
     // Testcontainers image – pin to a specific Confluent Platform version
     // so that builds are reproducible. Bump when you need a newer version.
@@ -109,13 +109,13 @@ public class SchemaRegistryTestExtension
                             // Additional debugging
                             "SCHEMA_REGISTRY_DEBUG",
                             "true"))
-                    .withLogConsumer(outputFrame ->
-                            LOGGER.trace(outputFrame.getUtf8String().trim()))
+                    .withLogConsumer(
+                            outputFrame -> log.trace(outputFrame.getUtf8String().trim()))
                     .withReuse(false);
 
             schemaRegistryContainer.start();
 
-            LOGGER.info("[SchemaRegistryTestExtension] Schema Registry started at: " + getSchemaRegistryUrl());
+            log.info("[SchemaRegistryTestExtension] Schema Registry started at: " + getSchemaRegistryUrl());
 
             // Initialize the Schema Registry client
             schemaRegistryClient = new CachedSchemaRegistryClient(
@@ -145,7 +145,7 @@ public class SchemaRegistryTestExtension
                 // Schema Registry client doesn't require explicit closing in most cases
                 schemaRegistryClient = null;
             } catch (Exception e) {
-                LOGGER.error("[SchemaRegistryTestExtension] Error closing Schema Registry client: " + e.getMessage());
+                log.error("[SchemaRegistryTestExtension] Error closing Schema Registry client: " + e.getMessage());
             }
         }
         if (schemaRegistryContainer != null && schemaRegistryContainer.isRunning()) {
