@@ -21,6 +21,8 @@ package io.github.ktestify.io.kafka;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.models.Topic;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -33,7 +35,8 @@ public final class ConsumerContext<K, V> {
     private final Consumer<K, V> consumer;
     private final String expectedRecordKey;
     private final String matchMethod;
-    private final String matchFilePath;
+    private final List<String> matchFilePaths;
+    private final List<String> excludedFields;
     private final Long readTimeout;
     private final Long consumerDeltaTime;
     private final boolean isBatchConsumer;
@@ -45,7 +48,8 @@ public final class ConsumerContext<K, V> {
             Consumer<K, V> consumer,
             String expectedRecordKey,
             String matchMethod,
-            String matchFilePath,
+            List<String> matchFilePaths,
+            List<String> excludedFields,
             Long readTimeout,
             Long consumerDeltaTime,
             boolean isBatchConsumer,
@@ -55,11 +59,20 @@ public final class ConsumerContext<K, V> {
         this.consumer = consumer;
         this.expectedRecordKey = expectedRecordKey;
         this.matchMethod = matchMethod;
-        this.matchFilePath = matchFilePath;
+        this.matchFilePaths = matchFilePaths != null ? matchFilePaths : Collections.emptyList();
+        this.excludedFields = excludedFields != null ? excludedFields : Collections.emptyList();
         this.readTimeout = readTimeout;
         this.consumerDeltaTime = consumerDeltaTime;
         this.isBatchConsumer = isBatchConsumer;
         this.batchSize = batchSize;
+    }
+
+    /**
+     * Convenience accessor for single-record consumers. Returns the first element of {@link #matchFilePaths}, or
+     * {@code null} if the list is empty.
+     */
+    public String getMatchFilePath() {
+        return matchFilePaths != null && !matchFilePaths.isEmpty() ? matchFilePaths.get(0) : null;
     }
 
     public static <K, V> Builder<K, V> builder() {
@@ -73,7 +86,8 @@ public final class ConsumerContext<K, V> {
         private Consumer<K, V> consumer;
         private String expectedRecordKey;
         private String matchMethod;
-        private String matchFilePath;
+        private List<String> matchFilePaths;
+        private List<String> excludedFields;
         private Long readTimeout;
         private Long consumerDeltaTime;
         private boolean isBatchConsumer;
@@ -104,8 +118,27 @@ public final class ConsumerContext<K, V> {
             return this;
         }
 
+        /**
+         * Sets the expected file paths for matching. For a single file, pass {@code List.of(path)}. For batch matching,
+         * pass one path per expected record in order.
+         */
+        public Builder<K, V> matchFilePaths(List<String> matchFilePaths) {
+            this.matchFilePaths = matchFilePaths;
+            return this;
+        }
+
+        /** Convenience setter for single-record consumers. Wraps the path in a {@code List}. */
         public Builder<K, V> matchFilePath(String matchFilePath) {
-            this.matchFilePath = matchFilePath;
+            this.matchFilePaths = matchFilePath != null ? List.of(matchFilePath) : Collections.emptyList();
+            return this;
+        }
+
+        /**
+         * Sets the fields / keys to exclude from the comparison (e.g. timestamps, generated IDs). Populated from the
+         * DataTable {@code excludedKeys} or {@code excludedElements} columns.
+         */
+        public Builder<K, V> excludedFields(List<String> excludedFields) {
+            this.excludedFields = excludedFields;
             return this;
         }
 
@@ -148,7 +181,8 @@ public final class ConsumerContext<K, V> {
                     validatedConsumer,
                     expectedRecordKey,
                     matchMethod,
-                    matchFilePath,
+                    matchFilePaths,
+                    excludedFields,
                     readTimeout,
                     consumerDeltaTime,
                     isBatchConsumer,
