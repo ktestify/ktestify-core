@@ -78,10 +78,12 @@ public class AvroKafkaProducer extends AbstractKafkaProducer<String, GenericReco
             ProducerRecord<String, GenericRecord> record = buildRecord(context.getRecordKey(), recordValue);
             RecordMetadata metadata = producer.send(record).get();
             logger.info(
-                    "Produced avro record to {} partition {} offset {}",
+                    "Produced Avro record to {} with key={} partition {} offset {} and timestamp {}",
                     metadata.topic(),
+                    record.key(),
                     metadata.partition(),
-                    metadata.offset());
+                    metadata.offset(),
+                    metadata.timestamp());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("Interrupted while producing Avro message", e);
