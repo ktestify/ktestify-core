@@ -57,6 +57,7 @@ public final class FrameworkConfig {
     // Reporting
     private final boolean enableReporting;
     private final String reportFormat;
+    private final String reportOutputDirectory;
 
     FrameworkConfig(Config config) {
         this.config = config;
@@ -84,6 +85,7 @@ public final class FrameworkConfig {
         Config reportConfig = config.getConfig("reporting");
         this.enableReporting = reportConfig.getBoolean("enabled");
         this.reportFormat = reportConfig.getString("format");
+        this.reportOutputDirectory = reportConfig.getString("output");
     }
 
     private Optional<String> getOptionalString(Config config, String path) {

@@ -90,6 +90,7 @@ ktestify {
     reporting {
       enabled = true
       format = "html"
+      output = "target/test-output"
     }
   }
 }
