@@ -24,6 +24,8 @@ import java.io.File;
 import java.util.Optional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.config.Configurator;
 
 /**
  * Main configuration class for ktestify framework.
@@ -64,9 +66,46 @@ public final class KtestifyConfig {
         this.kafka = new KafkaConfig(config.getConfig("ktestify.kafka"));
         this.schemaRegistry = new SchemaRegistryConfig(config.getConfig("ktestify.schema-registry"));
         this.framework = new FrameworkConfig(config.getConfig("ktestify.framework"));
+        applyLogLevels(config);
         log.info("KtestifyConfig loaded successfully");
         log.debug("Kafka bootstrap servers: {}", kafka.getBootstrapServers());
         log.debug("Schema Registry URL: {}", schemaRegistry.getUrl());
+    }
+
+    /**
+     * Applies log levels defined in {@code ktestify.logging} HOCON section via Log4j2's
+     * {@link Configurator}, overriding the static defaults set in {@code log4j2.properties}.
+     *
+     * <p>Supported keys and their environment variable overrides:
+     * <ul>
+     *   <li>{@code level}              / {@code KTESTIFY_LOG_LEVEL}        — {@code io.github.ktestify.*}
+     *   <li>{@code root-level}         / {@code KTESTIFY_ROOT_LOG_LEVEL}   — root logger
+     *   <li>{@code kafka-level}        / {@code KTESTIFY_KAFKA_LOG_LEVEL}  — {@code org.apache.kafka.*}
+     *   <li>{@code testcontainers-level} / {@code KTESTIFY_TC_LOG_LEVEL}   — Testcontainers + Docker Java
+     *   <li>{@code confluent-level}    / {@code KTESTIFY_CONFLUENT_LOG_LEVEL} — {@code io.confluent.*}
+     * </ul>
+     */
+    private static void applyLogLevels(Config config) {
+        Config lc = config.getConfig("ktestify.logging");
+
+        Configurator.setLevel("io.github.ktestify", Level.toLevel(lc.getString("level"), Level.DEBUG));
+        Configurator.setRootLevel(Level.toLevel(lc.getString("root-level"), Level.INFO));
+        Configurator.setLevel("org.apache.kafka", Level.toLevel(lc.getString("kafka-level"), Level.WARN));
+
+        Level tcLevel = Level.toLevel(lc.getString("testcontainers-level"), Level.INFO);
+        Configurator.setLevel("org.testcontainers", tcLevel);
+        Configurator.setLevel("tc", tcLevel);
+        Configurator.setLevel("com.github.dockerjava", tcLevel);
+
+        Configurator.setLevel("io.confluent", Level.toLevel(lc.getString("confluent-level"), Level.WARN));
+
+        log.debug(
+                "Log levels applied — ktestify={} root={} kafka={} testcontainers={} confluent={}",
+                lc.getString("level"),
+                lc.getString("root-level"),
+                lc.getString("kafka-level"),
+                lc.getString("testcontainers-level"),
+                lc.getString("confluent-level"));
     }
 
     /**

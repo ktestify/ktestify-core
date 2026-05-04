@@ -68,6 +68,7 @@
         <kafka.version>4.2.0</kafka.version>
         <lombok.version>1.18.44</lombok.version>
         <mockito.version>5.23.0</mockito.version>
+        <jackson.version>2.19.2</jackson.version>
         <log4j2.version>2.25.4</log4j2.version>
         <slf4j.version>2.0.17</slf4j.version>
         <snakeyaml.version>2.6</snakeyaml.version>
@@ -94,6 +95,28 @@
         <versions.plugin.version>2.21.0</versions.plugin.version>
         <central.publishing.plugin.version>0.10.0</central.publishing.plugin.version>
     </properties>
+
+    <!-- ===================================================== -->
+    <!-- Dependency Management — version alignment             -->
+    <!-- ===================================================== -->
+    <dependencyManagement>
+        <dependencies>
+            <!--
+                Pin ALL com.fasterxml.jackson.* modules to the same version.
+                Without this, transitive deps (e.g. kafka-streams, confluent)
+                pull in mixed patch versions (e.g. 2.19.0 vs 2.19.2) which
+                causes ObjectMapper's static initializer to throw
+                NoClassDefFoundError at runtime.
+            -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <!-- ===================================== -->
