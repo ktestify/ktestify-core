@@ -73,7 +73,7 @@
         <snakeyaml.version>2.6</snakeyaml.version>
         <testcontainers.version>2.0.4</testcontainers.version>
         <testcontainers-kafka.version>2.0.4</testcontainers-kafka.version>
-        <typesafe.config.version>1.4.6</typesafe.config.version>
+        <typesafe.config.version>1.4.7</typesafe.config.version>
         <xmlunit.version>2.11.0</xmlunit.version>
 
         <!-- Maven Plugin Versions (Alphabetically Ordered) -->
