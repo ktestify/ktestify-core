@@ -18,7 +18,6 @@
  */
 package io.github.ktestify.match;
 
-
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.match.impl.AvroFieldsRecordMatcher;
 import io.github.ktestify.match.impl.AvroFileKeyRecordMatcher;
