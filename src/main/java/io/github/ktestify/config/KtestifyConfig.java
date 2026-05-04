@@ -73,16 +73,17 @@ public final class KtestifyConfig {
     }
 
     /**
-     * Applies log levels defined in {@code ktestify.logging} HOCON section via Log4j2's
-     * {@link Configurator}, overriding the static defaults set in {@code log4j2.properties}.
+     * Applies log levels defined in {@code ktestify.logging} HOCON section via Log4j2's {@link Configurator},
+     * overriding the static defaults set in {@code log4j2.properties}.
      *
      * <p>Supported keys and their environment variable overrides:
+     *
      * <ul>
-     *   <li>{@code level}              / {@code KTESTIFY_LOG_LEVEL}        — {@code io.github.ktestify.*}
-     *   <li>{@code root-level}         / {@code KTESTIFY_ROOT_LOG_LEVEL}   — root logger
-     *   <li>{@code kafka-level}        / {@code KTESTIFY_KAFKA_LOG_LEVEL}  — {@code org.apache.kafka.*}
-     *   <li>{@code testcontainers-level} / {@code KTESTIFY_TC_LOG_LEVEL}   — Testcontainers + Docker Java
-     *   <li>{@code confluent-level}    / {@code KTESTIFY_CONFLUENT_LOG_LEVEL} — {@code io.confluent.*}
+     *   <li>{@code level} / {@code KTESTIFY_LOG_LEVEL} — {@code io.github.ktestify.*}
+     *   <li>{@code root-level} / {@code KTESTIFY_ROOT_LOG_LEVEL} — root logger
+     *   <li>{@code kafka-level} / {@code KTESTIFY_KAFKA_LOG_LEVEL} — {@code org.apache.kafka.*}
+     *   <li>{@code testcontainers-level} / {@code KTESTIFY_TC_LOG_LEVEL} — Testcontainers + Docker Java
+     *   <li>{@code confluent-level} / {@code KTESTIFY_CONFLUENT_LOG_LEVEL} — {@code io.confluent.*}
      * </ul>
      */
     private static void applyLogLevels(Config config) {
