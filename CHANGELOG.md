@@ -13,6 +13,10 @@ All notable changes to this project will be documented in this file.
 
 - Enhance XmlRecordMatcher to support automatic exclusion of elements marked as EXCLUDED in XML templates — [@nil-malh](https://github.com/nil-malh)
 
+- Added report output path in the FrameworkConfig — [@nil-malh](https://github.com/nil-malh)
+
+- Added Log4J config in KTestify Config — [@nil-malh](https://github.com/nil-malh)
+
 
 ### 🐛 Bug Fixes
 
@@ -30,6 +34,8 @@ All notable changes to this project will be documented in this file.
 
 - Refactor record fetching logic to improve handling of single and batch modes — [@nil-malh](https://github.com/nil-malh)
 
+- Used a try with resources in the AbstractKafkaConsumer.call() — [@nil-malh](https://github.com/nil-malh)
+
 
 ### 🔧 Miscellaneous
 
@@ -39,10 +45,12 @@ All notable changes to this project will be documented in this file.
 
 - Cleanup some unused dependencies — [@nil-malh](https://github.com/nil-malh)
 
+- Removed ConfigConstants.java — [@nil-malh](https://github.com/nil-malh)
+
 
 ### 🎉 New Contributors
 
-- @nil-malh made their first contribution in [#3](https://github.com/ktestify/ktestify-corepull/3)
+- @nil-malh made their first contribution in [#11](https://github.com/ktestify/ktestify-corepull/11)
 
 
 
