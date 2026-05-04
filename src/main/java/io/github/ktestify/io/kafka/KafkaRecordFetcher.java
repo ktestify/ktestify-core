@@ -18,7 +18,6 @@
  */
 package io.github.ktestify.io.kafka;
 
-import static io.github.ktestify.constants.ConfigConstants.*;
 import static io.github.ktestify.constants.LogMessagesConstants.*;
 
 import io.github.ktestify.config.FrameworkConfig;
@@ -81,6 +80,8 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
     private final Map<String, String> properties;
 
     private volatile boolean closed = false;
+
+    public static final String CONSUMER_DELTA_TIME = "consumerDeltaTime";
 
     /**
      * Creates a new fetcher from a {@link ConsumerContext}.
@@ -200,7 +201,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         if (deltaTimeStr != null && !deltaTimeStr.isEmpty()) {
             log.debug(MESSAGE_CONSUMER_DELTA_TIME_FROM_DATATABLE, deltaTimeStr);
             try {
-                long delta = System.currentTimeMillis() - (Long.parseLong(deltaTimeStr) * TO_MILLISECONDS);
+                long delta = System.currentTimeMillis() - (Long.parseLong(deltaTimeStr) * 1000);
                 log.debug(MESSAGE_CONSUMER_DELTA_TIME_IN_TIMESTAMP, delta);
                 return delta;
             } catch (NumberFormatException e) {
@@ -337,7 +338,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         // Context takes priority over properties map
         String expectedKey = context.getExpectedRecordKey();
         if (expectedKey == null || expectedKey.isEmpty()) {
-            expectedKey = properties.get(EXPECTED_RECORD_KEY);
+            expectedKey = properties.get("expectedRecordKey");
         }
 
         if (expectedKey == null || expectedKey.isEmpty()) {
@@ -362,7 +363,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         if (context.getReadTimeout() != null) {
             return context.getReadTimeout();
         }
-        String timeoutStr = properties.get(DATA_TABLE_READ_TIMEOUT);
+        String timeoutStr = properties.get("consumerReadTimeout");
         if (timeoutStr != null && !timeoutStr.isEmpty()) {
             try {
                 return Long.parseLong(timeoutStr);

@@ -18,6 +18,7 @@
  */
 package io.github.ktestify.io.kafka;
 
+import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_FILE;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
@@ -25,7 +26,6 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import io.github.ktestify.config.ConfigBuilder;
 import io.github.ktestify.config.KtestifyConfig;
-import io.github.ktestify.constants.ConfigConstants;
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.io.kafka.impl.AvroKafkaConsumer;
 import io.github.ktestify.models.Topic;
@@ -251,7 +251,7 @@ class AvroKafkaConsumerTest {
                             .consumer(createAvroKafkaConsumer())
                             .readTimeout(10_000L)
                             .consumerDeltaTime(60_000L)
-                            .matchMethod(ConfigConstants.METHOD_MATCH_FILE)
+                            .matchMethod(METHOD_MATCH_FILE)
                             .matchFilePath(resourcePath("expected-order.json"))
                             .build())
                     .call();
@@ -269,7 +269,7 @@ class AvroKafkaConsumerTest {
                             .consumer(createAvroKafkaConsumer())
                             .readTimeout(10_000L)
                             .consumerDeltaTime(60_000L)
-                            .matchMethod(ConfigConstants.METHOD_MATCH_FILE)
+                            .matchMethod(METHOD_MATCH_FILE)
                             .matchFilePath(resourcePath("expected-order.json"))
                             .build())
                     .call();

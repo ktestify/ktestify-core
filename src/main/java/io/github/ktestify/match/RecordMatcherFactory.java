@@ -18,7 +18,6 @@
  */
 package io.github.ktestify.match;
 
-import static io.github.ktestify.constants.ConfigConstants.*;
 
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.match.impl.AvroFieldsRecordMatcher;
@@ -53,6 +52,13 @@ import org.apache.avro.generic.GenericRecord;
  */
 @Slf4j
 public final class RecordMatcherFactory {
+
+    public static final String METHOD_MATCH_FILE = "methodMatchFile";
+    public static final String METHOD_MATCH_KEY_FILE = "methodMatchKeyValue";
+    public static final String METHOD_MATCH_XML = "methodMatchXML";
+    public static final String METHOD_MATCH_XPATH = "methodMatchXPath";
+    public static final String METHOD_FIELDS_TO_MATCH = "methodFieldsToMatch";
+    public static final String METHOD_RECORD_KEY_MATCH = "methodRecordKeyMatch";
 
     private RecordMatcherFactory() {}
 

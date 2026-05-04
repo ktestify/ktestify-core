@@ -18,8 +18,6 @@
  */
 package io.github.ktestify.utils.serdes;
 
-import static io.github.ktestify.constants.ConfigConstants.ERROR_UNEXPECTED_VALUE_TYPE;
-
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.time.Instant;
@@ -60,6 +58,7 @@ import org.slf4j.LoggerFactory;
 public final class AvroDeserializer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AvroDeserializer.class);
+    public static final String ERROR_UNEXPECTED_VALUE_TYPE = "Unexpected value type";
 
     private static final String DATE = "date";
     private static final String DECIMAL = "decimal";
