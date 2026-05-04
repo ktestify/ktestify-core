@@ -20,28 +20,6 @@ package io.github.ktestify.constants;
 
 public final class LogMessagesConstants {
 
-    public static final String MESSAGE_FOUND_RECORD = "Found record in topic {}";
-    public static final String MESSAGE_RECORD_NOT_FOUND = "Did not find record in topic {}";
-
-    public static final String MESSAGE_MESSAGE_SENT_IN_OBJECT_NAME = "Message has been sent to {}";
-    public static final String MESSAGE_FOUND_RECORDS = "Found records in topic {}";
-    public static final String MESSAGE_FILE_CONTENT_FROM_FILE = "Content from file {} \n {}";
-    public static final String MESSAGE_USING_ASSETS_DIRECTORY = "Using declared assets directory to get the file path";
-    public static final String MESSAGE_QUEUE_RECORD_FIELDS_MATCHES = "Record in queue does match !";
-    public static final String MESSAGE_QUEUE_RECORD_FIELDS_DOES_NOT_MATCH = "Record in queue does not match !";
-    public static final String MESSAGE_TOPIC_RECORD_MATCHES = "Record in topic {} does match !";
-    public static final String MESSAGE_TOPIC_RECORD_DOES_NOT_MATCH = "Record in topic does not match !";
-    public static final String MESSAGE_TOPIC_RECORDS_MATCHES = "Records in topic {} does match !";
-    public static final String MESSAGE_TOPIC_RECORDS_DOES_NOT_MATCH = "One or more records do not match";
-    public static final String MESSAGE_RAW_PRODUCER_CREATED_QUEUE = "Created RAW Producer on queue {}";
-    public static final String MESSAGE_RAW_PRODUCER_CREATED_QUEUE_WITH_FILE_CONTENT =
-            "Created RAW Producer on queue : {} with this file content \n {}";
-    public static final String MESSAGE_RAW_PRODUCER_CREATED_TOPIC = "Created RAW Producer on topic {}";
-    public static final String MESSAGE_RAW_PRODUCER_CREATED_TOPIC_WITH_FILE_CONTENT =
-            "Created RAW Producer on topic : {} with this file content \n {}";
-    public static final String MESSAGE_AVRO_PRODUCER_CREATED = "Created AVRO Producer on topic {}.";
-    public static final String MESSAGE_AVRO_PRODUCER_CREATED_WITH_SCHEMA_AND_FILE_CONTENT =
-            "Created AVRO Producer on topic : {}, using the schema {} with this file content :\n{}";
     public static final String MESSAGE_CONSUMER_SUBSCRIBED_TO_TOPIC = "Subscribed to topic {}.";
     public static final String MESSAGE_CONSUMER_DELTA_TIME_FROM_DATATABLE =
             "Retrieved a consumer delta time from the DataTable : {} seconds.";
@@ -60,33 +38,13 @@ public final class LogMessagesConstants {
     public static final String MESSAGE_CONSUMER_NO_DELTA_TIME_FOUND =
             "No consumer delta time has been found in DataTable, defaulting to {} ms..";
     public static final String MESSAGE_CONSUMER_RECORDS_IN_TOPIC_NOT_EMPTY = "Records in topic {} are not empty.";
-    public static final String MESSAGE_CONSUMER_DOES_MATCH = "Does match ? {}";
     public static final String MESSAGE_CONSUMER_RECORD_DO_NOT_MATCHES_EXPECTED_KEY =
             "Found a record with key {} but it does not match the expected key {}.";
     public static final String MESSAGE_CONSUMER_RECORD_MATCHES_EXPECTED_KEY =
             "Found a record that matches the expected key {}.";
-    public static final String MESSAGE_CONSUMER_SNAPSHOT_ACTIVE_TEST_FAILED_UPDATE =
-            "Snapshot manager is active, the test did not pass. Updating the output match file ...";
-    public static final String MESSAGE_CONSUMER_SNAPSHOT_UPDATED_RETRYING_TEST =
-            "Output file has been updated, retrying test ...";
-    public static final String MESSAGE_SCRIPT_EXECUTING_WITH_ARGS = "Executing script {} with arguments {}.";
-    public static final String MESSAGE_SCRIPT_EXECUTED_WITH_EXIT_CODE = "Script {} executed with exit code {}.";
-    // Error messages
-    public static final String ERROR_EMPTY_FILE = "File is empty";
-    public static final String ERROR_CFT_SESSION_NULL = "Session is null";
-    public static final String ERROR_CONSUMER_THREAD_EXCEPTION = "Error while waiting for record to appear in topic";
-    public static final String ERROR_QUEUE_THREAD_EXCEPTION = "Error while waiting for record to appear in queue";
-    public static final String ERROR_WATCHER_RECORD_FOUND = "The watcher found record(s) where it should not";
-    public static final String ERROR_WATCHER_RECORD_NOT_FOUND =
-            "The watcher did not found record(s) where it should've";
-    public static final String ERROR_MISSING_TOPIC_IN_DATA_TABLE =
-            "Missing topic name or topic name alias in DataTable";
-    public static final String ERROR_MISSING_QUEUE_IN_DATA_TABLE =
-            "Missing queue name or queue name alias in DataTable";
-    public static final String ERROR_SCRIPT_EXECUTED_WITH_EXIT_CODE = "Script executed with exit code ";
+
     public static final String ERROR_PARSING_CONSUMER_DELTA_TIME =
             "Failed to parse consumer delta time, defaulting to {} ms";
-    public static final String ERROR_MISSING_MATCH_METHOD = "Missing match method !";
 
     public static final String AVRO_UTILS_DATE_CONVERSION_INFO = "Converting dates to timestamps";
     public static final String AVRO_UTILS_VALUES_STRICTLY_MATCH = "Values strictly match";

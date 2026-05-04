@@ -18,11 +18,12 @@
  */
 package io.github.ktestify.io.kafka;
 
+import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_FILE;
+import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_XML;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.github.ktestify.config.ConfigBuilder;
 import io.github.ktestify.config.KtestifyConfig;
-import io.github.ktestify.constants.ConfigConstants;
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.io.kafka.impl.RawKafkaConsumer;
 import io.github.ktestify.models.Topic;
@@ -214,7 +215,7 @@ class RawKafkaConsumerTest {
                                     KtestifyConfig.getOrLoad(), "raw-file-match-" + UUID.randomUUID()))
                             .readTimeout(10_000L)
                             .consumerDeltaTime(60_000L)
-                            .matchMethod(ConfigConstants.METHOD_MATCH_FILE)
+                            .matchMethod(METHOD_MATCH_FILE)
                             .matchFilePath(resourcePath("expected-order.json"))
                             .build())
                     .call();
@@ -233,7 +234,7 @@ class RawKafkaConsumerTest {
                                     KtestifyConfig.getOrLoad(), "raw-file-no-match-" + UUID.randomUUID()))
                             .readTimeout(10_000L)
                             .consumerDeltaTime(60_000L)
-                            .matchMethod(ConfigConstants.METHOD_MATCH_FILE)
+                            .matchMethod(METHOD_MATCH_FILE)
                             .matchFilePath(resourcePath("expected-order.json"))
                             .build())
                     .call();
@@ -289,7 +290,7 @@ class RawKafkaConsumerTest {
                                     KtestifyConfig.getOrLoad(), "raw-xml-match-" + UUID.randomUUID()))
                             .readTimeout(10_000L)
                             .consumerDeltaTime(60_000L)
-                            .matchMethod(ConfigConstants.METHOD_MATCH_XML)
+                            .matchMethod(METHOD_MATCH_XML)
                             .matchFilePath(resourcePath("expected-order.xml"))
                             .build())
                     .call();

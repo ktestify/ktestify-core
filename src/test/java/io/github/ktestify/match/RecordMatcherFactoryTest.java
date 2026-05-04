@@ -18,7 +18,7 @@
  */
 package io.github.ktestify.match;
 
-import static io.github.ktestify.constants.ConfigConstants.*;
+import static io.github.ktestify.match.RecordMatcherFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.github.ktestify.exceptions.ConsumerException;

@@ -108,8 +108,7 @@ public abstract class AbstractKafkaConsumer<K, V> extends AbstractConsumer {
      */
     @Override
     public Boolean call() throws ConsumerException {
-        KafkaRecordFetcher<K, V> fetcher = new KafkaRecordFetcher<>(context);
-        try {
+        try (KafkaRecordFetcher<K, V> fetcher = new KafkaRecordFetcher<>(context)) {
             List<ConsumedRecord<V>> records = fetcher.fetch();
             MatchContext matchContext = buildMatchContext();
             MatchResult result = matcher.match(records, matchContext);
@@ -124,8 +123,6 @@ public abstract class AbstractKafkaConsumer<K, V> extends AbstractConsumer {
 
         } catch (FetchException e) {
             throw new ConsumerException(e.getMessage());
-        } finally {
-            fetcher.close();
         }
     }
 
