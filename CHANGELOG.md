@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file.
 
 - Bump com.typesafe:config from 1.4.6 to 1.4.7 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
+- Bump org.projectlombok:lombok from 1.18.44 to 1.18.46 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
 
 ### 🐛 Bug Fixes
 
@@ -55,7 +57,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🎉 New Contributors
 
-- @nil-malh made their first contribution in [#10](https://github.com/ktestify/ktestify-corepull/10)
+- @nil-malh made their first contribution in [#8](https://github.com/ktestify/ktestify-corepull/8)
 
 
 
