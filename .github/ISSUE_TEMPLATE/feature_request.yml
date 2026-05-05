@@ -53,8 +53,6 @@ body:
         - Dynamic Variables
         - Configuration (HOCON)
         - Cucumber / BDD Integration
-        - IBM MQ
-        - SFTP
         - Documentation
         - CI / Build
         - Other

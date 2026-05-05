@@ -24,7 +24,7 @@ for critical issues.
 
 ### Option 2 — Email
 
-Send a detailed report to the maintainers.  
+Send a detailed report to security@ktestify.xyz.  
 Include:
 - A description of the vulnerability
 - Steps to reproduce
