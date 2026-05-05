@@ -219,7 +219,7 @@ class PluginRegistryTest {
         @DisplayName("thrown by PluginRegistry when plugin init fails")
         void thrownWhenPluginInitFails() {
             // arrange: a PluginContext that provides a valid config
-            KtestifyConfig cfg = KtestifyConfig.getOrLoad();
+            KtestifyConfig.getOrLoad();
 
             // Use a ServiceLoader-incompatible approach: verify the wrapping logic directly
             PluginException direct = assertThrows(PluginException.class, () -> {
