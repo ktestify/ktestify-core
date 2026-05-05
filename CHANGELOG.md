@@ -18,6 +18,11 @@ All notable changes to this project will be documented in this file.
 - Added Log4J config in KTestify Config — [@nil-malh](https://github.com/nil-malh)
 
 
+### ⬆️ Dependency Updates
+
+- Bump com.typesafe:config from 1.4.6 to 1.4.7 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
+
 ### 🐛 Bug Fixes
 
 - Update commit message prefixes for Dependabot and CI in configuration files — [@nil-malh](https://github.com/nil-malh)
@@ -50,7 +55,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🎉 New Contributors
 
-- @nil-malh made their first contribution in [#11](https://github.com/ktestify/ktestify-corepull/11)
+- @nil-malh made their first contribution in [#10](https://github.com/ktestify/ktestify-corepull/10)
 
 
 
