@@ -24,6 +24,8 @@ All notable changes to this project will be documented in this file.
 
 - Bump org.projectlombok:lombok from 1.18.44 to 1.18.46 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
+- Bump the junit5 group with 3 updates *(deps-dev)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
 
 ### 🐛 Bug Fixes
 
@@ -57,7 +59,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🎉 New Contributors
 
-- @nil-malh made their first contribution in [#8](https://github.com/ktestify/ktestify-corepull/8)
+- @nil-malh made their first contribution in [#5](https://github.com/ktestify/ktestify-corepull/5)
 
 
 
