@@ -58,10 +58,11 @@ All notable changes to this project will be documented in this file.
 
 - Removed ConfigConstants.java — [@nil-malh](https://github.com/nil-malh)
 
+- Removed unused components in feature_request.yml & added email in SECURITY.md — [@nil-malh](https://github.com/nil-malh)
+
 
 ### 🎉 New Contributors
 
-- @nil-malh made their first contribution in [#6](https://github.com/ktestify/ktestify-corepull/6)
 
 
 
