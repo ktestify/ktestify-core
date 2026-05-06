@@ -51,6 +51,8 @@ All notable changes to this project will be documented in this file.
 
 - Fixed 'Unread local variable' in test — [@nil-malh](https://github.com/nil-malh)
 
+- Fix : Fixed an issue with the import of GPG keys for release — [@nil-malh](https://github.com/nil-malh)
+
 
 ### 🔧 Miscellaneous
 
@@ -69,7 +71,6 @@ All notable changes to this project will be documented in this file.
 
 ### 🎉 New Contributors
 
-- @nil-malh made their first contribution in [#12](https://github.com/ktestify/ktestify-corepull/12)
 
 
 
