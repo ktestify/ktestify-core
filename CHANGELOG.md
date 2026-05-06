@@ -17,6 +17,8 @@ All notable changes to this project will be documented in this file.
 
 - Added Log4J config in KTestify Config — [@nil-malh](https://github.com/nil-malh)
 
+- Implement plugin system with KtestifyPlugin interface and PluginRegistry — [@nil-malh](https://github.com/nil-malh)
+
 
 ### ⬆️ Dependency Updates
 
@@ -47,6 +49,8 @@ All notable changes to this project will be documented in this file.
 
 - Used a try with resources in the AbstractKafkaConsumer.call() — [@nil-malh](https://github.com/nil-malh)
 
+- Fixed 'Unread local variable' in test — [@nil-malh](https://github.com/nil-malh)
+
 
 ### 🔧 Miscellaneous
 
@@ -60,9 +64,12 @@ All notable changes to this project will be documented in this file.
 
 - Removed unused components in feature_request.yml & added email in SECURITY.md — [@nil-malh](https://github.com/nil-malh)
 
+- Update license in all files — [@nil-malh](https://github.com/nil-malh)
+
 
 ### 🎉 New Contributors
 
+- @nil-malh made their first contribution in [#12](https://github.com/ktestify/ktestify-corepull/12)
 
 
 
