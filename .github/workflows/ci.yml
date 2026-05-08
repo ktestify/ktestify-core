@@ -1,8 +1,16 @@
 # ============================================================
 # CI — Continuous Integration
 #
-# Triggered on every push to any branch and on every PR
-# targeting `main`.  Two independent jobs run in parallel:
+# Triggered on:
+#   • push  → main      (every merge — post-merge validation)
+#   • pull_request → main (every PR — pre-merge validation)
+#
+# Restricting push to main avoids duplicate job runs: when a
+# feature branch has an open PR, GitHub fires both push and
+# pull_request events.  Limiting push to main means each commit
+# is evaluated exactly once.
+#
+# Two independent jobs run in parallel:
 #
 #   lint   → Spotless code-style check
 #   build  → Compile + tests (unit + Testcontainers) + JaCoCo
@@ -14,7 +22,7 @@ name: CI
 
 on:
   push:
-    branches: [ "**" ]
+    branches: [ main ]    # feature branches are covered by pull_request — avoids duplicate runs
     paths-ignore:
       - "**.md"
       - "LICENSE"
@@ -246,6 +254,7 @@ jobs:
         if: ${{ always() && github.event_name == 'pull_request' }}
         uses: actions/github-script@v9
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const fs = require('fs');
             if (!fs.existsSync('/tmp/ci-report.md')) {
