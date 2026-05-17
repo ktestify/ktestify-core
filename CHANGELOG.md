@@ -2,7 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.1.0] — 2026-05-17
+
 ### ✨ Features
 
 - Added topic namespace configuration to KafkaConfig and reference.conf — [@nil-malh](https://github.com/nil-malh)
