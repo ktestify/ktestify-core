@@ -98,11 +98,10 @@ public final class KtestifyConfig {
         Configurator.setLevel("io.confluent", Level.toLevel(lc.getString("confluent-level"), Level.WARN));
 
         log.debug(
-                "Log levels applied — ktestify={} root={} kafka={} testcontainers={} confluent={}",
+                "Log levels applied — ktestify={} root={} kafka={} confluent={}",
                 lc.getString("level"),
                 lc.getString("root-level"),
                 lc.getString("kafka-level"),
-                lc.getString("testcontainers-level"),
                 lc.getString("confluent-level"));
     }
 
@@ -121,6 +120,7 @@ public final class KtestifyConfig {
         if (instance == null) {
             synchronized (LOCK) {
                 if (instance == null) {
+                    ConfigFactory.invalidateCaches();
                     Config config = ConfigFactory.load();
                     instance = new KtestifyConfig(config);
                 }

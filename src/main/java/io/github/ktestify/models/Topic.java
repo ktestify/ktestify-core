@@ -15,10 +15,15 @@
  */
 package io.github.ktestify.models;
 
+import static java.util.Objects.requireNonNull;
+
+import io.github.ktestify.config.KtestifyConfig;
+import io.github.ktestify.exceptions.ConfigException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
 @Builder
@@ -59,5 +64,35 @@ public class Topic {
         public static String getSimpleClassName() {
             return TopicNamespace.class.getSimpleName();
         }
+    }
+
+    public static Topic validateTopic(Topic topic, Type topicType) {
+        requireNonNull(topic, "Topic must be provided");
+        String topicName = topic.getTopicName();
+
+        if ((topic.getTopicNamespace() == null
+                        || StringUtils.isBlank(topic.getTopicNamespace().getNamespace()))
+                && KtestifyConfig.getOrLoad().getKafka().getTopicNamespace().isPresent()) {
+            topic.setTopicNamespace(Topic.TopicNamespace.builder()
+                    .namespace(KtestifyConfig.getOrLoad()
+                            .getKafka()
+                            .getTopicNamespace()
+                            .get())
+                    .build());
+        }
+
+        if (topicName == null || topicName.isEmpty()) {
+            throw new ConfigException("No topic name was specified !");
+        }
+
+        if (topic.getTopicType() != topicType) {
+            if (topicType == Type.INPUT) {
+                throw new ConfigException(
+                        "Topic type is " + topicType.toString() + ", Cannot consume from an input topic !");
+            }
+            throw new ConfigException(
+                    "Topic type is " + topicType.toString() + ", Cannot produce to an output topic !");
+        }
+        return topic;
     }
 }
