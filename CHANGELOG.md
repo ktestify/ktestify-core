@@ -19,6 +19,8 @@ All notable changes to this project will be documented in this file.
 
 - Implement plugin system with KtestifyPlugin interface and PluginRegistry — [@nil-malh](https://github.com/nil-malh)
 
+- Migrated from custom GitHub PAT to GITHUB_TOKEN — [@nil-malh](https://github.com/nil-malh)
+
 
 ### ⬆️ Dependency Updates
 
@@ -29,6 +31,16 @@ All notable changes to this project will be documented in this file.
 - Bump the junit5 group with 3 updates *(deps-dev)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
 - Bump commons-io:commons-io in the commons group *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
+- Bump the testcontainers group across 1 directory with 3 updates *(deps-dev)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
+- Bump com.google.code.gson:gson from 2.13.2 to 2.14.0 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
+- Bump the logging group with 3 updates *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
+- Bump com.typesafe:config from 1.4.7 to 1.4.8 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
+- Bump com.fasterxml.jackson:jackson-bom from 2.19.2 to 2.21.3 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
 
 ### 🐛 Bug Fixes
@@ -67,6 +79,8 @@ All notable changes to this project will be documented in this file.
 - Removed unused components in feature_request.yml & added email in SECURITY.md — [@nil-malh](https://github.com/nil-malh)
 
 - Update license in all files — [@nil-malh](https://github.com/nil-malh)
+
+- Removed sonarscan plugin — [@nil-malh](https://github.com/nil-malh)
 
 
 ### 🎉 New Contributors
