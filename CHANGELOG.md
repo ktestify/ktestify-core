@@ -65,6 +65,8 @@ All notable changes to this project will be documented in this file.
 
 - Fix : Fixed an issue with the import of GPG keys for release — [@nil-malh](https://github.com/nil-malh)
 
+- Fixed an issue on changelog.yml — [@nil-malh](https://github.com/nil-malh)
+
 
 ### 🔧 Miscellaneous
 
