@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Schema Registry configuration.
@@ -31,6 +33,8 @@ import lombok.Getter;
  */
 @Getter
 public final class SchemaRegistryConfig {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SchemaRegistryConfig.class);
 
     private final Config config;
 
@@ -68,6 +72,13 @@ public final class SchemaRegistryConfig {
         this.sslTruststorePassword = getOptionalString(sslConfig, "truststore-password");
         this.sslKeystoreLocation = getOptionalString(sslConfig, "keystore-location");
         this.sslKeystorePassword = getOptionalString(sslConfig, "keystore-password");
+
+        LOG.debug(
+                "SchemaRegistryConfig loaded — url={}, autoRegister={}, auth.credentialsSource={}, auth.userInfo={}",
+                this.url,
+                this.autoRegisterSchemas,
+                this.basicAuthCredentialsSource.orElse("<not set>"),
+                this.basicAuthUserInfo.map(v -> "<redacted>").orElse("<not set>"));
     }
 
     private Optional<String> getOptionalString(Config config, String path) {
@@ -100,6 +111,7 @@ public final class SchemaRegistryConfig {
         sslKeystoreLocation.ifPresent(v -> props.put("schema.registry.ssl.keystore.location", v));
         sslKeystorePassword.ifPresent(v -> props.put("schema.registry.ssl.keystore.password", v));
 
+        LOG.trace("SchemaRegistryConfig.getProperties() keys: {}", props.keySet());
         return props;
     }
 

@@ -160,7 +160,7 @@ public final class ConsumerContext<K, V> {
         }
 
         public ConsumerContext<K, V> build() {
-            Topic validatedTopic = validateTopic(topic);
+            Topic validatedTopic = Topic.validateTopic(topic, Topic.Type.OUTPUT);
 
             // Use config-based properties if not provided
             Map<String, String> validatedProps = properties != null
@@ -184,18 +184,6 @@ public final class ConsumerContext<K, V> {
                     consumerDeltaTime,
                     isBatchConsumer,
                     batchSize);
-        }
-
-        private static Topic validateTopic(Topic topic) {
-            requireNonNull(topic, "Topic must be provided");
-            String topicName = topic.getTopicName();
-            if (topicName == null || topicName.isEmpty()) {
-                throw new ConsumerException("No topic name was specified !");
-            }
-            if (topic.getTopicType() == Topic.Type.INPUT) {
-                throw new ConsumerException("Topic type is INPUT. Cannot consume from an input topic !");
-            }
-            return topic;
         }
 
         private static <T> T requireNonNull(T value, String message) {

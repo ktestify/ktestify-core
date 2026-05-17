@@ -120,7 +120,7 @@ public final class ProducerContext<K, V> {
         }
 
         public ProducerContext<K, V> build() {
-            Topic validatedTopic = validateTopic(topic);
+            Topic validatedTopic = Topic.validateTopic(topic, Topic.Type.INPUT);
 
             // Use config-based properties if not provided
             Map<String, String> validatedProps = properties != null
@@ -144,18 +144,6 @@ public final class ProducerContext<K, V> {
                     payload,
                     schemaName,
                     schemaVersion);
-        }
-
-        private static Topic validateTopic(Topic topic) {
-            requireNonNull(topic, "Topic must be provided");
-            String topicName = topic.getTopicName();
-            if (topicName == null || topicName.isEmpty()) {
-                throw new ProducerException("No topic name was specified !");
-            }
-            if (topic.getTopicType() == Topic.Type.OUTPUT) {
-                throw new ProducerException("Topic type is OUTPUT. Cannot produce to an output topic !");
-            }
-            return topic;
         }
 
         private static File validateFile(File file) {

@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import io.github.ktestify.config.ConfigBuilder;
 import io.github.ktestify.config.KtestifyConfig;
+import io.github.ktestify.exceptions.ConfigException;
 import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.kafka.impl.RawKafkaProducer;
 import io.github.ktestify.models.Topic;
@@ -437,7 +438,7 @@ class RawKafkaProducerTest {
 
             // When/Then
             assertThrows(
-                    ProducerException.class,
+                    ConfigException.class,
                     () -> ProducerContext.<String, String>builder()
                             .topic(outputTopic)
                             .producer(producer)
@@ -458,7 +459,7 @@ class RawKafkaProducerTest {
 
             // When/Then
             assertThrows(
-                    ProducerException.class,
+                    ConfigException.class,
                     () -> ProducerContext.<String, String>builder()
                             .topic(topicWithNullName)
                             .producer(producer)
@@ -479,7 +480,7 @@ class RawKafkaProducerTest {
 
             // When/Then
             assertThrows(
-                    ProducerException.class,
+                    ConfigException.class,
                     () -> ProducerContext.<String, String>builder()
                             .topic(topicWithEmptyName)
                             .producer(producer)
