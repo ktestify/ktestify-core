@@ -45,8 +45,7 @@ on:
 permissions:
   contents: write   # needed to push tags and create the GitHub Release
   id-token: write   # OIDC token for Maven Central trusted publishing
-  pull-requests: read  # Add this for fetching PR metadata
-  
+
 env:
   JAVA_VERSION: "25"
   MAVEN_OPTS: "-Xmx2048m -XX:+EnableDynamicAgentLoading"
@@ -60,6 +59,7 @@ jobs:
     permissions:
       contents: write       # push tag + create GitHub Release
       id-token: write       # OIDC token for Maven Central trusted publishing
+      pull-requests: read  # Add this for fetching PR metadata
 
     steps:
       # ── Checkout ──────────────────────────────────────────
