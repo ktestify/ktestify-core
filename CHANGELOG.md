@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 
 - Bump org.slf4j:slf4j-api in the logging group *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
+- Bump the kafka group with 2 updates *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
 
 ## [0.1.0] — 2026-05-17
 
