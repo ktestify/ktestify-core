@@ -198,9 +198,9 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            target/ktestify-core-${{ inputs.release-version }}.jar
-            target/ktestify-core-${{ inputs.release-version }}-sources.jar
-            target/ktestify-core-${{ inputs.release-version }}-javadoc.jar
+            target/ktestify-core.jar
+            target/ktestify-core-sources.jar
+            target/ktestify-core-javadoc.jar
 
       # ── FIX 3: Rollback on failure ────────────────────────
       # Runs only when a previous step has failed AND this is not a dry-run.
