@@ -13,7 +13,9 @@
 #   6. A GitHub Release is created with auto-generated notes.
 #
 # Required secrets (set in Settings → Secrets → Actions):
-#   GITHUB_TOKEN        — Built-in token (contents:write + id-token:write set at job level)
+#   KTESTIFY_CHANGELOG_PAT — PAT with repo scope; used for checkout, git push,
+#                            tagging, and GitHub Release creation (bypasses main
+#                            branch ruleset that blocks github-actions[bot])
 #   CENTRAL_USERNAME    — Maven Central Portal username token
 #   CENTRAL_PASSWORD    — Maven Central Portal password token
 #   GPG_PRIVATE_KEY     — ASCII-armored GPG private key
@@ -56,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     permissions:
-      contents: write       # push tag + create GitHub Release
+      contents: read        # KTESTIFY_CHANGELOG_PAT handles all writes to main
       id-token: write       # OIDC token for Maven Central trusted publishing
       pull-requests: read   # git-cliff: fetch PR metadata for changelog
 
@@ -81,7 +83,7 @@ jobs:
       - name: Checkout (full history for tagging)
         uses: actions/checkout@v6
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.KTESTIFY_CHANGELOG_PAT }}
           fetch-depth: 0
 
       # ── Java & Maven ──────────────────────────────────────
@@ -105,7 +107,7 @@ jobs:
           echo "${KEY_FPR}:6:" | gpg --import-ownertrust --batch --no-tty
           echo "Imported key fingerprint: ${KEY_FPR}"
 
-      # ── Set release version ───────────────────────────────
+      # ── Set release version ───────────────────────────────────
       - name: Set pom.xml to release version ${{ inputs.release-version }}
         run: |
           mvn versions:set \
@@ -113,7 +115,25 @@ jobs:
             --no-transfer-progress
           mvn versions:commit --no-transfer-progress
 
-      # ── Build, test & sign ────────────────────────────────
+      # ── Update README.md with release version ─────────────────
+      # Two substitutions:
+      #   1. shields.io version badge  — pattern: badge/version-<old>-6EE7B7
+      #   2. Maven dependency snippet  — pattern: <version>…</version>
+      - name: Update README.md to release version ${{ inputs.release-version }}
+        run: |
+          RELEASE_VERSION="${{ inputs.release-version }}"
+          # 1. Version badge (shields.io encodes '-' as '--' in label text)
+          sed -i -E \
+            "s|(badge/version-)([^?]+)(-6EE7B7)|\1${RELEASE_VERSION}\3|" \
+            README.md
+          # 2. Maven <version> tag inside the dependency snippet
+          sed -i -E \
+            "s|(<version>)[0-9][^<]*(</version>)|\1${RELEASE_VERSION}\2|" \
+            README.md
+          echo "README.md updated → ${RELEASE_VERSION}"
+          grep -E "badge/version|<version>" README.md | head -5
+
+      # ── Build, test & sign ────────────────────────────────────
       # FIX 2: GPG passphrase moved from CLI arg to step-level env var.
       # Passing secrets as Maven -D flags exposes them in `ps` output and
       # runner debug logs. The shell variable ${GPG_PASSPHRASE} is expanded
@@ -146,7 +166,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pom.xml
+          git add pom.xml README.md
           git commit -m "chore(release): prepare release ${{ inputs.release-version }} [skip ci]"
           git tag -a "v${{ inputs.release-version }}" \
             -m "Release ${{ inputs.release-version }}"
@@ -162,7 +182,7 @@ jobs:
         env:
           OUTPUT: RELEASE_NOTES.md
           GITHUB_REPO: ${{ github.repository }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.KTESTIFY_CHANGELOG_PAT }}
 
       # ── Update CHANGELOG.md with the new release ──────────
       - name: Update CHANGELOG.md (git-cliff full history)
@@ -174,7 +194,7 @@ jobs:
         env:
           OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.KTESTIFY_CHANGELOG_PAT }}
 
       - name: Bump to next SNAPSHOT ${{ inputs.next-snapshot-version }}
         if: inputs.dry-run == 'false'
@@ -183,7 +203,21 @@ jobs:
             -DnewVersion=${{ inputs.next-snapshot-version }} \
             --no-transfer-progress
           mvn versions:commit --no-transfer-progress
-          git add pom.xml CHANGELOG.md
+
+          NEXT_SNAPSHOT="${{ inputs.next-snapshot-version }}"
+          # shields.io encodes '-' as '--', so "0.3.1-SNAPSHOT" → "0.3.1--SNAPSHOT"
+          NEXT_SNAPSHOT_BADGE=$(echo "${NEXT_SNAPSHOT}" | sed 's/-/--/g')
+          # 1. Version badge
+          sed -i -E \
+            "s|(badge/version-)([^?]+)(-6EE7B7)|\1${NEXT_SNAPSHOT_BADGE}\3|" \
+            README.md
+          # 2. Maven <version> tag
+          sed -i -E \
+            "s|(<version>)[0-9][^<]*(</version>)|\1${NEXT_SNAPSHOT}\2|" \
+            README.md
+          echo "README.md updated → ${NEXT_SNAPSHOT}"
+
+          git add pom.xml CHANGELOG.md README.md
           git commit -m "chore(release): prepare next iteration ${{ inputs.next-snapshot-version }} [skip ci]"
           git push origin main
 
@@ -192,6 +226,7 @@ jobs:
         if: inputs.dry-run == 'false'
         uses: softprops/action-gh-release@v3
         with:
+          token: ${{ secrets.KTESTIFY_CHANGELOG_PAT }}
           tag_name: v${{ inputs.release-version }}
           name: "ktestify ${{ inputs.release-version }}"
           body_path: RELEASE_NOTES.md
@@ -222,8 +257,8 @@ jobs:
           # Delete local tag if present
           git tag -d "$TAG" 2>/dev/null && echo "Deleted local tag $TAG" || true
 
-          # Reset pom.xml and CHANGELOG.md to HEAD so main is clean
-          git checkout HEAD -- pom.xml CHANGELOG.md 2>/dev/null || true
+          # Reset pom.xml, CHANGELOG.md and README.md to HEAD so main is clean
+          git checkout HEAD -- pom.xml CHANGELOG.md README.md 2>/dev/null || true
 
           echo ""
           echo "Rollback complete."
@@ -239,7 +274,7 @@ jobs:
         env:
           OUTPUT: RELEASE_NOTES_DRYRUN.md
           GITHUB_REPO: ${{ github.repository }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.KTESTIFY_CHANGELOG_PAT }}
 
       - name: Dry-run summary
         if: inputs.dry-run == 'true'
