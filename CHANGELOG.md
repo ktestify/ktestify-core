@@ -11,6 +11,15 @@ All notable changes to this project will be documented in this file.
 
 - Bump the kafka group with 2 updates *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
+- Bump the kafka group across 1 directory with 2 updates *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
+- Bump the junit5 group across 1 directory with 3 updates *(deps-dev)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
+
+### 🐛 Bug Fixes
+
+- Fixed an issue where a release on GitHub would not have the jars attached — [@nil-malh](https://github.com/nil-malh)
+
 
 ## [0.1.0] — 2026-05-17
 
