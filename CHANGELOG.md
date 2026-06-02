@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
 
 - Bump the junit5 group across 1 directory with 3 updates *(deps-dev)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
+- Bump xmlunit.version from 2.11.0 to 2.12.0 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
 
 ### 🐛 Bug Fixes
 
