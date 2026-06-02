@@ -17,6 +17,8 @@ All notable changes to this project will be documented in this file.
 
 - Bump xmlunit.version from 2.11.0 to 2.12.0 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
+- Bump maven.surefire.plugin.version from 3.5.5 to 3.5.6 *(deps-dev)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
 
 ### 🐛 Bug Fixes
 
