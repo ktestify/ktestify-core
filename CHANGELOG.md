@@ -21,6 +21,8 @@ All notable changes to this project will be documented in this file.
 
 - Bump com.diffplug.spotless:spotless-maven-plugin *(deps-dev)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
+- Bump org.jacoco:jacoco-maven-plugin *(deps-dev)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
 
 ### 🐛 Bug Fixes
 
