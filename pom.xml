@@ -205,21 +205,11 @@
         <!-- ===================================== -->
         <!-- Kafka Dependencies                    -->
         <!-- ===================================== -->
-
-        <!-- Apache Kafka Streams -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-streams</artifactId>
+            <artifactId>kafka-clients</artifactId>
             <version>${kafka.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka-streams-test-utils</artifactId>
-            <version>${kafka.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Confluent Kafka dependencies -->
         <dependency>
             <groupId>io.confluent</groupId>
