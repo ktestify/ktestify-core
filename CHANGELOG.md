@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### ⬆️ Dependency Updates
+
+- Bump com.typesafe:config from 1.4.8 to 1.4.9 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
+
 ## [0.1.1] — 2026-06-11
 
 ### ⬆️ Dependency Updates
