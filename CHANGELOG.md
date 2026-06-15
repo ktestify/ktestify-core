@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 
 - Bump com.typesafe:config from 1.4.8 to 1.4.9 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
+- Bump com.fasterxml.jackson:jackson-bom from 2.21.3 to 2.22.0 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
 
 ## [0.1.1] — 2026-06-11
 
