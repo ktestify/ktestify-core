@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 
 - Bump com.diffplug.spotless:spotless-maven-plugin *(deps-dev)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
+- Bump the kafka group with 2 updates *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
 
 ## [0.1.1] — 2026-06-11
 
