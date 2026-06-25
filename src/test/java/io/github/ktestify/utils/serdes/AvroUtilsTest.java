@@ -2541,4 +2541,88 @@ class AvroUtilsTest {
             assertTrue(exception.getMessage().contains("Actual: 72"));
         }
     }
+
+    @Nested
+    @DisplayName("performDeepEqualsComparison - Effective Size Check With Excluded Keys")
+    class EffectiveSizeCheckWithExcludedKeysTests {
+
+        @Test
+        @DisplayName("Should return true when expected has an extra key that is excluded (core bug regression)")
+        void shouldReturnTrue_WhenExpectedHasExtraExcludedKey() {
+            // expected has key3 which is excluded — old code failed here (size 3 != 2)
+            String expected = "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}";
+            String actual   = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
+            List<String> excludedKeys = List.of("key3");
+
+            assertTrue(
+                    AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
+                    "Expected map has an extra key that is excluded — effective sizes are equal, should match");
+        }
+
+        @Test
+        @DisplayName("Should return true when actual has an extra key that is excluded")
+        void shouldReturnTrue_WhenActualHasExtraExcludedKey() {
+            // Symmetric case: the extra key lives in actual instead
+            String expected = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
+            String actual   = "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}";
+            List<String> excludedKeys = List.of("key3");
+
+            assertTrue(
+                    AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
+                    "Actual map has an extra key that is excluded — effective sizes are equal, should match");
+        }
+
+        @Test
+        @DisplayName("Should return true when each map has a distinct extra excluded key")
+        void shouldReturnTrue_WhenEachMapHasDistinctExtraExcludedKey() {
+            // expected has excludedA (size 3), actual has excludedB (size 3)
+            // Both effective sizes = 2 after subtracting their own excluded key
+            String expected = "{\"key1\":\"value1\",\"key2\":\"value2\",\"excludedA\":\"foo\"}";
+            String actual   = "{\"key1\":\"value1\",\"key2\":\"value2\",\"excludedB\":\"bar\"}";
+            List<String> excludedKeys = List.of("excludedA", "excludedB");
+
+            assertTrue(
+                    AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
+                    "Each map carries a different extra excluded key — effective sizes are equal, should match");
+        }
+
+        @Test
+        @DisplayName("Should return false when effective sizes still differ after accounting for excluded keys")
+        void shouldReturnFalse_WhenEffectiveSizesStillDifferAfterExclusion() {
+            // expected has key2 + key3 (key3 excluded), actual has only key1 — effective 2 vs 1
+            String expected = "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}";
+            String actual   = "{\"key1\":\"value1\"}";
+            List<String> excludedKeys = List.of("key3");
+
+            assertFalse(
+                    AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
+                    "Even after excluding key3, expected still has more non-excluded keys than actual — should not match");
+        }
+
+        @Test
+        @DisplayName("Should not change effective size when excluded key is absent from both maps")
+        void shouldNotAffectEffectiveSize_WhenExcludedKeyAbsentFromBothMaps() {
+            // The exclusion list contains a key that exists in neither map
+            String expected = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
+            String actual   = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
+            List<String> excludedKeys = List.of("phantomKey");
+
+            assertTrue(
+                    AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
+                    "An excluded key absent from both maps must not distort effective sizes — equal maps should still match");
+        }
+
+        @Test
+        @DisplayName("Should return true when multiple extra excluded keys are present only in expected")
+        void shouldReturnTrue_WhenMultipleExtraExcludedKeysOnlyInExpected() {
+            // expected has 4 keys, two of which are excluded; actual has 2 non-excluded keys
+            String expected = "{\"key1\":\"value1\",\"key2\":\"value2\",\"excl1\":\"x\",\"excl2\":\"y\"}";
+            String actual   = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
+            List<String> excludedKeys = List.of("excl1", "excl2");
+
+            assertTrue(
+                    AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
+                    "Multiple extra excluded keys only in expected — effective sizes both 2, should match");
+        }
+    }
 }
