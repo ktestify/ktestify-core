@@ -2551,7 +2551,7 @@ class AvroUtilsTest {
         void shouldReturnTrue_WhenExpectedHasExtraExcludedKey() {
             // expected has key3 which is excluded — old code failed here (size 3 != 2)
             String expected = "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}";
-            String actual   = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
+            String actual = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
             List<String> excludedKeys = List.of("key3");
 
             assertTrue(
@@ -2564,7 +2564,7 @@ class AvroUtilsTest {
         void shouldReturnTrue_WhenActualHasExtraExcludedKey() {
             // Symmetric case: the extra key lives in actual instead
             String expected = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
-            String actual   = "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}";
+            String actual = "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}";
             List<String> excludedKeys = List.of("key3");
 
             assertTrue(
@@ -2578,7 +2578,7 @@ class AvroUtilsTest {
             // expected has excludedA (size 3), actual has excludedB (size 3)
             // Both effective sizes = 2 after subtracting their own excluded key
             String expected = "{\"key1\":\"value1\",\"key2\":\"value2\",\"excludedA\":\"foo\"}";
-            String actual   = "{\"key1\":\"value1\",\"key2\":\"value2\",\"excludedB\":\"bar\"}";
+            String actual = "{\"key1\":\"value1\",\"key2\":\"value2\",\"excludedB\":\"bar\"}";
             List<String> excludedKeys = List.of("excludedA", "excludedB");
 
             assertTrue(
@@ -2591,7 +2591,7 @@ class AvroUtilsTest {
         void shouldReturnFalse_WhenEffectiveSizesStillDifferAfterExclusion() {
             // expected has key2 + key3 (key3 excluded), actual has only key1 — effective 2 vs 1
             String expected = "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}";
-            String actual   = "{\"key1\":\"value1\"}";
+            String actual = "{\"key1\":\"value1\"}";
             List<String> excludedKeys = List.of("key3");
 
             assertFalse(
@@ -2604,7 +2604,7 @@ class AvroUtilsTest {
         void shouldNotAffectEffectiveSize_WhenExcludedKeyAbsentFromBothMaps() {
             // The exclusion list contains a key that exists in neither map
             String expected = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
-            String actual   = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
+            String actual = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
             List<String> excludedKeys = List.of("phantomKey");
 
             assertTrue(
@@ -2617,7 +2617,7 @@ class AvroUtilsTest {
         void shouldReturnTrue_WhenMultipleExtraExcludedKeysOnlyInExpected() {
             // expected has 4 keys, two of which are excluded; actual has 2 non-excluded keys
             String expected = "{\"key1\":\"value1\",\"key2\":\"value2\",\"excl1\":\"x\",\"excl2\":\"y\"}";
-            String actual   = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
+            String actual = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
             List<String> excludedKeys = List.of("excl1", "excl2");
 
             assertTrue(
