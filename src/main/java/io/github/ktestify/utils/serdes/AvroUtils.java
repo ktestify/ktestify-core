@@ -548,19 +548,25 @@ public final class AvroUtils {
      */
     private static boolean performDeepEqualsComparison(
             Map<String, Object> expectedValueMap, Map<String, Object> actualValueMap, List<String> excludedKeys) {
-        if (expectedValueMap.size() != actualValueMap.size()) {
+
+        long expectedExcludedCount =
+                excludedKeys.stream().filter(expectedValueMap::containsKey).count();
+        long actualExcludedCount =
+                excludedKeys.stream().filter(actualValueMap::containsKey).count();
+
+        long effectiveExpectedSize = expectedValueMap.size() - expectedExcludedCount;
+        long effectiveActualSize = actualValueMap.size() - actualExcludedCount;
+
+        if (effectiveExpectedSize != effectiveActualSize) {
             LOGGER.error(AVRO_UTILS_RECORD_MISMATCH);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(
                         AVRO_UTILS_RECORD_MISMATCH_DETAILS,
                         "Expected",
-                        expectedValueMap.size(),
+                        effectiveExpectedSize,
                         getKeySets(expectedValueMap));
                 LOGGER.debug(
-                        AVRO_UTILS_RECORD_MISMATCH_DETAILS,
-                        "Actual",
-                        actualValueMap.size(),
-                        getKeySets(actualValueMap));
+                        AVRO_UTILS_RECORD_MISMATCH_DETAILS, "Actual", effectiveActualSize, getKeySets(actualValueMap));
             }
             return false;
         }
