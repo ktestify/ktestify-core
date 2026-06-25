@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 
 - Bump com.fasterxml.jackson:jackson-bom from 2.21.3 to 2.22.0 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
+- Bump org.sonatype.central:central-publishing-maven-plugin *(deps-dev)* — [@dependabot[bot]](https://github.com/dependabot[bot])
+
 
 ## [0.1.1] — 2026-06-11
 
