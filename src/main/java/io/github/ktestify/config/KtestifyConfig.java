@@ -107,9 +107,9 @@ public final class KtestifyConfig {
     }
 
     /**
-     * Applies the JVM-level truststore defined in {@code ktestify.jvm.truststore} HOCON section by setting
-     * the corresponding {@code javax.net.ssl.*} system properties. This truststore is shared by all plugins
-     * and underlying libraries that don't provide their own SSL configuration.
+     * Applies the JVM-level truststore defined in {@code ktestify.jvm.truststore} HOCON section by setting the
+     * corresponding {@code javax.net.ssl.*} system properties. This truststore is shared by all plugins and underlying
+     * libraries that don't provide their own SSL configuration.
      *
      * <p>If {@code location} is blank, no system properties are set and the JVM's built-in cacerts are used.
      *
@@ -131,8 +131,7 @@ public final class KtestifyConfig {
         }
 
         System.setProperty("javax.net.ssl.trustStore", location);
-        System.setProperty(
-                "javax.net.ssl.trustStoreType", config.getString("ktestify.jvm.truststore.type"));
+        System.setProperty("javax.net.ssl.trustStoreType", config.getString("ktestify.jvm.truststore.type"));
 
         String password = config.getString("ktestify.jvm.truststore.password");
         if (password != null && !password.isBlank()) {
