@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+### ✨ Features
+
+- Add JVM wide truststore configuration and tests — [@nil-malh](https://github.com/nil-malh)
+
+
 ### ⬆️ Dependency Updates
 
 - Bump com.typesafe:config from 1.4.8 to 1.4.9 *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
