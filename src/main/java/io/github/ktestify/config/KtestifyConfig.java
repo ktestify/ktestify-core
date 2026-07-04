@@ -64,6 +64,7 @@ public final class KtestifyConfig {
         this.schemaRegistry = new SchemaRegistryConfig(config.getConfig("ktestify.schema-registry"));
         this.framework = new FrameworkConfig(config.getConfig("ktestify.framework"));
         applyLogLevels(config);
+        applyJvmTruststore(config);
         log.info("KtestifyConfig loaded successfully");
         log.debug("Kafka bootstrap servers: {}", kafka.getBootstrapServers());
         log.debug("Schema Registry URL: {}", schemaRegistry.getUrl());
@@ -103,6 +104,45 @@ public final class KtestifyConfig {
                 lc.getString("root-level"),
                 lc.getString("kafka-level"),
                 lc.getString("confluent-level"));
+    }
+
+    /**
+     * Applies the JVM-level truststore defined in {@code ktestify.jvm.truststore} HOCON section by setting
+     * the corresponding {@code javax.net.ssl.*} system properties. This truststore is shared by all plugins
+     * and underlying libraries that don't provide their own SSL configuration.
+     *
+     * <p>If {@code location} is blank, no system properties are set and the JVM's built-in cacerts are used.
+     *
+     * <p>Supported keys and their environment variable overrides:
+     *
+     * <ul>
+     *   <li>{@code location} / {@code KTESTIFY_JVM_TRUSTSTORE_LOCATION}
+     *   <li>{@code password} / {@code KTESTIFY_JVM_TRUSTSTORE_PASSWORD}
+     *   <li>{@code type} / {@code KTESTIFY_JVM_TRUSTSTORE_TYPE} — {@code JKS} or {@code PKCS12}
+     * </ul>
+     *
+     * @param config the resolved Config object containing {@code ktestify.jvm.truststore}
+     */
+    public static void applyJvmTruststore(Config config) {
+        String location = config.getString("ktestify.jvm.truststore.location");
+        if (location == null || location.isBlank()) {
+            log.debug("No JVM truststore location configured; keeping JVM default cacerts");
+            return;
+        }
+
+        System.setProperty("javax.net.ssl.trustStore", location);
+        System.setProperty(
+                "javax.net.ssl.trustStoreType", config.getString("ktestify.jvm.truststore.type"));
+
+        String password = config.getString("ktestify.jvm.truststore.password");
+        if (password != null && !password.isBlank()) {
+            System.setProperty("javax.net.ssl.trustStorePassword", password);
+        }
+
+        log.info(
+                "JVM truststore applied — location={} type={}",
+                location,
+                config.getString("ktestify.jvm.truststore.type"));
     }
 
     /**

@@ -693,4 +693,112 @@ class KtestifyConfigTest {
         assertEquals(100L, fw.getPollIntervalMillis());
         assertEquals(5000L, fw.getBufferTimeMillis());
     }
+
+    // ==========================================
+    // JVM TRUSTSTORE TESTS
+    // ==========================================
+
+    @Nested
+    @DisplayName("JVM Truststore")
+    class JvmTruststoreTests {
+
+        @BeforeEach
+        void cleanSslProperties() {
+            System.clearProperty("javax.net.ssl.trustStore");
+            System.clearProperty("javax.net.ssl.trustStoreType");
+            System.clearProperty("javax.net.ssl.trustStorePassword");
+        }
+
+        @AfterEach
+        void restoreSslProperties() {
+            System.clearProperty("javax.net.ssl.trustStore");
+            System.clearProperty("javax.net.ssl.trustStoreType");
+            System.clearProperty("javax.net.ssl.trustStorePassword");
+        }
+
+        @Test
+        @DisplayName("Should not set truststore properties when location is blank")
+        void shouldNotSetTruststoreWhenLocationBlank() {
+            Config customConfig = ConfigFactory.parseString("""
+                    ktestify {
+                      jvm {
+                        truststore {
+                          location = ""
+                          password = ""
+                          type = "JKS"
+                        }
+                      }
+                    }
+                    """);
+
+            KtestifyConfig.load(customConfig);
+
+            assertNull(System.getProperty("javax.net.ssl.trustStore"));
+            assertNull(System.getProperty("javax.net.ssl.trustStoreType"));
+            assertNull(System.getProperty("javax.net.ssl.trustStorePassword"));
+        }
+
+        @Test
+        @DisplayName("Should set truststore location and type when location is provided")
+        void shouldSetTruststoreWhenLocationProvided() {
+            Config customConfig = ConfigFactory.parseString("""
+                    ktestify {
+                      jvm {
+                        truststore {
+                          location = "/path/to/truststore.jks"
+                          password = ""
+                          type = "PKCS12"
+                        }
+                      }
+                    }
+                    """);
+
+            KtestifyConfig.load(customConfig);
+
+            assertEquals("/path/to/truststore.jks", System.getProperty("javax.net.ssl.trustStore"));
+            assertEquals("PKCS12", System.getProperty("javax.net.ssl.trustStoreType"));
+            assertNull(System.getProperty("javax.net.ssl.trustStorePassword"));
+        }
+
+        @Test
+        @DisplayName("Should set truststore password when provided")
+        void shouldSetTruststorePasswordWhenProvided() {
+            Config customConfig = ConfigFactory.parseString("""
+                    ktestify {
+                      jvm {
+                        truststore {
+                          location = "/path/to/truststore.jks"
+                          password = "secret"
+                          type = "JKS"
+                        }
+                      }
+                    }
+                    """);
+
+            KtestifyConfig.load(customConfig);
+
+            assertEquals("/path/to/truststore.jks", System.getProperty("javax.net.ssl.trustStore"));
+            assertEquals("JKS", System.getProperty("javax.net.ssl.trustStoreType"));
+            assertEquals("secret", System.getProperty("javax.net.ssl.trustStorePassword"));
+        }
+
+        @Test
+        @DisplayName("Should default truststore type to JKS from reference.conf")
+        void shouldDefaultTruststoreTypeToJks() {
+            Config customConfig = ConfigFactory.parseString("""
+                    ktestify {
+                      jvm {
+                        truststore {
+                          location = "/path/to/truststore.jks"
+                        }
+                      }
+                    }
+                    """);
+
+            KtestifyConfig.load(customConfig);
+
+            assertEquals("/path/to/truststore.jks", System.getProperty("javax.net.ssl.trustStore"));
+            assertEquals("JKS", System.getProperty("javax.net.ssl.trustStoreType"));
+        }
+    }
 }
