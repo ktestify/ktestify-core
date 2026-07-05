@@ -22,7 +22,9 @@ import java.util.Optional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 
 /**
  * Main configuration class for ktestify framework.
@@ -71,8 +73,9 @@ public final class KtestifyConfig {
     }
 
     /**
-     * Applies log levels defined in {@code ktestify.logging} HOCON section via Log4j2's {@link Configurator},
-     * overriding the static defaults set in {@code log4j2.properties}.
+     * Applies log levels defined in {@code ktestify.logging} HOCON section by modifying the Log4j2 {@link LoggerConfig}
+     * objects directly and calling {@code ctx.updateLoggers()}, overriding the static defaults set in
+     * {@code log4j2.properties}.
      *
      * <p>Supported keys and their environment variable overrides:
      *
@@ -87,16 +90,21 @@ public final class KtestifyConfig {
     private static void applyLogLevels(Config config) {
         Config lc = config.getConfig("ktestify.logging");
 
-        Configurator.setLevel("io.github.ktestify", Level.toLevel(lc.getString("level"), Level.DEBUG));
-        Configurator.setRootLevel(Level.toLevel(lc.getString("root-level"), Level.INFO));
-        Configurator.setLevel("org.apache.kafka", Level.toLevel(lc.getString("kafka-level"), Level.WARN));
+        LoggerContext ctx = LoggerContext.getContext(false);
+        Configuration log4jConfig = ctx.getConfiguration();
+
+        setLoggerLevel(log4jConfig, "io.github.ktestify", Level.toLevel(lc.getString("level"), Level.DEBUG));
+        log4jConfig.getRootLogger().setLevel(Level.toLevel(lc.getString("root-level"), Level.INFO));
+        setLoggerLevel(log4jConfig, "org.apache.kafka", Level.toLevel(lc.getString("kafka-level"), Level.WARN));
 
         Level tcLevel = Level.toLevel(lc.getString("testcontainers-level"), Level.INFO);
-        Configurator.setLevel("org.testcontainers", tcLevel);
-        Configurator.setLevel("tc", tcLevel);
-        Configurator.setLevel("com.github.dockerjava", tcLevel);
+        setLoggerLevel(log4jConfig, "org.testcontainers", tcLevel);
+        setLoggerLevel(log4jConfig, "tc", tcLevel);
+        setLoggerLevel(log4jConfig, "com.github.dockerjava", tcLevel);
 
-        Configurator.setLevel("io.confluent", Level.toLevel(lc.getString("confluent-level"), Level.WARN));
+        setLoggerLevel(log4jConfig, "io.confluent", Level.toLevel(lc.getString("confluent-level"), Level.WARN));
+
+        ctx.updateLoggers(log4jConfig);
 
         log.debug(
                 "Log levels applied — ktestify={} root={} kafka={} confluent={}",
@@ -104,6 +112,25 @@ public final class KtestifyConfig {
                 lc.getString("root-level"),
                 lc.getString("kafka-level"),
                 lc.getString("confluent-level"));
+    }
+
+    /**
+     * Sets the level on an existing named {@link LoggerConfig}, or creates a new one if it doesn't exist.
+     *
+     * @param log4jConfig the Log4j2 {@link Configuration}
+     * @param loggerName the logger name (use {@code null} for root)
+     * @param level the level to set
+     */
+    private static void setLoggerLevel(Configuration log4jConfig, String loggerName, Level level) {
+        LoggerConfig loggerConfig = log4jConfig.getLoggerConfig(loggerName);
+        if (loggerConfig == null
+                || (!loggerName.equals(loggerConfig.getName())
+                        && !loggerConfig.getName().isEmpty())) {
+            loggerConfig = new LoggerConfig(loggerName, level, true);
+            log4jConfig.addLogger(loggerName, loggerConfig);
+        } else {
+            loggerConfig.setLevel(level);
+        }
     }
 
     /**

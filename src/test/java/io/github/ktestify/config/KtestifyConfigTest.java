@@ -24,6 +24,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Properties;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -799,6 +802,96 @@ class KtestifyConfigTest {
 
             assertEquals("/path/to/truststore.jks", System.getProperty("javax.net.ssl.trustStore"));
             assertEquals("JKS", System.getProperty("javax.net.ssl.trustStoreType"));
+        }
+    }
+
+    // ==========================================
+    // LOG LEVEL TESTS
+    // ==========================================
+
+    @Nested
+    @DisplayName("Log Levels")
+    class LogLevelTests {
+
+        @AfterEach
+        void restoreRootLevel() {
+            // Restore root logger to INFO after each test
+            LoggerContext ctx = LoggerContext.getContext(false);
+            LoggerConfig rootConfig = ctx.getConfiguration().getRootLogger();
+            rootConfig.setLevel(Level.INFO);
+            ctx.updateLoggers(ctx.getConfiguration());
+        }
+
+        @Test
+        @DisplayName("Should set root logger level to DEBUG from config")
+        void shouldSetRootLoggerLevelToDebug() {
+            Config customConfig = ConfigFactory.parseString("""
+                    ktestify {
+                      logging {
+                        root-level = "DEBUG"
+                      }
+                    }
+                    """);
+
+            KtestifyConfig.load(customConfig);
+
+            LoggerContext ctx = LoggerContext.getContext(false);
+            LoggerConfig rootConfig = ctx.getConfiguration().getRootLogger();
+            assertEquals(Level.DEBUG, rootConfig.getLevel());
+        }
+
+        @Test
+        @DisplayName("Should set root logger level to TRACE from config")
+        void shouldSetRootLoggerLevelToTrace() {
+            Config customConfig = ConfigFactory.parseString("""
+                    ktestify {
+                      logging {
+                        root-level = "TRACE"
+                      }
+                    }
+                    """);
+
+            KtestifyConfig.load(customConfig);
+
+            LoggerContext ctx = LoggerContext.getContext(false);
+            LoggerConfig rootConfig = ctx.getConfiguration().getRootLogger();
+            assertEquals(Level.TRACE, rootConfig.getLevel());
+        }
+
+        @Test
+        @DisplayName("Should set ktestify logger level from config")
+        void shouldSetKtestifyLoggerLevel() {
+            Config customConfig = ConfigFactory.parseString("""
+                    ktestify {
+                      logging {
+                        level = "TRACE"
+                      }
+                    }
+                    """);
+
+            KtestifyConfig.load(customConfig);
+
+            LoggerContext ctx = LoggerContext.getContext(false);
+            LoggerConfig ktestifyConfig = ctx.getConfiguration().getLoggerConfig("io.github.ktestify");
+            assertEquals(Level.TRACE, ktestifyConfig.getLevel());
+        }
+
+        @Test
+        @DisplayName("Should set kafka logger level from config")
+        void shouldSetKafkaLoggerLevel() {
+            Config customConfig = ConfigFactory.parseString("""
+                    ktestify {
+                      logging {
+                        kafka-level = "DEBUG"
+                      }
+                    }
+                    """);
+
+            KtestifyConfig.load(customConfig);
+
+            LoggerContext ctx = LoggerContext.getContext(false);
+            LoggerConfig kafkaConfig = ctx.getConfiguration().getLoggerConfig("org.apache.kafka");
+            assertEquals(Level.DEBUG, kafkaConfig.getLevel());
         }
     }
 }
