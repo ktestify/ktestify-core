@@ -27,6 +27,11 @@ All notable changes to this project will be documented in this file.
 - Bump org.apache.kafka:kafka-clients *(deps)* — [@dependabot[bot]](https://github.com/dependabot[bot])
 
 
+### 🐛 Bug Fixes
+
+- Fixed an issue where KTESTIFY_ROOT_LOG_LEVEL did not set the desired log level — [@nil-malh](https://github.com/nil-malh)
+
+
 ## [0.1.1] — 2026-06-11
 
 ### ⬆️ Dependency Updates
