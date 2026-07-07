@@ -10,7 +10,7 @@
 
     <!-- Project Coordinates -->
     <artifactId>ktestify-core</artifactId>
-    <version>0.1.3-SNAPSHOT</version>
+    <version>1.0.3</version>
     <packaging>jar</packaging>
 
     <!-- Project Information -->
