@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 - Switch to a parent pom to manage dependencies — [@nil-malh](https://github.com/nil-malh)
 
 
+### ⬆️ Dependency Updates
+
+- Updated ktestify-parent to 1.0.2 — [@nil-malh](https://github.com/nil-malh)
+
+
 ## [0.1.2] — 2026-07-05
 
 ### ✨ Features
