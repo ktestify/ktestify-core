@@ -12,6 +12,9 @@
 # ============================================================
 name: Changelog
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
@@ -27,6 +30,8 @@ on:
 
 jobs:
   changelog:
+    permissions:
+      contents: write
     uses: ktestify/.github/.github/workflows/reusable-changelog.yml@main
     secrets:
       KTESTIFY_CHANGELOG_PAT: ${{ secrets.KTESTIFY_CHANGELOG_PAT }}
