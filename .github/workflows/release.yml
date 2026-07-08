@@ -6,6 +6,10 @@
 # ============================================================
 name: Release
 
+permissions:
+  contents: read
+  packages: read
+
 on:
   workflow_dispatch:
     inputs:
