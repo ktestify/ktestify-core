@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
@@ -37,8 +38,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 @Slf4j
 class AvroUtilsTest {
@@ -615,15 +614,18 @@ class AvroUtilsTest {
     }
 
     @Test
-    void convertDatesToTimestamps_ShouldReturnMapWithTimestamps_WhenInputMapHasDateStrings() {
+    void convertDatesToTimestamps_ShouldNotConvertDateLikeStrings_SinceNoTypeInformationIsAvailable() {
+        // Content-sniffing was removed (issue #49): a Map on its own carries no schema information, so
+        // date-like strings must be left untouched. Type-driven conversion only happens in compareValues(),
+        // where the actual side's real Java type (Instant/LocalDateTime/LocalDate) is known.
         Map<String, Object> inputMap = new HashMap<>();
         inputMap.put("date1", "2022-01-01T00:00:00Z");
         inputMap.put("date2", "2022-01-02T00:00:00Z");
 
         Map<String, Object> result = AvroUtils.convertDatesToTimestamps(inputMap);
 
-        assertEquals(1640995200000L, result.get("date1"));
-        assertEquals(1641081600000L, result.get("date2"));
+        assertEquals("2022-01-01T00:00:00Z", result.get("date1"));
+        assertEquals("2022-01-02T00:00:00Z", result.get("date2"));
     }
 
     @Test
@@ -635,33 +637,6 @@ class AvroUtilsTest {
         Map<String, Object> result = AvroUtils.convertDatesToTimestamps(inputMap);
 
         assertEquals(inputMap, result);
-    }
-
-    @Test
-    void isDateString_ShouldReturnTrue_WhenInputIsDateString() {
-        String dateString = "2022-01-01T00:00:00";
-        String dateString1 = "2022-01-01T00:00:00Z";
-        String dateString2 = "2022-01-01T00:00:00:000";
-        String dateString3 = "2022-01-01T00:00:00:000Z";
-
-        boolean result = AvroUtils.isDateString(dateString);
-        boolean result1 = AvroUtils.isDateString(dateString1);
-        boolean result2 = AvroUtils.isDateString(dateString2);
-        boolean result3 = AvroUtils.isDateString(dateString3);
-
-        Assertions.assertTrue(result);
-        Assertions.assertTrue(result1);
-        Assertions.assertTrue(result2);
-        Assertions.assertTrue(result3);
-    }
-
-    @Test
-    void isDateString_ShouldReturnFalse_WhenInputIsNotDateString() {
-        String notDateString = "Not a date string";
-
-        boolean result = AvroUtils.isDateString(notDateString);
-
-        Assertions.assertFalse(result);
     }
 
     @Test
@@ -763,7 +738,7 @@ class AvroUtilsTest {
     }
 
     @Test
-    void testConvertDatesToTimestamps_MainObject() throws ParseException {
+    void testConvertDatesToTimestamps_MainObject() {
         String json = """
             {
               "date": "2025-01-02T00:00:00Z",
@@ -773,12 +748,12 @@ class AvroUtilsTest {
         Map<String, Object> jsonMap = AvroUtils.convertJsonToMap(json);
         Map<String, Object> result = AvroUtils.convertDatesToTimestamps(jsonMap);
 
-        long expectedTimestamp = AvroUtils.convertDateStringToTimestamp("2025-01-02T00:00:00Z");
-        assertEquals(expectedTimestamp, result.get("date"));
+        // No type information is available for a standalone map, so the date-like string is left untouched.
+        assertEquals("2025-01-02T00:00:00Z", result.get("date"));
     }
 
     @Test
-    void testConvertDatesToTimestamps_NestedObject() throws ParseException {
+    void testConvertDatesToTimestamps_NestedObject() {
         String json = """
             {
               "nested": {
@@ -790,12 +765,13 @@ class AvroUtilsTest {
         Map<String, Object> jsonMap = AvroUtils.convertJsonToMap(json);
         Map<String, Object> result = AvroUtils.convertDatesToTimestamps(jsonMap);
 
-        long expectedTimestamp = AvroUtils.convertDateStringToTimestamp("2025-01-02T00:00:00Z");
-        //        assertEquals(expectedTimestamp, ((Map<?, ?>) result.get("nested")).get("date"));
+        // Recursion into nested maps now works, but no conversion is performed — the nested date-like string
+        // must remain untouched.
+        assertEquals("2025-01-02T00:00:00Z", ((Map<?, ?>) result.get("nested")).get("date"));
     }
 
     @Test
-    void testConvertDatesToTimestamps_NestedList() throws ParseException {
+    void testConvertDatesToTimestamps_NestedList() {
         String json = """
             {
               "list": [
@@ -814,11 +790,10 @@ class AvroUtilsTest {
         Map<String, Object> result = AvroUtils.convertDatesToTimestamps(jsonMap);
 
         List<?> list = (List<?>) result.get("list");
-        long expectedTimestamp1 = AvroUtils.convertDateStringToTimestamp("2025-01-02T00:00:00Z");
-        long expectedTimestamp2 = AvroUtils.convertDateStringToTimestamp("2025-01-03T00:00:00Z");
 
-        //        assertEquals(expectedTimestamp1, ((Map<?, ?>) list.get(0)).get("date"));
-        //        assertEquals(expectedTimestamp2, ((Map<?, ?>) list.get(1)).get("date"));
+        // Recursion into nested list items works, but no conversion is performed — dates remain untouched.
+        assertEquals("2025-01-02T00:00:00Z", ((Map<?, ?>) list.get(0)).get("date"));
+        assertEquals("2025-01-03T00:00:00Z", ((Map<?, ?>) list.get(1)).get("date"));
     }
 
     @Test
@@ -1175,8 +1150,8 @@ class AvroUtilsTest {
                 GenericData.Array.class, record.get("arrayField"), "Array field should be a GenericData.Array");
         GenericData.Array<?> array = (GenericData.Array<?>) record.get("arrayField");
         assertFalse(array.isEmpty(), "Array should not be empty");
-        assertInstanceOf(GenericRecord.class, array.get(0), "Array item should be a GenericRecord");
-        assertEquals("innerValue", ((GenericRecord) array.get(0)).get("innerField"), "Inner field should match");
+        assertInstanceOf(GenericRecord.class, array.getFirst(), "Array item should be a GenericRecord");
+        assertEquals("innerValue", ((GenericRecord) array.getFirst()).get("innerField"), "Inner field should match");
 
         assertInstanceOf(Map.class, record.get("mapField"), "Map field should be a Map");
         Map<?, ?> map = (Map<?, ?>) record.get("mapField");
@@ -1185,7 +1160,7 @@ class AvroUtilsTest {
 
     // Test date conversion in nested structures
     @Test
-    void testConvertDatesToTimestampsInNestedStructures() throws ParseException {
+    void testConvertDatesToTimestampsInNestedStructures() {
         Map<String, Object> nestedMap = new HashMap<>();
         nestedMap.put("nestedDate", "2022-01-01T00:00:00Z");
 
@@ -1201,14 +1176,19 @@ class AvroUtilsTest {
 
         Map<String, Object> result = AvroUtils.convertDatesToTimestamps(inputMap);
 
-        // Assert that dates at all levels were converted
-        assertEquals(1641168000000L, result.get("date"), "Top level date should be converted");
-        //        assertEquals(1640995200000L, ((Map<?, ?>) result.get("nested")).get("nestedDate"), "Nested date should
-        // be converted");
+        // No conversion is performed anymore (content-sniffing removed) — dates remain untouched at all levels,
+        // but the recursion still produces a correctly structured (deep-copied) map.
+        assertEquals("2022-01-03T00:00:00Z", result.get("date"), "Top level date should remain unconverted");
+        assertEquals(
+                "2022-01-01T00:00:00Z",
+                ((Map<?, ?>) result.get("nested")).get("nestedDate"),
+                "Nested date should remain unconverted");
 
         List<?> resultList = (List<?>) result.get("list");
-        //        assertEquals(1641081600000L, ((Map<?, ?>) resultList.get(0)).get("itemDate"), "Date in list item
-        // should be converted");
+        assertEquals(
+                "2022-01-02T00:00:00Z",
+                ((Map<?, ?>) resultList.get(0)).get("itemDate"),
+                "Date in list item should remain unconverted");
     }
 
     // Test for logical type INT conversions
@@ -1260,25 +1240,6 @@ class AvroUtilsTest {
                 RuntimeException.class,
                 () -> AvroUtils.convertJsonToAvro(jsonElement, timeSchema),
                 "Should throw RuntimeException for invalid time format");
-    }
-
-    // Parameterized test for isDateString method
-    @ParameterizedTest
-    @ValueSource(
-            strings = {
-                "2022-01-01T00:00:00",
-                "2022-01-01T00:00:00Z",
-                "2022-01-01T00:00:00:000",
-                "2022-01-01T00:00:00:000Z"
-            })
-    void testIsDateStringWithValidFormats(String dateString) {
-        assertTrue(AvroUtils.isDateString(dateString), "Should recognize valid date format: " + dateString);
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"2022-01-01", "00:00:00", "not-a-date", ""})
-    void testIsDateStringWithInvalidFormats(String dateString) {
-        assertFalse(AvroUtils.isDateString(dateString), "Should reject invalid date format: " + dateString);
     }
 
     // Test edge cases for convertDateStringToDateInt
@@ -1420,17 +1381,6 @@ class AvroUtilsTest {
         assertNotNull(result, "Result should not be null");
         assertEquals("123", result.get("numericHeader"), "Numeric header should be converted to string");
         assertEquals("true", result.get("booleanHeader"), "Boolean header should be converted to string");
-    }
-
-    // Test date format edge cases for isDateString
-    @Test
-    void testIsDateStringWithMalformedDates() {
-        // Test with malformed date formats
-        assertFalse(AvroUtils.isDateString("2022-01-01T25:00:00Z"), "Should reject invalid hour");
-        assertFalse(AvroUtils.isDateString("2022-01-01T00:60:00Z"), "Should reject invalid minute");
-        assertFalse(AvroUtils.isDateString("2022-01-01T00:00:60Z"), "Should reject invalid second");
-        assertFalse(AvroUtils.isDateString("2022-13-01T00:00:00Z"), "Should reject invalid month");
-        assertFalse(AvroUtils.isDateString("2022-01-32T00:00:00Z"), "Should reject invalid day");
     }
 
     @Test
@@ -2623,6 +2573,169 @@ class AvroUtilsTest {
             assertTrue(
                     AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
                     "Multiple extra excluded keys only in expected — effective sizes both 2, should match");
+        }
+    }
+
+    @Nested
+    @DisplayName("Type-driven date comparison")
+    class TypeDrivenDateComparisonTests {
+
+        @Test
+        @DisplayName("Should compare literally when both sides are plain strings, even if date-like")
+        void shouldCompareLiterally_WhenBothSidesAreDateLikeStrings() {
+            // A genuine Avro `string` field whose content happens to look like a date/timestamp must never be
+            // converted or reinterpreted — it must be compared as a literal string on both sides.
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("MyDate", "2026-02-10T16:19:14.123Z");
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("MyDate", "2026-02-10T16:19:14.123Z");
+
+            assertTrue(AvroUtils.deepEquals(expected, actual));
+        }
+
+        @Test
+        @DisplayName("Should not match date-like strings that differ, comparing them literally")
+        void shouldNotMatch_WhenDateLikeStringsDifferLiterally() {
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("MyDate", "2026-02-10T16:19:14.000000Z");
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("MyDate", "2026-02-10T16:19:14.123Z");
+
+            assertFalse(AvroUtils.deepEquals(expected, actual));
+        }
+
+        @Test
+        @DisplayName(
+                "Should match an actual Instant (timestamp-micros) against an expected microsecond-precision string")
+        void shouldMatch_ActualInstant_vs_ExpectedMicrosecondString() {
+            Instant actualInstant = Instant.parse("2026-02-10T16:19:14.000000Z");
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("timestamp", "2026-02-10T16:19:14.000000Z");
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("timestamp", actualInstant);
+
+            assertTrue(AvroUtils.deepEquals(expected, actual));
+        }
+
+        @Test
+        @DisplayName("Should match an actual Instant against an expected millisecond-precision string")
+        void shouldMatch_ActualInstant_vs_ExpectedMillisecondString() {
+            Instant actualInstant = Instant.parse("2026-02-10T16:19:14.123Z");
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("timestamp", "2026-02-10T16:19:14.123Z");
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("timestamp", actualInstant);
+
+            assertTrue(AvroUtils.deepEquals(expected, actual));
+        }
+
+        @Test
+        @DisplayName("Should match an actual Instant against an expected string with no fractional seconds")
+        void shouldMatch_ActualInstant_vs_ExpectedStringWithNoFraction() {
+            Instant actualInstant = Instant.parse("2026-02-10T16:19:14Z");
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("timestamp", "2026-02-10T16:19:14Z");
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("timestamp", actualInstant);
+
+            assertTrue(AvroUtils.deepEquals(expected, actual));
+        }
+
+        @Test
+        @DisplayName("Should match an actual LocalDateTime against an expected local-timestamp string")
+        void shouldMatch_ActualLocalDateTime_vs_ExpectedString() {
+            LocalDateTime actualLocalDateTime = LocalDateTime.parse("2026-02-10T16:19:14.123456");
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("localTimestamp", "2026-02-10T16:19:14.123456");
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("localTimestamp", actualLocalDateTime);
+
+            assertTrue(AvroUtils.deepEquals(expected, actual));
+        }
+
+        @Test
+        @DisplayName("Should match an actual LocalDate against an expected yyyy-MM-dd string")
+        void shouldMatch_ActualLocalDate_vs_ExpectedString() {
+            LocalDate actualLocalDate = LocalDate.parse("2026-02-10");
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("birthDate", "2026-02-10");
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("birthDate", actualLocalDate);
+
+            assertTrue(AvroUtils.deepEquals(expected, actual));
+        }
+
+        @Test
+        @DisplayName("Should not match an actual LocalDate against a mismatching expected string")
+        void shouldNotMatch_ActualLocalDate_vs_MismatchingExpectedString() {
+            LocalDate actualLocalDate = LocalDate.parse("2026-02-10");
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("birthDate", "2026-02-11");
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("birthDate", actualLocalDate);
+
+            assertFalse(AvroUtils.deepEquals(expected, actual));
+        }
+
+        @Test
+        @DisplayName("Should apply type-driven date comparison inside nested objects")
+        void shouldMatch_NestedObjectWithDateField() {
+            Instant actualInstant = Instant.parse("2026-02-10T16:19:14.123456Z");
+
+            Map<String, Object> nestedExpected = new HashMap<>();
+            nestedExpected.put("timestamp", "2026-02-10T16:19:14.123456Z");
+            nestedExpected.put("label", "hello");
+
+            Map<String, Object> nestedActual = new HashMap<>();
+            nestedActual.put("timestamp", actualInstant);
+            nestedActual.put("label", "hello");
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("nested", nestedExpected);
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("nested", nestedActual);
+
+            assertTrue(AvroUtils.deepEquals(expected, actual));
+        }
+
+        @Test
+        @DisplayName("Should apply type-driven date comparison inside nested lists")
+        void shouldMatch_NestedListWithDateField() {
+            Instant actualInstant1 = Instant.parse("2026-02-10T16:19:14.000Z");
+            Instant actualInstant2 = Instant.parse("2026-02-11T08:30:00.000000Z");
+
+            Map<String, Object> item1Expected = new HashMap<>();
+            item1Expected.put("timestamp", "2026-02-10T16:19:14Z");
+            Map<String, Object> item2Expected = new HashMap<>();
+            item2Expected.put("timestamp", "2026-02-11T08:30:00.000000Z");
+
+            Map<String, Object> item1Actual = new HashMap<>();
+            item1Actual.put("timestamp", actualInstant1);
+            Map<String, Object> item2Actual = new HashMap<>();
+            item2Actual.put("timestamp", actualInstant2);
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("items", List.of(item1Expected, item2Expected));
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("items", List.of(item1Actual, item2Actual));
+
+            assertTrue(AvroUtils.deepEquals(expected, actual));
         }
     }
 }
