@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### ♻️ Refactoring
+
+- Remove date content-sniffing and implement type-driven date comparison — [@nil-malh](https://github.com/nil-malh)
+
+
+### ✨ Features
+
+- Switched to centralised GH Actions — [@nil-malh](https://github.com/nil-malh)
+
+
 ## [1.0.3] — 2026-07-07
 
 ### ✨ Features
