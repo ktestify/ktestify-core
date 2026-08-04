@@ -12,6 +12,8 @@ All notable changes to this project will be documented in this file.
 
 - Switched to centralised GH Actions — [@nil-malh](https://github.com/nil-malh)
 
+- Enhance deepEquals method to support dot-notation for excluded keys — [@nil-malh](https://github.com/nil-malh)
+
 
 ## [1.0.3] — 2026-07-07
 
