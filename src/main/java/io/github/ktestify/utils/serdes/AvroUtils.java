@@ -29,9 +29,9 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -73,10 +73,6 @@ public final class AvroUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AvroUtils.class);
 
-    /** Date format patterns supported for automatic date detection and conversion. */
-    private static final String[] SUPPORTED_DATE_PATTERNS = {
-        "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm:ss:SSS", "yyyy-MM-dd'T'HH:mm:ss:SSS'Z'"
-    };
 
     /** UTC zone formatters for timestamp conversion with optional milliseconds and microseconds. */
     private static final DateTimeFormatter TIMESTAMP_FORMATTER_WITH_MS =
@@ -117,19 +113,6 @@ public final class AvroUtils {
         return gson.toJson(jsonElement);
     }
 
-    public static GenericRecord convertJsonToAvroRecord(JsonObject jsonEvent, Schema schema) {
-        GenericRecord avroRecord = new GenericData.Record(schema);
-        for (Map.Entry<String, JsonElement> entry : jsonEvent.entrySet()) {
-            String key = entry.getKey();
-            JsonElement value = entry.getValue();
-            Schema.Field field = schema.getField(key);
-            if (field != null) {
-                avroRecord.put(key, AvroUtils.convertJsonToAvro(value, field.schema()));
-            }
-        }
-        return avroRecord;
-    }
-
     /**
      * Converts a Map to a pretty-printed JSON string representation.
      *
@@ -147,15 +130,6 @@ public final class AvroUtils {
 
         var gson = new GsonBuilder().setPrettyPrinting().create();
         return gson.toJson(map);
-    }
-
-    public static JsonObject readJsonFromFile(String filePath) {
-        try (FileReader reader = new FileReader(filePath)) {
-            return JsonParser.parseReader(reader).getAsJsonObject();
-        } catch (IOException e) {
-            LOGGER.error("Error reading JSON from file: {}", filePath, e);
-            throw new RuntimeException("Error reading JSON from file: " + filePath, e);
-        }
     }
 
     /**
@@ -602,6 +576,17 @@ public final class AvroUtils {
     /**
      * Compares two values, handling different types including nested objects and lists.
      *
+     * <p>When the actual value is a real Avro logical-type value already resolved by {@link
+     * io.github.ktestify.utils.serdes.AvroDeserializer} (an {@link Instant}, {@link LocalDateTime}, or {@link
+     * LocalDate}) and the expected value is a plain {@link String} (typically hand-written JSON with no schema
+     * information), the expected string is parsed into the same target type and compared accordingly. This avoids
+     * guessing whether a string "looks like" a date and instead relies on the actual side's real Java type, which is
+     * only ever a date/time type when the underlying Avro schema declares a logical type.
+     *
+     * <p>When both values are plain {@link String} instances, no date detection or conversion is attempted — they are
+     * compared literally, so genuine Avro {@code string} fields whose content happens to look like a date are never
+     * misinterpreted.
+     *
      * @param expectedValue the expected value
      * @param actualValue the actual value
      * @param excludedKeys list of keys to exclude from nested comparisons
@@ -627,6 +612,43 @@ public final class AvroUtils {
                 LOGGER.error("Value mismatch for key {} values does not match for a list", key);
                 return false;
             }
+        } else if (actualValue instanceof Instant actualInstant && expectedValue instanceof String expectedString) {
+            var parsedExpected = parseExpectedInstant(expectedString);
+            if (parsedExpected == null || !parsedExpected.equals(actualInstant)) {
+                LOGGER.error(
+                        AVRO_UTILS_VALUES_MISMATCH_WITH_CLASS_NAMES,
+                        key,
+                        expectedValue,
+                        expectedValue.getClass().getSimpleName(),
+                        actualValue,
+                        actualValue.getClass().getSimpleName());
+                return false;
+            }
+        } else if (actualValue instanceof LocalDateTime actualLocalDateTime
+                && expectedValue instanceof String expectedString) {
+            var parsedExpected = parseExpectedLocalDateTime(expectedString);
+            if (parsedExpected == null || !parsedExpected.equals(actualLocalDateTime)) {
+                LOGGER.error(
+                        AVRO_UTILS_VALUES_MISMATCH_WITH_CLASS_NAMES,
+                        key,
+                        expectedValue,
+                        expectedValue.getClass().getSimpleName(),
+                        actualValue,
+                        actualValue.getClass().getSimpleName());
+                return false;
+            }
+        } else if (actualValue instanceof LocalDate actualLocalDate && expectedValue instanceof String expectedString) {
+            var parsedExpected = parseExpectedLocalDate(expectedString);
+            if (parsedExpected == null || !parsedExpected.equals(actualLocalDate)) {
+                LOGGER.error(
+                        AVRO_UTILS_VALUES_MISMATCH_WITH_CLASS_NAMES,
+                        key,
+                        expectedValue,
+                        expectedValue.getClass().getSimpleName(),
+                        actualValue,
+                        actualValue.getClass().getSimpleName());
+                return false;
+            }
         } else if (expectedValue == null) {
             if (actualValue != null) {
                 LOGGER.error(AVRO_UTILS_VALUES_MISMATCH_SHOULD_BE_NULL, key, actualValue);
@@ -644,6 +666,81 @@ public final class AvroUtils {
         }
 
         return true;
+    }
+
+    /**
+     * Parses an expected date string as an {@link Instant}, trying several supported precisions.
+     *
+     * <p>Since the actual side has already been resolved to an {@link Instant} by {@link AvroDeserializer} (i.e. this
+     * is genuinely a timestamp-millis/timestamp-micros logical-type field), we know for certain the expected string is
+     * meant to represent a timestamp, so no content-sniffing/guessing is required — only parsing.
+     *
+     * @param expectedValue the expected date string
+     * @return the parsed {@link Instant}, or null if it could not be parsed with any supported format
+     */
+    private static Instant parseExpectedInstant(String expectedValue) {
+        try {
+            // Handles no-fraction, millisecond, microsecond and nanosecond precision uniformly.
+            return Instant.parse(expectedValue);
+        } catch (DateTimeParseException e) {
+            LOGGER.debug("Falling back to alternate timestamp formats for value: {}", expectedValue);
+        }
+
+        try {
+            return Instant.from(TIMESTAMP_FORMATTER_WITH_MICROS.parse(expectedValue));
+        } catch (DateTimeParseException e) {
+            LOGGER.debug("Value {} did not match the microseconds timestamp formatter", expectedValue);
+        }
+
+        try {
+            return Instant.from(TIMESTAMP_FORMATTER_WITH_MS.parse(expectedValue));
+        } catch (DateTimeParseException e) {
+            LOGGER.error("Unable to parse expected value {} as an Instant", expectedValue);
+            return null;
+        }
+    }
+
+    /**
+     * Parses an expected date string as a {@link LocalDateTime}, trying several supported precisions.
+     *
+     * @param expectedValue the expected date string
+     * @return the parsed {@link LocalDateTime}, or null if it could not be parsed with any supported format
+     */
+    private static LocalDateTime parseExpectedLocalDateTime(String expectedValue) {
+        try {
+            // Handles no-fraction, millisecond, microsecond and nanosecond precision uniformly.
+            return LocalDateTime.parse(expectedValue);
+        } catch (DateTimeParseException e) {
+            LOGGER.debug("Falling back to alternate local date-time formats for value: {}", expectedValue);
+        }
+
+        try {
+            return LocalDateTime.from(TIMESTAMP_FORMATTER_WITH_MICROS.parse(expectedValue));
+        } catch (DateTimeParseException e) {
+            LOGGER.debug("Value {} did not match the microseconds local date-time formatter", expectedValue);
+        }
+
+        try {
+            return LocalDateTime.from(TIMESTAMP_FORMATTER_WITH_MS.parse(expectedValue));
+        } catch (DateTimeParseException e) {
+            LOGGER.error("Unable to parse expected value {} as a LocalDateTime", expectedValue);
+            return null;
+        }
+    }
+
+    /**
+     * Parses an expected date string as a {@link LocalDate}.
+     *
+     * @param expectedValue the expected date string, expected in "yyyy-MM-dd" format
+     * @return the parsed {@link LocalDate}, or null if it could not be parsed
+     */
+    private static LocalDate parseExpectedLocalDate(String expectedValue) {
+        try {
+            return LocalDate.parse(expectedValue);
+        } catch (DateTimeParseException e) {
+            LOGGER.error("Unable to parse expected value {} as a LocalDate", expectedValue);
+            return null;
+        }
     }
 
     /**
@@ -1206,13 +1303,21 @@ public final class AvroUtils {
     // ===========================================
 
     /**
-     * Recursively converts date strings to Unix timestamps throughout a nested map structure.
+     * Recursively traverses a nested map structure (as produced by {@link #convertJsonToMap(String)}).
      *
-     * <p>This method traverses a map representation of JSON input, identifies fields containing date strings, and
-     * converts them to Unix timestamps. It handles nested maps and lists recursively.
+     * <p>Content-based date sniffing has been intentionally removed (see <a
+     * href="https://github.com/ktestify/ktestify-core/issues/49">issue #49</a>): guessing whether a plain string
+     * "looks like" a date is fundamentally unreliable, since it cannot distinguish a genuine Avro {@code string} field
+     * whose content happens to look like a date from an actual logical-type date/timestamp field. Date/timestamp
+     * comparison is now performed in a type-driven way directly in {@link #compareValues(Object, Object, List,
+     * String)}, based on the actual side's real Java type ({@link Instant}, {@link LocalDateTime}, {@link LocalDate})
+     * as resolved by {@link AvroDeserializer}.
+     *
+     * <p>This method still recurses into nested maps and lists so that the returned map is a structurally-independent
+     * (deep) copy, but performs no value conversion.
      *
      * @param jsonMap the map representation of the JSON input
-     * @return a map with date fields converted to Unix timestamps
+     * @return the map, recursively copied
      */
     public static Map<String, Object> convertDatesToTimestamps(Map<String, Object> jsonMap) {
         Objects.requireNonNull(jsonMap, "JSON map cannot be null");
@@ -1220,58 +1325,27 @@ public final class AvroUtils {
         for (var entry : jsonMap.entrySet()) {
             var value = entry.getValue();
 
-            if (value instanceof String dateString) {
-                if (isDateString(dateString)) {
-                    try {
-                        var timestamp = convertDateStringToTimestamp(dateString);
-                        jsonMap.put(entry.getKey(), timestamp);
-                    } catch (ParseException e) {
-                        LOGGER.error("An error happened while converting Date to Timestamps", e);
-                    }
-                }
-            } else if (value instanceof Map<?, ?> nestedMap) {
-                // convertDatesToTimestamps((Map<String, Object>) nestedMap);
+            if (value instanceof Map<?, ?> nestedMap) {
+                @SuppressWarnings("unchecked")
+                var typedNestedMap = (Map<String, Object>) nestedMap;
+                jsonMap.put(entry.getKey(), convertDatesToTimestamps(new HashMap<>(typedNestedMap)));
             } else if (value instanceof List<?> list) {
-                for (var item : list) {
+                List<Object> convertedList = new ArrayList<>(list);
+                for (int i = 0; i < convertedList.size(); i++) {
+                    var item = convertedList.get(i);
                     if (item instanceof Map<?, ?> mapItem) {
-
-                        // convertDatesToTimestamps(<(Map<String, Object>) mapItem);
+                        @SuppressWarnings("unchecked")
+                        var typedMapItem = (Map<String, Object>) mapItem;
+                        convertedList.set(i, convertDatesToTimestamps(new HashMap<>(typedMapItem)));
                     }
                 }
+                jsonMap.put(entry.getKey(), convertedList);
             }
         }
 
         return jsonMap;
     }
 
-    /**
-     * Determines if a string matches one of the supported date formats.
-     *
-     * <p>This method tests a string against multiple date format patterns to determine if it represents a valid
-     * date/timestamp. It uses strict parsing to avoid false positives.
-     *
-     * @param dateString the string to check
-     * @return true if the string matches a supported date format, false otherwise
-     */
-    public static boolean isDateString(String dateString) {
-        if (dateString == null) {
-            return false;
-        }
-
-        for (var pattern : SUPPORTED_DATE_PATTERNS) {
-            var dateFormat = new SimpleDateFormat(pattern);
-            dateFormat.setLenient(false);
-
-            try {
-                dateFormat.parse(dateString);
-                return true;
-            } catch (ParseException e) {
-                // Continue trying other patterns
-            }
-        }
-
-        return false;
-    }
 
     /**
      * Converts a date string to an integer representing days since epoch (1970-01-01).
