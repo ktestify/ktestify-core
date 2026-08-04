@@ -2738,4 +2738,157 @@ class AvroUtilsTest {
             assertTrue(AvroUtils.deepEquals(expected, actual));
         }
     }
+
+    @Nested
+    @DisplayName("Dot-notation excludedKeys (nested field exclusion)")
+    class DotNotationExcludedKeysTests {
+
+        @Test
+        @DisplayName(
+                "Should exclude only the nested field when a dot-notation path is used, keeping sibling fields compared")
+        void shouldExcludeOnlyNestedField_WhenDotNotationPathIsUsed() {
+            // Mirrors the reported schema: RootField is a nested record with NestedField1 / NestedField2.
+            Map<String, Object> expectedNested = new HashMap<>();
+            expectedNested.put("NestedField1", "same-value");
+            expectedNested.put("NestedField2", "expected-value");
+
+            Map<String, Object> actualNested = new HashMap<>();
+            actualNested.put("NestedField1", "same-value");
+            actualNested.put("NestedField2", "actual-value"); // differs, but excluded via dot-notation
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("RootField", expectedNested);
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("RootField", actualNested);
+
+            assertTrue(
+                    AvroUtils.deepEquals(expected, actual, List.of("RootField.NestedField2")),
+                    "RootField.NestedField2 should be excluded, leaving NestedField1 (which matches) to make the"
+                            + " records equal");
+        }
+
+        @Test
+        @DisplayName("Should still fail when a sibling (non-excluded) nested field differs")
+        void shouldStillFail_WhenNonExcludedNestedFieldDiffers() {
+            Map<String, Object> expectedNested = new HashMap<>();
+            expectedNested.put("NestedField1", "expected-value");
+            expectedNested.put("NestedField2", "same-value");
+
+            Map<String, Object> actualNested = new HashMap<>();
+            actualNested.put("NestedField1", "actual-value"); // differs and is NOT excluded
+            actualNested.put("NestedField2", "same-value");
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("RootField", expectedNested);
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("RootField", actualNested);
+
+            assertFalse(
+                    AvroUtils.deepEquals(expected, actual, List.of("RootField.NestedField2")),
+                    "NestedField1 differs and is not excluded, so the records should not match");
+        }
+
+        @Test
+        @DisplayName("Should support multi-level dot-notation paths")
+        void shouldSupportMultiLevelDotNotationPaths() {
+            Map<String, Object> expectedLevel3 = new HashMap<>();
+            expectedLevel3.put("value", "expected");
+
+            Map<String, Object> actualLevel3 = new HashMap<>();
+            actualLevel3.put("value", "actual"); // differs, excluded via "a.b.c.value"
+
+            Map<String, Object> expectedLevel2 = new HashMap<>();
+            expectedLevel2.put("c", expectedLevel3);
+            Map<String, Object> actualLevel2 = new HashMap<>();
+            actualLevel2.put("c", actualLevel3);
+
+            Map<String, Object> expectedLevel1 = new HashMap<>();
+            expectedLevel1.put("b", expectedLevel2);
+            Map<String, Object> actualLevel1 = new HashMap<>();
+            actualLevel1.put("b", actualLevel2);
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("a", expectedLevel1);
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("a", actualLevel1);
+
+            assertTrue(AvroUtils.deepEquals(expected, actual, List.of("a.b.c.value")));
+        }
+
+        @Test
+        @DisplayName("Should apply dot-notation exclusion to every element of an array field")
+        void shouldApplyDotNotationExclusionToArrayElements() {
+            Map<String, Object> expectedItem1 = new HashMap<>();
+            expectedItem1.put("id", 1);
+            expectedItem1.put("volatileField", "expected-1");
+
+            Map<String, Object> expectedItem2 = new HashMap<>();
+            expectedItem2.put("id", 2);
+            expectedItem2.put("volatileField", "expected-2");
+
+            Map<String, Object> actualItem1 = new HashMap<>();
+            actualItem1.put("id", 1);
+            actualItem1.put("volatileField", "actual-1");
+
+            Map<String, Object> actualItem2 = new HashMap<>();
+            actualItem2.put("id", 2);
+            actualItem2.put("volatileField", "actual-2");
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("items", List.of(expectedItem1, expectedItem2));
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("items", List.of(actualItem1, actualItem2));
+
+            assertTrue(AvroUtils.deepEquals(expected, actual, List.of("items.volatileField")));
+        }
+
+        @Test
+        @DisplayName("Should keep excluding a field at every depth when a simple (non-dotted) name is used")
+        void shouldStillSupportSimpleNameExclusion_ForBackwardCompatibility() {
+            Map<String, Object> expectedNested = new HashMap<>();
+            expectedNested.put("NestedField1", "same-value");
+            expectedNested.put("NestedField2", "expected-value");
+
+            Map<String, Object> actualNested = new HashMap<>();
+            actualNested.put("NestedField1", "same-value");
+            actualNested.put("NestedField2", "actual-value");
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("RootField", expectedNested);
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("RootField", actualNested);
+
+            // Simple (non-dotted) exclusion still works at any nesting depth, as before.
+            assertTrue(AvroUtils.deepEquals(expected, actual, List.of("NestedField2")));
+        }
+
+        @Test
+        @DisplayName("Should correctly account for effective size when a nested field is excluded via dot-notation")
+        void shouldAccountForEffectiveSize_WhenNestedFieldExcludedViaDotNotation() {
+            // Even though "RootField.NestedField2" is excluded, RootField itself must remain counted at the
+            // top level (only NestedField2 is skipped at the nested level), so this must not be treated as a
+            // record-size mismatch.
+            Map<String, Object> expectedNested = new HashMap<>();
+            expectedNested.put("NestedField1", "value1");
+            expectedNested.put("NestedField2", "expected-only");
+
+            Map<String, Object> actualNested = new HashMap<>();
+            actualNested.put("NestedField1", "value1");
+            actualNested.put("NestedField2", "actual-only");
+
+            Map<String, Object> expected = new HashMap<>();
+            expected.put("RootField", expectedNested);
+            expected.put("otherField", "same");
+
+            Map<String, Object> actual = new HashMap<>();
+            actual.put("RootField", actualNested);
+            actual.put("otherField", "same");
+
+            assertTrue(AvroUtils.deepEquals(expected, actual, List.of("RootField.NestedField2")));
+        }
+    }
 }

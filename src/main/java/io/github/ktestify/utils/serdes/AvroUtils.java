@@ -227,9 +227,14 @@ public final class AvroUtils {
      * <p>This method is particularly useful when you want to compare records while ignoring certain fields like
      * timestamps, IDs, or other fields that may vary between records but don't affect the semantic equality.
      *
+     * <p>Each entry in {@code excludedKeys} can be a simple field name (excludes that field at any nesting depth) or a
+     * dot-notation path such as {@code "RootField.NestedField"} to exclude only a specific nested field. See
+     * {@link #deepEquals(Map, Map, List)} for details.
+     *
      * @param expectedRecord the expected Avro record in JSON format
      * @param actualRecord the actual Avro record in JSON format
-     * @param excludedKeys a list of JSON keys that will be excluded from comparison
+     * @param excludedKeys a list of JSON keys (simple names or dot-notation paths) that will be excluded from
+     *     comparison
      * @return true if the records match (excluding specified keys), false otherwise
      * @throws JsonSyntaxException if either record is not valid JSON
      * @throws IllegalArgumentException if any parameter is null
@@ -267,7 +272,7 @@ public final class AvroUtils {
         var expectedConverted = convertDatesToTimestamps(new HashMap<>(expectedValueMap));
         var actualConverted = convertDatesToTimestamps(new HashMap<>(actualValueMap));
 
-        return performDeepEqualsComparison(expectedConverted, actualConverted, Collections.emptyList());
+        return performDeepEqualsComparison(expectedConverted, actualConverted, Collections.emptyList(), "");
     }
 
     /**
@@ -277,9 +282,21 @@ public final class AvroUtils {
      * comparison. This is useful for ignoring volatile fields like timestamps, UUIDs, or other fields that may change
      * between records.
      *
+     * <p>Keys in {@code excludedKeys} can be either:
+     *
+     * <ul>
+     *   <li>A simple field name (e.g. {@code "timestamp"}), which excludes any field with that exact name at any
+     *       nesting depth (top-level object, nested object, or inside array elements) — this is the historical
+     *       behavior.
+     *   <li>A dot-notation path (e.g. {@code "RootField.NestedField"}), which excludes only the field found at that
+     *       exact nested location, leaving sibling fields (and the parent object itself) subject to normal comparison.
+     *       Paths can be nested arbitrarily deep (e.g. {@code "a.b.c"}), and also apply within array elements (e.g.
+     *       {@code "items.subField"} excludes {@code subField} on every element of the {@code items} array).
+     * </ul>
+     *
      * @param expectedValueMap the map representing the expected Avro record
      * @param actualValueMap the map representing the actual Avro record
-     * @param excludedKeys a list of keys to exclude from comparison
+     * @param excludedKeys a list of keys (simple names or dot-notation paths) to exclude from comparison
      * @return true if the maps are deeply equal (excluding specified keys), false otherwise
      * @throws IllegalArgumentException if any parameter is null
      */
@@ -297,7 +314,7 @@ public final class AvroUtils {
         var expectedConverted = convertDatesToTimestamps(new HashMap<>(expectedValueMap));
         var actualConverted = convertDatesToTimestamps(new HashMap<>(actualValueMap));
 
-        return performDeepEqualsComparison(expectedConverted, actualConverted, excludedKeys);
+        return performDeepEqualsComparison(expectedConverted, actualConverted, excludedKeys, "");
     }
 
     // ===========================================
@@ -358,7 +375,8 @@ public final class AvroUtils {
      *
      * @param expectedRecord the expected Avro record in JSON format
      * @param actualRecord the actual Avro record in JSON format
-     * @param excludedKeys a list of JSON keys that will be excluded from comparison
+     * @param excludedKeys a list of JSON keys (simple names or dot-notation paths, see {@link #deepEquals(Map, Map,
+     *     List)}) that will be excluded from comparison
      * @throws ComparisonException if the records do not match (excluding specified keys)
      * @throws JsonSyntaxException if either record is not valid JSON
      * @throws IllegalArgumentException if any parameter is null
@@ -512,18 +530,29 @@ public final class AvroUtils {
      * <p>This method handles the core comparison logic including nested objects, lists, and null value handling. It
      * provides detailed logging for debugging and troubleshooting purposes.
      *
+     * <p>{@code excludedKeys} entries are matched either as a simple field name (matching at any nesting depth) or as a
+     * dot-notation path qualified from the root of the record being compared (e.g. {@code "RootField.NestedField"}),
+     * built up across recursive calls via {@code parentPath}.
+     *
      * @param expectedValueMap the processed expected map
      * @param actualValueMap the processed actual map
-     * @param excludedKeys list of keys to exclude from comparison
+     * @param excludedKeys list of keys (simple names or dot-notation paths) to exclude from comparison
+     * @param parentPath the dot-notation path of the object currently being compared, relative to the record root
+     *     (empty string at the root)
      * @return true if maps are equal, false otherwise
      */
     private static boolean performDeepEqualsComparison(
-            Map<String, Object> expectedValueMap, Map<String, Object> actualValueMap, List<String> excludedKeys) {
+            Map<String, Object> expectedValueMap,
+            Map<String, Object> actualValueMap,
+            List<String> excludedKeys,
+            String parentPath) {
 
-        long expectedExcludedCount =
-                excludedKeys.stream().filter(expectedValueMap::containsKey).count();
-        long actualExcludedCount =
-                excludedKeys.stream().filter(actualValueMap::containsKey).count();
+        long expectedExcludedCount = expectedValueMap.keySet().stream()
+                .filter(k -> isKeyExcluded(k, buildQualifiedKey(parentPath, k), excludedKeys))
+                .count();
+        long actualExcludedCount = actualValueMap.keySet().stream()
+                .filter(k -> isKeyExcluded(k, buildQualifiedKey(parentPath, k), excludedKeys))
+                .count();
 
         long effectiveExpectedSize = expectedValueMap.size() - expectedExcludedCount;
         long effectiveActualSize = actualValueMap.size() - actualExcludedCount;
@@ -549,8 +578,9 @@ public final class AvroUtils {
 
         for (var entry : expectedValueMap.entrySet()) {
             var key = entry.getKey();
-            if (excludedKeys.contains(key)) {
-                LOGGER.debug("The key {} will not be matched due to it being in the excluded list", key);
+            var qualifiedKey = buildQualifiedKey(parentPath, key);
+            if (isKeyExcluded(key, qualifiedKey, excludedKeys)) {
+                LOGGER.debug("The key {} will not be matched due to it being in the excluded list", qualifiedKey);
                 continue;
             }
 
@@ -562,12 +592,37 @@ public final class AvroUtils {
             var expectedValue = entry.getValue();
             var actualValue = actualValueMap.get(key);
 
-            if (!compareValues(expectedValue, actualValue, excludedKeys, key)) {
+            if (!compareValues(expectedValue, actualValue, excludedKeys, key, qualifiedKey)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * Builds the fully-qualified dot-notation path of a key, relative to the record root.
+     *
+     * @param parentPath the path of the enclosing object (empty string at the root)
+     * @param key the local field name
+     * @return {@code key} if {@code parentPath} is empty, otherwise {@code parentPath + "." + key}
+     */
+    private static String buildQualifiedKey(String parentPath, String key) {
+        return (parentPath == null || parentPath.isEmpty()) ? key : parentPath + "." + key;
+    }
+
+    /**
+     * Determines whether a field should be excluded from comparison, supporting both the historical simple-name
+     * matching (exclude at any nesting depth) and dot-notation path matching (exclude only at a specific nested
+     * location).
+     *
+     * @param key the local field name
+     * @param qualifiedKey the fully-qualified dot-notation path of the field, relative to the record root
+     * @param excludedKeys the configured list of excluded keys/paths
+     * @return true if the field must be excluded from comparison
+     */
+    private static boolean isKeyExcluded(String key, String qualifiedKey, List<String> excludedKeys) {
+        return excludedKeys.contains(key) || excludedKeys.contains(qualifiedKey);
     }
 
     /**
@@ -588,15 +643,20 @@ public final class AvroUtils {
      * @param actualValue the actual value
      * @param excludedKeys list of keys to exclude from nested comparisons
      * @param key the current key being compared (for logging)
+     * @param qualifiedKey the dot-notation path of the current key, relative to the record root (used to thread nested
+     *     exclusion paths down into recursive comparisons)
      * @return true if values are equal, false otherwise
      */
     private static boolean compareValues(
-            Object expectedValue, Object actualValue, List<String> excludedKeys, String key) {
+            Object expectedValue, Object actualValue, List<String> excludedKeys, String key, String qualifiedKey) {
         if (expectedValue instanceof Map && actualValue instanceof Map) {
             LOGGER.debug(
                     AVRO_UTILS_NESTED_OBJECT_FOUND, expectedValue.getClass().getSimpleName());
             if (!performDeepEqualsComparison(
-                    (Map<String, Object>) expectedValue, (Map<String, Object>) actualValue, excludedKeys)) {
+                    (Map<String, Object>) expectedValue,
+                    (Map<String, Object>) actualValue,
+                    excludedKeys,
+                    qualifiedKey)) {
                 LOGGER.debug(AVRO_UTILS_NESTED_OBJECT_NOT_MATCH);
                 return false;
             }
@@ -605,7 +665,7 @@ public final class AvroUtils {
                     AVRO_UTILS_NESTED_OBJECT_FOUND + " key : {}",
                     expectedValue.getClass().getSimpleName(),
                     key);
-            if (!deepEqualsList((List<Object>) expectedValue, (List<Object>) actualValue, excludedKeys)) {
+            if (!deepEqualsList((List<Object>) expectedValue, (List<Object>) actualValue, excludedKeys, qualifiedKey)) {
                 LOGGER.error("Value mismatch for key {} values does not match for a list", key);
                 return false;
             }
@@ -747,10 +807,12 @@ public final class AvroUtils {
      * @param expectedList the expected list
      * @param actualList the actual list
      * @param excludedKeys list of keys to exclude from nested object comparisons
+     * @param parentPath the dot-notation path of the array field, relative to the record root (used so that exclusion
+     *     paths like {@code "items.subField"} apply to every element of the array)
      * @return true if lists are equal, false otherwise
      */
     private static boolean deepEqualsList(
-            List<Object> expectedList, List<Object> actualList, List<String> excludedKeys) {
+            List<Object> expectedList, List<Object> actualList, List<String> excludedKeys, String parentPath) {
         if (expectedList.size() != actualList.size()) {
             LOGGER.error("List size mismatch. Expected: {}, Actual: {}", expectedList.size(), actualList.size());
             return false;
@@ -759,11 +821,11 @@ public final class AvroUtils {
         // For primitive arrays or mixed types, fall back to ordered comparison
         if (expectedList.isEmpty() || !isObjectArray(expectedList)) {
 
-            return deepEqualsListOrdered(expectedList, actualList, excludedKeys);
+            return deepEqualsListOrdered(expectedList, actualList, excludedKeys, parentPath);
         }
 
         // Smart matching for object arrays - match regardless of order
-        return deepEqualsListUnordered(expectedList, actualList, excludedKeys);
+        return deepEqualsListUnordered(expectedList, actualList, excludedKeys, parentPath);
     }
 
     /**
@@ -782,10 +844,11 @@ public final class AvroUtils {
      * @param expectedList the expected list
      * @param actualList the actual list
      * @param excludedKeys list of keys to exclude from nested object comparisons
+     * @param parentPath the dot-notation path of the array field, relative to the record root
      * @return true if lists are equal in order, false otherwise
      */
     private static boolean deepEqualsListOrdered(
-            List<Object> expectedList, List<Object> actualList, List<String> excludedKeys) {
+            List<Object> expectedList, List<Object> actualList, List<String> excludedKeys, String parentPath) {
         LOGGER.debug("Performing ordered array comparison for {} expected objects", expectedList.size());
         for (int i = 0; i < expectedList.size(); i++) {
             var expected = expectedList.get(i);
@@ -793,7 +856,7 @@ public final class AvroUtils {
 
             if (expected instanceof Map && actual instanceof Map) {
                 if (!performDeepEqualsComparison(
-                        (Map<String, Object>) expected, (Map<String, Object>) actual, excludedKeys)) {
+                        (Map<String, Object>) expected, (Map<String, Object>) actual, excludedKeys, parentPath)) {
                     return false;
                 }
             } else if (!Objects.equals(expected, actual)) {
@@ -812,10 +875,11 @@ public final class AvroUtils {
      * @param expectedList the expected list of objects
      * @param actualList the actual list of objects
      * @param excludedKeys list of keys to exclude from nested object comparisons
+     * @param parentPath the dot-notation path of the array field, relative to the record root
      * @return true if all expected objects find matches in actual list, false otherwise
      */
     private static boolean deepEqualsListUnordered(
-            List<Object> expectedList, List<Object> actualList, List<String> excludedKeys) {
+            List<Object> expectedList, List<Object> actualList, List<String> excludedKeys, String parentPath) {
         LOGGER.debug("Performing smart unordered array comparison for {} expected objects", expectedList.size());
 
         // Keep track of which actual objects have been matched
@@ -834,7 +898,7 @@ public final class AvroUtils {
 
                 var actualObject = (Map<String, Object>) actualList.get(actualIndex);
 
-                if (performDeepEqualsComparison(expectedObject, actualObject, excludedKeys)) {
+                if (performDeepEqualsComparison(expectedObject, actualObject, excludedKeys, parentPath)) {
                     LOGGER.debug(
                             "Found match for expected object at index {} with actual object at index {}",
                             expectedIndex,
@@ -1306,9 +1370,9 @@ public final class AvroUtils {
      * href="https://github.com/ktestify/ktestify-core/issues/49">issue #49</a>): guessing whether a plain string "looks
      * like" a date is fundamentally unreliable, since it cannot distinguish a genuine Avro {@code string} field whose
      * content happens to look like a date from an actual logical-type date/timestamp field. Date/timestamp comparison
-     * is now performed in a type-driven way directly in {@link #compareValues(Object, Object, List, String)}, based on
-     * the actual side's real Java type ({@link Instant}, {@link LocalDateTime}, {@link LocalDate}) as resolved by
-     * {@link AvroDeserializer}.
+     * is now performed in a type-driven way directly in {@link #compareValues(Object, Object, List, String, String)},
+     * based on the actual side's real Java type ({@link Instant}, {@link LocalDateTime}, {@link LocalDate}) as resolved
+     * by {@link AvroDeserializer}.
      *
      * <p>This method still recurses into nested maps and lists so that the returned map is a structurally-independent
      * (deep) copy, but performs no value conversion.
