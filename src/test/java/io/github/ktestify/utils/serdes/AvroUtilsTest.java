@@ -639,7 +639,6 @@ class AvroUtilsTest {
         assertEquals(inputMap, result);
     }
 
-
     @Test
     void convertDateStringToTimestamp_ShouldReturnTimestamp_WhenInputIsDateString() throws ParseException {
         String dateString = "2022-01-01T00:00:00Z";
@@ -1243,7 +1242,6 @@ class AvroUtilsTest {
                 "Should throw RuntimeException for invalid time format");
     }
 
-
     // Test edge cases for convertDateStringToDateInt
     @Test
     void testConvertDateStringToDateIntWithInvalidFormat() {
@@ -1384,7 +1382,6 @@ class AvroUtilsTest {
         assertEquals("123", result.get("numericHeader"), "Numeric header should be converted to string");
         assertEquals("true", result.get("booleanHeader"), "Boolean header should be converted to string");
     }
-
 
     @Test
     void testDeepEqualsWithEqualLists() {
@@ -2610,7 +2607,8 @@ class AvroUtilsTest {
         }
 
         @Test
-        @DisplayName("Should match an actual Instant (timestamp-micros) against an expected microsecond-precision string")
+        @DisplayName(
+                "Should match an actual Instant (timestamp-micros) against an expected microsecond-precision string")
         void shouldMatch_ActualInstant_vs_ExpectedMicrosecondString() {
             Instant actualInstant = Instant.parse("2026-02-10T16:19:14.000000Z");
 

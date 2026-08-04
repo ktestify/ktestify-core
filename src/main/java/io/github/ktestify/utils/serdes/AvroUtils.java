@@ -21,8 +21,6 @@ import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import io.github.ktestify.exceptions.ComparisonException;
 import io.github.ktestify.exceptions.ProducerException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -72,7 +70,6 @@ import org.slf4j.LoggerFactory;
 public final class AvroUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AvroUtils.class);
-
 
     /** UTC zone formatters for timestamp conversion with optional milliseconds and microseconds. */
     private static final DateTimeFormatter TIMESTAMP_FORMATTER_WITH_MS =
@@ -576,9 +573,9 @@ public final class AvroUtils {
     /**
      * Compares two values, handling different types including nested objects and lists.
      *
-     * <p>When the actual value is a real Avro logical-type value already resolved by {@link
-     * io.github.ktestify.utils.serdes.AvroDeserializer} (an {@link Instant}, {@link LocalDateTime}, or {@link
-     * LocalDate}) and the expected value is a plain {@link String} (typically hand-written JSON with no schema
+     * <p>When the actual value is a real Avro logical-type value already resolved by
+     * {@link io.github.ktestify.utils.serdes.AvroDeserializer} (an {@link Instant}, {@link LocalDateTime}, or
+     * {@link LocalDate}) and the expected value is a plain {@link String} (typically hand-written JSON with no schema
      * information), the expected string is parsed into the same target type and compared accordingly. This avoids
      * guessing whether a string "looks like" a date and instead relies on the actual side's real Java type, which is
      * only ever a date/time type when the underlying Avro schema declares a logical type.
@@ -1306,12 +1303,12 @@ public final class AvroUtils {
      * Recursively traverses a nested map structure (as produced by {@link #convertJsonToMap(String)}).
      *
      * <p>Content-based date sniffing has been intentionally removed (see <a
-     * href="https://github.com/ktestify/ktestify-core/issues/49">issue #49</a>): guessing whether a plain string
-     * "looks like" a date is fundamentally unreliable, since it cannot distinguish a genuine Avro {@code string} field
-     * whose content happens to look like a date from an actual logical-type date/timestamp field. Date/timestamp
-     * comparison is now performed in a type-driven way directly in {@link #compareValues(Object, Object, List,
-     * String)}, based on the actual side's real Java type ({@link Instant}, {@link LocalDateTime}, {@link LocalDate})
-     * as resolved by {@link AvroDeserializer}.
+     * href="https://github.com/ktestify/ktestify-core/issues/49">issue #49</a>): guessing whether a plain string "looks
+     * like" a date is fundamentally unreliable, since it cannot distinguish a genuine Avro {@code string} field whose
+     * content happens to look like a date from an actual logical-type date/timestamp field. Date/timestamp comparison
+     * is now performed in a type-driven way directly in {@link #compareValues(Object, Object, List, String)}, based on
+     * the actual side's real Java type ({@link Instant}, {@link LocalDateTime}, {@link LocalDate}) as resolved by
+     * {@link AvroDeserializer}.
      *
      * <p>This method still recurses into nested maps and lists so that the returned map is a structurally-independent
      * (deep) copy, but performs no value conversion.
@@ -1345,7 +1342,6 @@ public final class AvroUtils {
 
         return jsonMap;
     }
-
 
     /**
      * Converts a date string to an integer representing days since epoch (1970-01-01).
