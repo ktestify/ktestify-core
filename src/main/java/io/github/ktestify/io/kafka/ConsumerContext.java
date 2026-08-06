@@ -38,6 +38,7 @@ public final class ConsumerContext<K, V> {
     private final Long consumerDeltaTime;
     private final boolean isBatchConsumer;
     private final int batchSize;
+    private final Long referenceTimestamp;
 
     private ConsumerContext(
             Topic topic,
@@ -50,7 +51,8 @@ public final class ConsumerContext<K, V> {
             Long readTimeout,
             Long consumerDeltaTime,
             boolean isBatchConsumer,
-            int batchSize) {
+            int batchSize,
+            Long referenceTimestamp) {
         this.topic = topic;
         this.properties = properties;
         this.consumer = consumer;
@@ -62,6 +64,7 @@ public final class ConsumerContext<K, V> {
         this.consumerDeltaTime = consumerDeltaTime;
         this.isBatchConsumer = isBatchConsumer;
         this.batchSize = batchSize;
+        this.referenceTimestamp = referenceTimestamp;
     }
 
     /**
@@ -69,7 +72,7 @@ public final class ConsumerContext<K, V> {
      * {@code null} if the list is empty.
      */
     public String getMatchFilePath() {
-        return matchFilePaths != null && !matchFilePaths.isEmpty() ? matchFilePaths.get(0) : null;
+        return matchFilePaths != null && !matchFilePaths.isEmpty() ? matchFilePaths.getFirst() : null;
     }
 
     public static <K, V> Builder<K, V> builder() {
@@ -89,6 +92,7 @@ public final class ConsumerContext<K, V> {
         private Long consumerDeltaTime;
         private boolean isBatchConsumer;
         private int batchSize;
+        private Long referenceTimestamp;
 
         public Builder<K, V> topic(Topic topic) {
             this.topic = topic;
@@ -159,6 +163,21 @@ public final class ConsumerContext<K, V> {
             return this;
         }
 
+        /**
+         * Pins the "now" reference used by {@code calculateDeltaTime()} to a fixed epoch-millisecond value instead of
+         * letting it be recomputed via {@code System.currentTimeMillis()} at fetch time.
+         *
+         * <p>Useful when a single Cucumber step orchestrates multiple internal fetches (e.g. a batch consumer, or
+         * several chained {@code Then} steps in quick succession) and needs a consistent seek offset across all of
+         * them, avoiding timestamp drift.
+         *
+         * @param referenceTimestamp epoch milliseconds to use as "now", or {@code null} to use the real clock
+         */
+        public Builder<K, V> referenceTimestamp(Long referenceTimestamp) {
+            this.referenceTimestamp = referenceTimestamp;
+            return this;
+        }
+
         public ConsumerContext<K, V> build() {
             Topic validatedTopic = Topic.validateTopic(topic, Topic.Type.OUTPUT);
 
@@ -183,7 +202,8 @@ public final class ConsumerContext<K, V> {
                     readTimeout,
                     consumerDeltaTime,
                     isBatchConsumer,
-                    batchSize);
+                    batchSize,
+                    referenceTimestamp);
         }
 
         private static <T> T requireNonNull(T value, String message) {
