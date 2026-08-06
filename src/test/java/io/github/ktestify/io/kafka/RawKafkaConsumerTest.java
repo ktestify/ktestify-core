@@ -390,4 +390,132 @@ class RawKafkaConsumerTest {
                             .call());
         }
     }
+
+    // =========================================================================
+    // referenceTimestamp — pinned "now" fixes clock-drift across delayed fetches
+    // (see https://github.com/ktestify/ktestify-cucumber/issues/38)
+    // =========================================================================
+
+    @Nested
+    @DisplayName("referenceTimestamp — pinned 'now' avoids clock drift")
+    class ReferenceTimestamp {
+
+        /** Narrow enough that a few seconds of drift pushes the seek window past the seeded record. */
+        private static final long NARROW_DELTA_TIME_MS = 2_000L;
+
+        /** Simulated step-processing delay between producing the record and fetching it. */
+        private static final long SIMULATED_STEP_DELAY_MS = 4_000L;
+
+        @Test
+        @DisplayName("without referenceTimestamp, a record is missed once the live-clock delta window drifts past it")
+        void recordIsMissedDueToClockDriftWithoutReferenceTimestamp() throws Exception {
+            seedRecord("KEY-1", "{\"orderId\":\"ORD-DRIFT\"}");
+
+            // Simulate the delay a slow Cucumber step (or a previous DataTable row) would introduce
+            // before this consumer actually seeks — this is exactly the drift the maintainer described
+            // in issue #38.
+            Thread.sleep(SIMULATED_STEP_DELAY_MS);
+
+            ConsumerContext<String, String> ctx = ConsumerContext.<String, String>builder()
+                    .topic(outputTopic())
+                    .consumer(KafkaClientFactory.createRawConsumer(
+                            KtestifyConfig.getOrLoad(), "drift-consumer-" + UUID.randomUUID()))
+                    .readTimeout(3_000L)
+                    .consumerDeltaTime(NARROW_DELTA_TIME_MS)
+                    // No referenceTimestamp — "now" is resolved live, at seek time.
+                    .build();
+
+            assertThrows(
+                    ConsumerException.class,
+                    () -> new RawKafkaConsumer(ctx).call(),
+                    "Expected the record to fall outside the live-clock seek window after the simulated delay.");
+        }
+
+        @Test
+        @DisplayName("with referenceTimestamp pinned before the delay, the record is still found")
+        void recordIsFoundWhenReferenceTimestampIsPinned() throws Exception {
+            // Pin "now" BEFORE seeding + the simulated delay, exactly like a Cucumber step
+            // would capture Instant.now() once at the top of the step.
+            long pinnedNow = System.currentTimeMillis();
+
+            seedRecord("KEY-1", "{\"orderId\":\"ORD-PINNED\"}");
+
+            Thread.sleep(SIMULATED_STEP_DELAY_MS);
+
+            ConsumerContext<String, String> ctx = ConsumerContext.<String, String>builder()
+                    .topic(outputTopic())
+                    .consumer(KafkaClientFactory.createRawConsumer(
+                            KtestifyConfig.getOrLoad(), "pinned-consumer-" + UUID.randomUUID()))
+                    .readTimeout(3_000L)
+                    .consumerDeltaTime(NARROW_DELTA_TIME_MS)
+                    .referenceTimestamp(pinnedNow)
+                    .build();
+
+            boolean result = new RawKafkaConsumer(ctx).call();
+
+            assertTrue(
+                    result,
+                    "Expected the record to be found because the seek window was pinned before the delay, "
+                            + "not recomputed against the live (drifted) clock.");
+        }
+
+        @Test
+        @DisplayName("two sequential fetches sharing the same referenceTimestamp compute identical seek windows")
+        void sequentialFetchesShareSameSeekWindow() throws Exception {
+            long pinnedNow = System.currentTimeMillis();
+
+            seedRecord("KEY-1", "{\"orderId\":\"ORD-A\"}");
+            seedRecord("KEY-2", "{\"orderId\":\"ORD-B\"}");
+
+            // First "row" — simulate a small delay before it runs.
+            Thread.sleep(1_500L);
+            boolean firstResult = new RawKafkaConsumer(ConsumerContext.<String, String>builder()
+                            .topic(outputTopic())
+                            .consumer(KafkaClientFactory.createRawConsumer(
+                                    KtestifyConfig.getOrLoad(), "seq-consumer-1-" + UUID.randomUUID()))
+                            .readTimeout(3_000L)
+                            .consumerDeltaTime(NARROW_DELTA_TIME_MS)
+                            .expectedRecordKey("KEY-1")
+                            .referenceTimestamp(pinnedNow)
+                            .build())
+                    .call();
+
+            // Second "row" — additional delay elapses before it runs too.
+            Thread.sleep(1_500L);
+            boolean secondResult = new RawKafkaConsumer(ConsumerContext.<String, String>builder()
+                            .topic(outputTopic())
+                            .consumer(KafkaClientFactory.createRawConsumer(
+                                    KtestifyConfig.getOrLoad(), "seq-consumer-2-" + UUID.randomUUID()))
+                            .readTimeout(3_000L)
+                            .consumerDeltaTime(NARROW_DELTA_TIME_MS)
+                            .expectedRecordKey("KEY-2")
+                            .referenceTimestamp(pinnedNow)
+                            .build())
+                    .call();
+
+            assertTrue(firstResult, "First row should find its record using the pinned reference timestamp.");
+            assertTrue(
+                    secondResult,
+                    "Second row should still find its record using the SAME pinned reference timestamp, "
+                            + "despite additional wall-clock time having elapsed between rows.");
+        }
+
+        @Test
+        @DisplayName("referenceTimestamp does not break normal (non-delayed) consumption")
+        void recordIsFoundImmediatelyWithoutDelay() throws Exception {
+            long pinnedNow = System.currentTimeMillis();
+            seedRecord(null, "{\"orderId\":\"ORD-IMMEDIATE\"}");
+
+            ConsumerContext<String, String> ctx = ConsumerContext.<String, String>builder()
+                    .topic(outputTopic())
+                    .consumer(KafkaClientFactory.createRawConsumer(
+                            KtestifyConfig.getOrLoad(), "immediate-consumer-" + UUID.randomUUID()))
+                    .readTimeout(5_000L)
+                    .consumerDeltaTime(60_000L)
+                    .referenceTimestamp(pinnedNow)
+                    .build();
+
+            assertTrue(new RawKafkaConsumer(ctx).call());
+        }
+    }
 }

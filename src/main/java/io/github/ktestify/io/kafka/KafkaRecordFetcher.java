@@ -176,7 +176,12 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
     /**
      * Calculates the earliest timestamp to read from.
      *
-     * <p>Priority order:
+     * <p>The "now" reference used below is either {@link ConsumerContext#getReferenceTimestamp()}, when the caller has
+     * pinned it — or the live {@code System.currentTimeMillis()} otherwise. Pinning "now" lets a single Cucumber step
+     * spawn several internal fetches (e.g. a batch consumer, or multiple {@code Then} steps executed in quick
+     * succession) without the seek offset drifting forward as wall-clock time advances between them.
+     *
+     * <p>Priority order for the delta itself:
      *
      * <ol>
      *   <li>Explicit {@code consumerDeltaTime} set on the {@link ConsumerContext} (milliseconds)
@@ -185,9 +190,12 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
      * </ol>
      */
     private long calculateDeltaTime() {
+        long now =
+                context.getReferenceTimestamp() != null ? context.getReferenceTimestamp() : System.currentTimeMillis();
+
         // 1. Explicit value from context (already in ms)
         if (context.getConsumerDeltaTime() != null) {
-            long delta = System.currentTimeMillis() - context.getConsumerDeltaTime();
+            long delta = now - context.getConsumerDeltaTime();
             log.debug("Using consumer delta time from context: {}ms", context.getConsumerDeltaTime());
             return delta;
         }
@@ -198,7 +206,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         if (deltaTimeStr != null && !deltaTimeStr.isEmpty()) {
             log.debug(MESSAGE_CONSUMER_DELTA_TIME_FROM_DATATABLE, deltaTimeStr);
             try {
-                long delta = System.currentTimeMillis() - (Long.parseLong(deltaTimeStr) * 1000);
+                long delta = now - (Long.parseLong(deltaTimeStr) * 1000);
                 log.debug(MESSAGE_CONSUMER_DELTA_TIME_IN_TIMESTAMP, delta);
                 return delta;
             } catch (NumberFormatException e) {
@@ -208,7 +216,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
 
         // 3. Framework default
         log.debug(MESSAGE_CONSUMER_NO_DELTA_TIME_FOUND, defaultDeltaMs);
-        return System.currentTimeMillis() - defaultDeltaMs;
+        return now - defaultDeltaMs;
     }
 
     /**
