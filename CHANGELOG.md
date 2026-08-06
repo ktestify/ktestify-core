@@ -16,6 +16,8 @@ All notable changes to this project will be documented in this file.
 
 - Add referenceTimestamp to ConsumerContext to prevent clock drift in fetches — [@nil-malh](https://github.com/nil-malh)
 
+- Update release permissions and add CI workflow for main branch — [@nil-malh](https://github.com/nil-malh)
+
 
 ## [1.0.3] — 2026-07-07
 
