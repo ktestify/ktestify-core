@@ -2,7 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.1.0] — 2026-08-06
+
 ### ♻️ Refactoring
 
 - Remove date content-sniffing and implement type-driven date comparison — [@nil-malh](https://github.com/nil-malh)
