@@ -7,8 +7,10 @@
 name: Release
 
 permissions:
-  contents: read
-  packages: read
+  contents: write
+  packages: write
+  pull-requests: read
+  id-token: write
 
 on:
   workflow_dispatch:
