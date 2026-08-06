@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 
 - Enhance deepEquals method to support dot-notation for excluded keys — [@nil-malh](https://github.com/nil-malh)
 
+- Add referenceTimestamp to ConsumerContext to prevent clock drift in fetches — [@nil-malh](https://github.com/nil-malh)
+
 
 ## [1.0.3] — 2026-07-07
 
