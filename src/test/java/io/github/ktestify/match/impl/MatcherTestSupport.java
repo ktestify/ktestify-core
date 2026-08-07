@@ -16,13 +16,16 @@
 package io.github.ktestify.match.impl;
 
 import io.github.ktestify.match.MatchContext;
+import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
+import org.apache.avro.generic.GenericRecord;
+
 import java.net.URL;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
-import org.apache.avro.generic.GenericRecord;
+import java.util.Map;
 
 /**
  * Shared test helpers for {@link RecordMatcher} unit tests. Keeps each test class lean — no boilerplate record
@@ -45,6 +48,17 @@ final class MatcherTestSupport {
     /** Wraps an Avro {@link GenericRecord} in a minimal {@link ConsumedRecord}. */
     static List<ConsumedRecord<GenericRecord>> avroRecord(String key, GenericRecord value) {
         return List.of(new ConsumedRecord<>("test-topic", 0, 0L, key, value, Instant.now(), Collections.emptyMap()));
+    }
+
+    /** Wraps a String value plus transport attributes in a minimal {@link ConsumedRecord}. */
+    static List<ConsumedRecord<String>> rawRecordWithAttributes(String value, Map<String, String> attributes) {
+        return List.of(new ConsumedRecord<>(
+                "test-topic", 0, 0L, "test-key", value, Instant.now(), Collections.emptyMap(), attributes));
+    }
+
+    /** Builds a {@link MatchContext} carrying only expected transport attributes. */
+    static MatchContext ctxWithAttributes(Map<String, String> expectedAttributes) {
+        return MatchContext.builder().expectedAttributes(expectedAttributes).build();
     }
 
     /**

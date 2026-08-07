@@ -16,17 +16,7 @@
 package io.github.ktestify.match;
 
 import io.github.ktestify.exceptions.ConsumerException;
-import io.github.ktestify.match.impl.AvroFieldsRecordMatcher;
-import io.github.ktestify.match.impl.AvroFileKeyRecordMatcher;
-import io.github.ktestify.match.impl.AvroFileRecordMatcher;
-import io.github.ktestify.match.impl.AvroKeyRecordMatcher;
-import io.github.ktestify.match.impl.FieldsRecordMatcher;
-import io.github.ktestify.match.impl.FileKeyRecordMatcher;
-import io.github.ktestify.match.impl.FileRecordMatcher;
-import io.github.ktestify.match.impl.KeyRecordMatcher;
-import io.github.ktestify.match.impl.NoOpRecordMatcher;
-import io.github.ktestify.match.impl.XPathRecordMatcher;
-import io.github.ktestify.match.impl.XmlRecordMatcher;
+import io.github.ktestify.match.impl.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
 
@@ -56,6 +46,14 @@ public final class RecordMatcherFactory {
     public static final String METHOD_FIELDS_TO_MATCH = "methodFieldsToMatch";
     public static final String METHOD_RECORD_KEY_MATCH = "methodRecordKeyMatch";
 
+    /**
+     * Asserts transport attributes (see {@link io.github.ktestify.models.ConsumedRecord#getAttributes()}). Only
+     * available for raw transports, since attributes are populated by synchronous request/response clients.
+     *
+     * @since 1.1.1
+     */
+    public static final String METHOD_MATCH_ATTRIBUTES = "methodMatchAttributes";
+
     private RecordMatcherFactory() {}
 
     // =========================================================================
@@ -83,10 +81,11 @@ public final class RecordMatcherFactory {
             case METHOD_MATCH_XML -> new XmlRecordMatcher();
             case METHOD_MATCH_XPATH -> new XPathRecordMatcher();
             case METHOD_RECORD_KEY_MATCH -> new KeyRecordMatcher();
+            case METHOD_MATCH_ATTRIBUTES -> new AttributeRecordMatcher<>();
             default ->
                 throw new ConsumerException("Unknown raw matchMethod '" + matchMethod + "'. "
                         + "Valid values: methodMatchFile, methodMatchKeyValue, methodFieldsToMatch, "
-                        + "methodMatchXML, methodMatchXPath, methodRecordKeyMatch.");
+                        + "methodMatchXML, methodMatchXPath, methodRecordKeyMatch, methodMatchAttributes.");
         };
     }
 

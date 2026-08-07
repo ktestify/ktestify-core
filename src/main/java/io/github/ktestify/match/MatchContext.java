@@ -15,10 +15,12 @@
  */
 package io.github.ktestify.match;
 
-import java.util.Collections;
-import java.util.List;
 import lombok.Builder;
 import lombok.Value;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Immutable value object that carries all configuration needed by a {@code RecordMatcher}.
@@ -71,6 +73,18 @@ public class MatchContext {
 
     /** Expected value for {@link #matchKey}. */
     String matchValue;
+
+    /**
+     * Expected transport-attribute key/value pairs (see
+     * {@link io.github.ktestify.models.ConsumedRecord#getAttributes()}).
+     *
+     * <p>Used by {@link io.github.ktestify.match.impl.AttributeRecordMatcher}. Example: {@code {"statusCode": "200"}}.
+     * Defaults to an empty map.
+     *
+     * @since 1.1.1
+     */
+    @Builder.Default
+    Map<String, String> expectedAttributes = Collections.emptyMap();
 
     /**
      * Convenience accessor for single-record matchers. Returns the first element of {@link #matchFilePaths}, or
