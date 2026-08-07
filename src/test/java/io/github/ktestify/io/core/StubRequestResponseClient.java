@@ -17,7 +17,6 @@ package io.github.ktestify.io.core;
 
 import io.github.ktestify.exceptions.FetchException;
 import io.github.ktestify.models.ConsumedRecord;
-
 import java.time.Instant;
 import java.util.*;
 
