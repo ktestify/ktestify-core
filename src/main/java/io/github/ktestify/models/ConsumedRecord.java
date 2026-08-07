@@ -15,14 +15,13 @@
  */
 package io.github.ktestify.models;
 
+import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Value;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
-
-import java.time.Instant;
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * Immutable value object representing a single record that has been fetched from any IO source (Kafka, IBM MQ, etc.).

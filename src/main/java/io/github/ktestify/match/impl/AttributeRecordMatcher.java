@@ -20,9 +20,8 @@ import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.*;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Generic matcher that asserts one or more {@link ConsumedRecord#getAttributes()} entries against the expected values

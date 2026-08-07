@@ -19,13 +19,12 @@ import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
-import org.apache.avro.generic.GenericRecord;
-
 import java.net.URL;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import org.apache.avro.generic.GenericRecord;
 
 /**
  * Shared test helpers for {@link RecordMatcher} unit tests. Keeps each test class lean — no boilerplate record

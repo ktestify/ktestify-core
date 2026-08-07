@@ -17,10 +17,9 @@ package io.github.ktestify.io.core;
 
 import io.github.ktestify.exceptions.FetchException;
 import io.github.ktestify.models.ConsumedRecord;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
 import java.util.function.Predicate;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Generic {@link RequestResponseClient} decorator that retries {@link #execute(Object)} against a delegate client until

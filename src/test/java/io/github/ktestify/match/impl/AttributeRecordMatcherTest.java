@@ -15,20 +15,19 @@
  */
 package io.github.ktestify.match.impl;
 
-import io.github.ktestify.exceptions.ComparisonException;
-import io.github.ktestify.match.MatchContext;
-import io.github.ktestify.match.MatchResult;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import static io.github.ktestify.match.impl.MatcherTestSupport.ctxWithAttributes;
 import static io.github.ktestify.match.impl.MatcherTestSupport.rawRecordWithAttributes;
 import static org.junit.jupiter.api.Assertions.*;
+
+import io.github.ktestify.exceptions.ComparisonException;
+import io.github.ktestify.match.MatchContext;
+import io.github.ktestify.match.MatchResult;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 @DisplayName("AttributeRecordMatcher")
 class AttributeRecordMatcherTest {
