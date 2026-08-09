@@ -15,10 +15,10 @@
  */
 package io.github.ktestify.plugin;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Unit tests for {@link PluginVersionResolver}.
@@ -58,4 +58,3 @@ class PluginVersionResolverTest {
         assertEquals("test", version);
     }
 }
-

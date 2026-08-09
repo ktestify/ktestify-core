@@ -15,22 +15,24 @@
  */
 package io.github.ktestify.plugin;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Resolves a plugin's build version from a Maven-filtered {@code plugin-version.properties} file on the classpath.
  *
  * <p>Each plugin ships a {@code plugin-version.properties} file in its own package directory (e.g.
  * {@code /io/github/ktestify/azureblob/plugin-version.properties}). The file contains a single property:
+ *
  * <pre>
  * plugin.version=${project.version}
  * </pre>
+ *
  * Maven substitutes {@code ${project.version}} at build time. This approach works in all deployment contexts:
+ *
  * <ul>
  *   <li>Standalone plugin JARs (external plugins loaded via {@code URLClassLoader})
  *   <li>The shaded fat JAR (each plugin's file is at a unique package-relative path, so no collision)
@@ -39,6 +41,7 @@ import java.util.Properties;
  *
  * <p>Plugins should call {@link #resolve(Class, String)} once at class-loading time and store the result in a
  * {@code static final} field:
+ *
  * <pre>
  * private static final String VERSION = PluginVersionResolver.resolve(MyPlugin.class, "dev");
  * </pre>
@@ -102,4 +105,3 @@ public final class PluginVersionResolver {
         }
     }
 }
-

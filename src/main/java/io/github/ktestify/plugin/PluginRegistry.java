@@ -16,14 +16,13 @@
 package io.github.ktestify.plugin;
 
 import io.github.ktestify.exceptions.PluginException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Discovers, loads, initializes, and holds all active {@link KtestifyPlugin} instances for the current JVM run.
