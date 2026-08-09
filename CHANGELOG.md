@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### ✨ Features
+
+- Add attributes support to ConsumedRecord and related matchers — [@nil-malh](https://github.com/nil-malh)
+
+- Reorganize imports for consistency and clarity across multiple files — [@nil-malh](https://github.com/nil-malh)
+
+
 ## [1.1.0] — 2026-08-06
 
 ### ♻️ Refactoring
