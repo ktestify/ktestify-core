@@ -19,17 +19,7 @@ import static io.github.ktestify.match.RecordMatcherFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.github.ktestify.exceptions.ConsumerException;
-import io.github.ktestify.match.impl.AvroFieldsRecordMatcher;
-import io.github.ktestify.match.impl.AvroFileKeyRecordMatcher;
-import io.github.ktestify.match.impl.AvroFileRecordMatcher;
-import io.github.ktestify.match.impl.AvroKeyRecordMatcher;
-import io.github.ktestify.match.impl.FieldsRecordMatcher;
-import io.github.ktestify.match.impl.FileKeyRecordMatcher;
-import io.github.ktestify.match.impl.FileRecordMatcher;
-import io.github.ktestify.match.impl.KeyRecordMatcher;
-import io.github.ktestify.match.impl.NoOpRecordMatcher;
-import io.github.ktestify.match.impl.XPathRecordMatcher;
-import io.github.ktestify.match.impl.XmlRecordMatcher;
+import io.github.ktestify.match.impl.*;
 import org.apache.avro.generic.GenericRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -83,6 +73,12 @@ class RecordMatcherFactoryTest {
         @DisplayName("METHOD_RECORD_KEY_MATCH → KeyRecordMatcher")
         void matchKey() {
             assertInstanceOf(KeyRecordMatcher.class, RecordMatcherFactory.forRaw(METHOD_RECORD_KEY_MATCH));
+        }
+
+        @Test
+        @DisplayName("METHOD_MATCH_ATTRIBUTES → AttributeRecordMatcher")
+        void matchAttributes() {
+            assertInstanceOf(AttributeRecordMatcher.class, RecordMatcherFactory.forRaw(METHOD_MATCH_ATTRIBUTES));
         }
     }
 
@@ -175,6 +171,12 @@ class RecordMatcherFactoryTest {
         @DisplayName("throws ConsumerException for XPath method (not supported for Avro)")
         void throwsForXPath() {
             assertThrows(ConsumerException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_XPATH));
+        }
+
+        @Test
+        @DisplayName("throws ConsumerException for attribute method (raw transports only)")
+        void throwsForAttributes() {
+            assertThrows(ConsumerException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_ATTRIBUTES));
         }
     }
 

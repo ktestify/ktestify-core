@@ -18,6 +18,7 @@ package io.github.ktestify.models;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
+import lombok.Builder;
 import lombok.Value;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
@@ -25,9 +26,12 @@ import org.apache.kafka.common.header.Header;
 /**
  * Immutable value object representing a single record that has been fetched from any IO source (Kafka, IBM MQ, etc.).
  *
- * <p>This is the <em>common currency</em> that flows between the transport layer ({@code RecordFetcher}) and the
- * assertion layer ({@code RecordMatcher}). Matchers have zero dependency on Kafka or any other transport — they only
- * know about {@code ConsumedRecord}.
+ * <p>This is the <em>common currency</em> that flows between the transport layer ({@code RecordFetcher} and
+ * {@code RequestResponseClient}) and the assertion layer ({@code RecordMatcher}). Matchers have zero dependency on
+ * Kafka or any other transport — they only know about {@code ConsumedRecord}.
+ *
+ * <p>Synchronous transports (see {@code RequestResponseClient}) additionally populate {@link #attributes} with
+ * structured transport metadata such as an HTTP status code. Asynchronous transports leave it empty.
  *
  * @param <V> the type of the record value
  * @since 0.3.0
@@ -56,12 +60,86 @@ public class ConsumedRecord<V> {
     /** Transport-level headers / properties. Keys and values are Strings to stay transport-agnostic. */
     Map<String, String> headers;
 
+    /**
+     * Transport-specific structured metadata that does not belong under {@link #headers} (which models actual protocol
+     * headers).
+     *
+     * <p>Examples: HTTP status code and elapsed time, a future gRPC status code, an MQ reason code, a script exit code.
+     * Matchers that need this data use {@link io.github.ktestify.match.impl.AttributeRecordMatcher} or read it
+     * directly. Never {@code null}, defaults to an empty, immutable map.
+     *
+     * @since 1.1.1
+     */
+    Map<String, String> attributes;
+
+    // -------------------------------------------------------------------------
+    // Constructors
+    // -------------------------------------------------------------------------
+
+    /**
+     * Full constructor including transport {@link #attributes}.
+     *
+     * @param source the source topic / queue / channel name
+     * @param partition the partition index, {@code 0} for non-partitioned sources
+     * @param offset the offset within the partition, {@code -1} when the source has no offset concept
+     * @param key the record key, may be {@code null}
+     * @param value the deserialized record value
+     * @param timestamp the timestamp at which the record was written to the source
+     * @param headers the transport-level headers, may be {@code null} (treated as empty)
+     * @param attributes the transport-specific metadata, may be {@code null} (treated as empty)
+     * @since 1.1.1
+     */
+    @Builder
+    public ConsumedRecord(
+            String source,
+            int partition,
+            long offset,
+            String key,
+            V value,
+            Instant timestamp,
+            Map<String, String> headers,
+            Map<String, String> attributes) {
+        this.source = source;
+        this.partition = partition;
+        this.offset = offset;
+        this.key = key;
+        this.value = value;
+        this.timestamp = timestamp;
+        this.headers = headers;
+        this.attributes = attributes != null ? attributes : Collections.emptyMap();
+    }
+
+    /**
+     * Backward-compatible constructor for transports that carry no {@link #attributes}. Delegates to the full
+     * constructor with an empty attribute map.
+     *
+     * @param source the source topic / queue / channel name
+     * @param partition the partition index, {@code 0} for non-partitioned sources
+     * @param offset the offset within the partition, {@code -1} when the source has no offset concept
+     * @param key the record key, may be {@code null}
+     * @param value the deserialized record value
+     * @param timestamp the timestamp at which the record was written to the source
+     * @param headers the transport-level headers, may be {@code null} (treated as empty)
+     */
+    public ConsumedRecord(
+            String source,
+            int partition,
+            long offset,
+            String key,
+            V value,
+            Instant timestamp,
+            Map<String, String> headers) {
+        this(source, partition, offset, key, value, timestamp, headers, Collections.emptyMap());
+    }
+
     // -------------------------------------------------------------------------
     // Factory helpers
     // -------------------------------------------------------------------------
 
     /**
      * Builds a {@code ConsumedRecord} from a Kafka {@link ConsumerRecord}.
+     *
+     * <p>Kafka has no use for {@link #attributes} today, so an empty map is supplied.
      *
      * @param <K> the Kafka key type
      * @param <V> the Kafka value type
@@ -78,7 +156,8 @@ public class ConsumedRecord<V> {
                 key,
                 record.value(),
                 Instant.ofEpochMilli(record.timestamp()),
-                headers);
+                headers,
+                Collections.emptyMap());
     }
 
     /**
