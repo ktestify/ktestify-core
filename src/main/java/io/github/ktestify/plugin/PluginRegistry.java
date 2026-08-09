@@ -16,17 +16,14 @@
 package io.github.ktestify.plugin;
 
 import io.github.ktestify.exceptions.PluginException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.ServiceLoader;
+import java.util.*;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Discovers, loads, initializes, and holds all active {@link KtestifyPlugin} instances for the current JVM run.
@@ -93,7 +90,7 @@ public final class PluginRegistry {
     public static PluginRegistry load(PluginContext ctx) {
         List<KtestifyPlugin> all = new ArrayList<>();
 
-        LOG.info("╔══ KTestify Plugin System ═════════════════════════════════════");
+        LOG.info("Loading plugins...");
 
         // Phase 1 — classpath / fat-jar plugins
         loadFromClasspath(ctx, all);
@@ -103,14 +100,13 @@ public final class PluginRegistry {
         loadFromDirectory(pluginsDir, ctx, all);
 
         if (all.isEmpty()) {
-            LOG.info("║  No plugins loaded.");
+            LOG.info("No plugins loaded.");
         } else {
             LOG.info(
-                    "║  {} plugin(s) active: [{}]",
+                    "Plugin system ready: {} plugin(s) active [{}]",
                     all.size(),
                     all.stream().map(p -> p.getId() + "@" + p.getVersion()).collect(Collectors.joining(", ")));
         }
-        LOG.info("╚═══════════════════════════════════════════════════════════════");
 
         return new PluginRegistry(all);
     }
@@ -174,7 +170,7 @@ public final class PluginRegistry {
         int before = target.size();
         for (KtestifyPlugin plugin : loader) {
             LOG.info(
-                    "║  [classpath] Discovered plugin: {} v{} — author: {} <{}>",
+                    "[classpath] Plugin discovered: {} v{} (author: {} <{}>)",
                     plugin.getId(),
                     plugin.getVersion(),
                     plugin.getAuthorName(),
@@ -192,23 +188,23 @@ public final class PluginRegistry {
      */
     private static void loadFromDirectory(String dirPath, PluginContext ctx, List<KtestifyPlugin> target) {
         if (dirPath == null || dirPath.isBlank()) {
-            LOG.debug("Phase 2 (external): plugins dir not configured — skipping.");
+            LOG.debug("Phase 2 (external): plugins dir not configured.");
             return;
         }
 
         File dir = new File(dirPath);
         if (!dir.exists() || !dir.isDirectory()) {
-            LOG.debug("Phase 2 (external): directory '{}' does not exist — no external plugins loaded.", dirPath);
+            LOG.debug("Phase 2 (external): directory '{}' does not exist.", dirPath);
             return;
         }
 
         File[] jars = dir.listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
         if (jars == null || jars.length == 0) {
-            LOG.debug("Phase 2 (external): no *.jar files found in '{}' — skipping.", dirPath);
+            LOG.debug("Phase 2 (external): no *.jar files found in '{}'", dirPath);
             return;
         }
 
-        LOG.info("║  [external] Scanning '{}' — {} JAR(s) found.", dirPath, jars.length);
+        LOG.info("[external] Scanning '{}' — {} JAR(s) found.", dirPath, jars.length);
 
         // Build a single URLClassLoader for all external jars (parent = current context CL)
         URL[] urls = Arrays.stream(jars)
@@ -228,7 +224,7 @@ public final class PluginRegistry {
         int before = target.size();
         for (KtestifyPlugin plugin : loader) {
             LOG.info(
-                    "║  [external] Discovered plugin: {} v{} — author: {} <{}> (from '{}')",
+                    "[external] Plugin discovered: {} v{} (author: {} <{}>, from '{}')",
                     plugin.getId(),
                     plugin.getVersion(),
                     plugin.getAuthorName(),
@@ -245,7 +241,7 @@ public final class PluginRegistry {
     private static void initPlugin(KtestifyPlugin plugin, PluginContext ctx) {
         try {
             plugin.initialize(ctx);
-            LOG.info("║  Plugin '{}' initialized successfully.", plugin.getId());
+            LOG.info("Plugin '{}' initialized.", plugin.getId());
         } catch (PluginException e) {
             throw e; // already wrapped
         } catch (Exception e) {
