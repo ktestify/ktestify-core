@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### ♻️ Refactoring
+
+- Improve logging messages for PluginSystem and add PluginVersionResolver class — [@nil-malh](https://github.com/nil-malh)
+
+- Refactored plugin init logs — [@nil-malh](https://github.com/nil-malh)
+
+
 ## [1.1.1] — 2026-08-09
 
 ### ✨ Features
