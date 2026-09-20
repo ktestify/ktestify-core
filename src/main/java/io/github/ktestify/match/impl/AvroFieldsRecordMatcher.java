@@ -23,9 +23,12 @@ import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.serdes.AvroDeserializer;
 import io.github.ktestify.utils.serdes.AvroUtils;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Matches a specific field (or set of fields) within an Avro record, using either an inline expected value or an
@@ -44,11 +47,16 @@ public class AvroFieldsRecordMatcher implements RecordMatcher<GenericRecord> {
     public MatchResult match(List<ConsumedRecord<GenericRecord>> records, MatchContext context)
             throws ComparisonException {
 
+        // Multi-field inline matching (keys/values columns)
+        if (context.getMatchKeyValues() != null && !context.getMatchKeyValues().isEmpty()) {
+            return matchMultipleFields(records, context);
+        }
+
         if (context.getMatchKey() == null || context.getMatchKey().isBlank()) {
             throw new ComparisonException("AvroFieldsRecordMatcher requires matchKey (the field name) to be set.");
         }
 
-        GenericRecord value = records.get(0).getValue();
+        GenericRecord value = records.getFirst().getValue();
         String actualValue = toJson(value);
         String key = context.getMatchKey();
 
@@ -81,6 +89,40 @@ public class AvroFieldsRecordMatcher implements RecordMatcher<GenericRecord> {
         }
 
         throw new ComparisonException("AvroFieldsRecordMatcher requires either matchValue or matchFilePath to be set.");
+    }
+
+    /**
+     * Validates every key/value pair in {@link MatchContext#getMatchKeyValues()} against the actual Avro record.
+     *
+     * <p>All pairs must match for the result to pass. The first mismatch is reported in the diff.
+     *
+     * @param records the consumed records (only the first is examined)
+     * @param context the match context carrying the key/value pairs
+     * @return a {@link MatchResult} indicating whether all fields matched
+     * @throws ComparisonException if the key/value map is empty (should not happen, guarded by the caller)
+     * @since 1.1.1
+     */
+    private MatchResult matchMultipleFields(List<ConsumedRecord<GenericRecord>> records, MatchContext context)
+            throws ComparisonException {
+        GenericRecord value = records.getFirst().getValue();
+        String actualValue = toJson(value);
+        Map<String, String> keyValues = context.getMatchKeyValues();
+
+        log.debug("Avro multi-field match against inline values : pairs: {}", keyValues);
+
+        List<String> mismatches = new ArrayList<>();
+        for (Map.Entry<String, String> entry : keyValues.entrySet()) {
+            String key = entry.getKey();
+            String expectedVal = entry.getValue();
+            if (!AvroUtils.doesAvroValueFromKeyMatchesRecord(expectedVal, key, actualValue)) {
+                mismatches.add("Avro field '" + key + "' does not match expected value '" + expectedVal + "'.");
+            }
+        }
+
+        if (mismatches.isEmpty()) {
+            return MatchResult.pass(keyValues.toString(), actualValue);
+        }
+        return MatchResult.fail(String.join(" ", mismatches), keyValues.toString(), actualValue);
     }
 
     private String toJson(GenericRecord value) {

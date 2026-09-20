@@ -19,12 +19,13 @@ import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
+import org.apache.avro.generic.GenericRecord;
+
 import java.net.URL;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.apache.avro.generic.GenericRecord;
 
 /**
  * Shared test helpers for {@link RecordMatcher} unit tests. Keeps each test class lean — no boilerplate record
@@ -110,5 +111,10 @@ final class MatcherTestSupport {
     /** Builds a {@link MatchContext} with a match key and an inline expected value. */
     static MatchContext ctxWithKeyAndValue(String matchKey, String matchValue) {
         return MatchContext.builder().matchKey(matchKey).matchValue(matchValue).build();
+    }
+
+    /** Builds a {@link MatchContext} with multiple key/value pairs for multi-field inline matching. */
+    static MatchContext ctxWithKeyValues(Map<String, String> keyValues) {
+        return MatchContext.builder().matchKeyValues(keyValues).build();
     }
 }
