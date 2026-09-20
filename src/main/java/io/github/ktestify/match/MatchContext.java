@@ -74,6 +74,20 @@ public class MatchContext {
     String matchValue;
 
     /**
+     * Multiple key/value pairs for multi-field inline matching.
+     *
+     * <p>When non-empty, the matcher validates that <em>every</em> key in the map has the corresponding expected value
+     * in the actual record. This is the multi-field equivalent of {@link #matchKey} / {@link #matchValue}.
+     *
+     * <p>Single-field callers should continue to use {@link #matchKey} and {@link #matchValue}; this map should be left
+     * empty (the default).
+     *
+     * @since 1.1.1
+     */
+    @Builder.Default
+    Map<String, String> matchKeyValues = Collections.emptyMap();
+
+    /**
      * Expected transport-attribute key/value pairs (see
      * {@link io.github.ktestify.models.ConsumedRecord#getAttributes()}).
      *
@@ -90,7 +104,7 @@ public class MatchContext {
      * {@code null} if the list is empty.
      */
     public String getMatchFilePath() {
-        return matchFilePaths != null && !matchFilePaths.isEmpty() ? matchFilePaths.get(0) : null;
+        return matchFilePaths != null && !matchFilePaths.isEmpty() ? matchFilePaths.getFirst() : null;
     }
 
     /**

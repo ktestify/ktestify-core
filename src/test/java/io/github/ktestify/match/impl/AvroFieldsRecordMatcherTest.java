@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import io.github.ktestify.exceptions.ComparisonException;
 import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
@@ -74,6 +76,62 @@ class AvroFieldsRecordMatcherTest {
             assertTrue(result.getDiff().contains("status"));
             assertTrue(result.getDiff().contains("CREATED"));
             assertEquals("CREATED", result.getExpected());
+        }
+    }
+
+    @Nested
+    @DisplayName("Multi-field inline value matching")
+    class MultiFieldValue {
+
+        @Test
+        @DisplayName("passes when all specified fields match their inline expected values")
+        void allFieldsMatchInlineValues() throws ComparisonException {
+            Map<String, String> keyValues = new LinkedHashMap<>();
+            keyValues.put("status", "CREATED");
+            keyValues.put("customerId", "CUST-42");
+            MatchResult result = matcher.match(
+                    avroRecord("key", buildRecord("ORD-001", "CUST-42", 99.99, "CREATED")),
+                    ctxWithKeyValues(keyValues));
+            assertTrue(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("fails when one of the specified fields does not match")
+        void oneFieldDoesNotMatch() throws ComparisonException {
+            Map<String, String> keyValues = new LinkedHashMap<>();
+            keyValues.put("status", "CREATED");
+            keyValues.put("customerId", "CUST-99");
+            MatchResult result = matcher.match(
+                    avroRecord("key", buildRecord("ORD-001", "CUST-42", 99.99, "SHIPPED")),
+                    ctxWithKeyValues(keyValues));
+            assertFalse(result.isPassed());
+            assertTrue(result.getDiff().contains("status"));
+            assertTrue(result.getDiff().contains("customerId"));
+        }
+
+        @Test
+        @DisplayName("fails when all specified fields do not match")
+        void noFieldsMatch() throws ComparisonException {
+            Map<String, String> keyValues = new LinkedHashMap<>();
+            keyValues.put("status", "CREATED");
+            keyValues.put("orderId", "ORD-999");
+            MatchResult result = matcher.match(
+                    avroRecord("key", buildRecord("ORD-001", "CUST-42", 99.99, "SHIPPED")),
+                    ctxWithKeyValues(keyValues));
+            assertFalse(result.isPassed());
+            assertTrue(result.getDiff().contains("status"));
+            assertTrue(result.getDiff().contains("orderId"));
+        }
+
+        @Test
+        @DisplayName("passes with a single entry in the key/value map")
+        void singleEntryKeyValues() throws ComparisonException {
+            Map<String, String> keyValues = new LinkedHashMap<>();
+            keyValues.put("status", "CREATED");
+            MatchResult result = matcher.match(
+                    avroRecord("key", buildRecord("ORD-001", "CUST-42", 99.99, "CREATED")),
+                    ctxWithKeyValues(keyValues));
+            assertTrue(result.isPassed());
         }
     }
 

@@ -111,4 +111,9 @@ final class MatcherTestSupport {
     static MatchContext ctxWithKeyAndValue(String matchKey, String matchValue) {
         return MatchContext.builder().matchKey(matchKey).matchValue(matchValue).build();
     }
+
+    /** Builds a {@link MatchContext} with multiple key/value pairs for multi-field inline matching. */
+    static MatchContext ctxWithKeyValues(Map<String, String> keyValues) {
+        return MatchContext.builder().matchKeyValues(keyValues).build();
+    }
 }
