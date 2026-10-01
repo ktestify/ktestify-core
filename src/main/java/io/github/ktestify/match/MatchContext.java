@@ -15,11 +15,12 @@
  */
 package io.github.ktestify.match;
 
+import lombok.Builder;
+import lombok.Value;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import lombok.Builder;
-import lombok.Value;
 
 /**
  * Immutable value object that carries all configuration needed by a {@code RecordMatcher}.

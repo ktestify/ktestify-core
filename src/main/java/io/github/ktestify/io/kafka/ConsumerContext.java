@@ -19,11 +19,12 @@ import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.match.KeyMatchStrategy;
 import io.github.ktestify.models.Topic;
+import lombok.Getter;
+import org.apache.kafka.clients.consumer.Consumer;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import lombok.Getter;
-import org.apache.kafka.clients.consumer.Consumer;
 
 @Getter
 public final class ConsumerContext<K, V> {

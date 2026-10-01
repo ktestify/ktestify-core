@@ -20,8 +20,9 @@ import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 /**
  * Asserts that the record key equals the expected key defined in {@link MatchContext#getMatchKey()}.

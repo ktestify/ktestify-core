@@ -15,7 +15,7 @@
  */
 package io.github.ktestify.io.kafka;
 
-import static io.github.ktestify.constants.LogMessagesConstants.*;
+ import static io.github.ktestify.constants.LogMessagesConstants.*;
 
 import io.github.ktestify.config.FrameworkConfig;
 import io.github.ktestify.config.KtestifyConfig;
@@ -36,6 +36,12 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
+
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
 
 /**
  * Kafka implementation of {@link RecordFetcher}.
