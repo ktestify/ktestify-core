@@ -16,13 +16,14 @@
 package io.github.ktestify.plugin;
 
 import io.github.ktestify.exceptions.PluginException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Discovers, loads, initializes, and holds all active {@link KtestifyPlugin} instances for the current JVM run.
@@ -71,8 +72,16 @@ public final class PluginRegistry {
 
     private final List<KtestifyPlugin> plugins;
 
-    private PluginRegistry(List<KtestifyPlugin> plugins) {
+    /**
+     * The {@link URLClassLoader} created for external plugin JARs, or {@code null} if no external plugins were loaded.
+     * <p>Kept open for the lifetime of the registry because loaded plugin classes reference it. It is closed in
+     * {@link #shutdown()} after all plugins have been shut down.
+     */
+    private final URLClassLoader externalClassLoader;
+
+    private PluginRegistry(List<KtestifyPlugin> plugins, URLClassLoader externalClassLoader) {
         this.plugins = Collections.unmodifiableList(plugins);
+        this.externalClassLoader = externalClassLoader;
     }
 
     // -------------------------------------------------------------------------
@@ -88,6 +97,7 @@ public final class PluginRegistry {
      */
     public static PluginRegistry load(PluginContext ctx) {
         List<KtestifyPlugin> all = new ArrayList<>();
+        URLClassLoader externalCL = null;
 
         LOG.info("Loading plugins...");
 
@@ -96,7 +106,15 @@ public final class PluginRegistry {
 
         // Phase 2 — external plugin directory
         String pluginsDir = resolvePluginsDir(ctx);
-        loadFromDirectory(pluginsDir, ctx, all);
+        try {
+            externalCL = loadFromDirectory(pluginsDir, ctx, all);
+        } catch (RuntimeException e) {
+            // If loading from directory fails after the classloader was created, close it to avoid a leak.
+            if (externalCL != null) {
+                closeClassLoaderQuietly(externalCL);
+            }
+            throw e;
+        }
 
         if (all.isEmpty()) {
             LOG.info("No plugins loaded.");
@@ -107,7 +125,7 @@ public final class PluginRegistry {
                     all.stream().map(p -> p.getId() + "@" + p.getVersion()).collect(Collectors.joining(", ")));
         }
 
-        return new PluginRegistry(all);
+        return new PluginRegistry(all, externalCL);
     }
 
     // -------------------------------------------------------------------------
@@ -139,7 +157,8 @@ public final class PluginRegistry {
     }
 
     /**
-     * Shuts down all plugins in reverse initialization order.
+     * Shuts down all plugins in reverse initialization order, then closes the external plugin {@link URLClassLoader}
+     * if one was created.
      *
      * <p>Exceptions thrown by individual plugins are caught, logged as warnings, and swallowed so the remaining plugins
      * can still be shut down cleanly.
@@ -155,6 +174,11 @@ public final class PluginRegistry {
             } catch (Exception e) {
                 LOG.warn("Error shutting down plugin '{}' — ignored: {}", plugin.getId(), e.getMessage());
             }
+        }
+
+        // Close the external URLClassLoader to release file handles on plugin JARs.
+        if (externalClassLoader != null) {
+            closeClassLoaderQuietly(externalClassLoader);
         }
     }
 
@@ -184,23 +208,26 @@ public final class PluginRegistry {
     /**
      * Phase 2: scans an external directory for {@code .jar} files, loads them via a {@link URLClassLoader}, and
      * discovers plugins inside each JAR.
+     *
+     * @return the {@link URLClassLoader} created for the external JARs, or {@code null} if no external plugins were
+     *         loaded (directory not configured, missing, or empty)
      */
-    private static void loadFromDirectory(String dirPath, PluginContext ctx, List<KtestifyPlugin> target) {
+    private static URLClassLoader loadFromDirectory(String dirPath, PluginContext ctx, List<KtestifyPlugin> target) {
         if (dirPath == null || dirPath.isBlank()) {
             LOG.debug("Phase 2 (external): plugins dir not configured.");
-            return;
+            return null;
         }
 
         File dir = new File(dirPath);
         if (!dir.exists() || !dir.isDirectory()) {
             LOG.debug("Phase 2 (external): directory '{}' does not exist.", dirPath);
-            return;
+            return null;
         }
 
         File[] jars = dir.listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
         if (jars == null || jars.length == 0) {
             LOG.debug("Phase 2 (external): no *.jar files found in '{}'", dirPath);
-            return;
+            return null;
         }
 
         LOG.info("[external] Scanning '{}' — {} JAR(s) found.", dirPath, jars.length);
@@ -234,6 +261,18 @@ public final class PluginRegistry {
         }
         int loaded = target.size() - before;
         LOG.debug("Phase 2 (external): {} plugin(s) discovered from '{}'.", loaded, dirPath);
+
+        return pluginCL;
+    }
+
+    /** Closes a {@link URLClassLoader} silently, logging any failure as a warning. */
+    private static void closeClassLoaderQuietly(URLClassLoader cl) {
+        try {
+            cl.close();
+            LOG.debug("External plugin URLClassLoader closed.");
+        } catch (Exception e) {
+            LOG.warn("Failed to close external plugin URLClassLoader — ignored: {}", e.getMessage());
+        }
     }
 
     /** Calls {@link KtestifyPlugin#initialize(PluginContext)}, wrapping any exception in a {@link PluginException}. */
