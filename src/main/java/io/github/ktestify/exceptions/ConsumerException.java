@@ -15,9 +15,36 @@
  */
 package io.github.ktestify.exceptions;
 
+/**
+ * Thrown by the orchestration layer when a consumer operation fails.
+ *
+ * <p>Typically wraps a {@link FetchException} from the transport layer. Also thrown for orchestration-level
+ * configuration errors such as consuming from an INPUT topic or a null consumer context.
+ *
+ * <p>This is the only exception that test-framework adapters (Cucumber steps, Robot Framework keywords, …)
+ * are expected to catch and surface as a human-readable assertion failure.
+ *
+ * @since 0.3.0
+ * @see FetchException
+ */
 public class ConsumerException extends RuntimeException {
 
+    /**
+     * Constructs a new {@code ConsumerException} with the supplied detail message.
+     *
+     * @param message a human-readable description of the consumer failure
+     */
     public ConsumerException(String message) {
         super(message);
+    }
+
+    /**
+     * Constructs a new {@code ConsumerException} with the supplied detail message and cause.
+     *
+     * @param message a human-readable description of the consumer failure
+     * @param cause the underlying exception that caused this failure
+     */
+    public ConsumerException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

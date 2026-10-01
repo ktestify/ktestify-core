@@ -15,13 +15,15 @@
  */
 package io.github.ktestify.utils;
 
+import io.github.ktestify.exceptions.ComparisonException;
 import io.github.ktestify.io.inputs.DynamicVariableProcessor;
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 
 @UtilityClass
 public final class FileUtils {
@@ -43,7 +45,7 @@ public final class FileUtils {
      *
      * @param file the file to read
      * @return the content of the file as a String
-     * @throws RuntimeException if something went wrong
+     * @throws ComparisonException if the file cannot be read
      */
     public static String getFileContent(File file) {
         try (InputStream inputStream = new FileInputStream(file)) {
@@ -55,7 +57,7 @@ public final class FileUtils {
 
             return content;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ComparisonException("Failed to read file: " + file.getAbsolutePath(), e);
         }
     }
 
@@ -64,15 +66,14 @@ public final class FileUtils {
      *
      * @param file The file for which to open the InputStream.
      * @return An InputStream for the specified file.
-     * @throws RuntimeException If an IOException occurs when opening the InputStream.
+     * @throws ComparisonException If an IOException occurs when opening the InputStream.
      */
     public static InputStream getInputStream(File file) {
         try {
             return new FileInputStream(file);
         } catch (IOException e) {
             LOGGER.error("Something when wrong while getting file content from a File object : {} ", e.getMessage());
-
-            throw new RuntimeException(e);
+            throw new ComparisonException("Failed to open file input stream: " + file.getAbsolutePath(), e);
         }
     }
 
@@ -82,7 +83,7 @@ public final class FileUtils {
      *
      * @param file An InputStream to read from.
      * @return A string representing the content read from the InputStream.
-     * @throws RuntimeException If an IOException occurs during stream reading.
+     * @throws ComparisonException If an IOException occurs during stream reading.
      */
     public static String getFileContent(InputStream file) {
         try {
@@ -95,7 +96,7 @@ public final class FileUtils {
             return content;
         } catch (IOException e) {
             LOGGER.error("Something when wrong while getting file content from a input stream : {} ", e.getMessage());
-            throw new RuntimeException(e);
+            throw new ComparisonException("Failed to read from input stream", e);
         }
     }
 

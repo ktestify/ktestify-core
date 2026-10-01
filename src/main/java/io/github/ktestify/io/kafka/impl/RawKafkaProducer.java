@@ -15,15 +15,17 @@
  */
 package io.github.ktestify.io.kafka.impl;
 
+import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.kafka.AbstractKafkaProducer;
 import io.github.ktestify.io.kafka.ProducerContext;
 import io.github.ktestify.models.Topic;
-import java.io.File;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+
+import java.io.File;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class RawKafkaProducer extends AbstractKafkaProducer<String, String> {
 
@@ -68,9 +70,9 @@ public class RawKafkaProducer extends AbstractKafkaProducer<String, String> {
                     metadata.timestamp());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while producing raw message", e);
+            throw new ProducerException("Interrupted while producing raw message", e);
         } catch (ExecutionException e) {
-            throw new RuntimeException("Failed to produce raw message", e.getCause());
+            throw new ProducerException("Failed to produce raw message", e.getCause());
         }
     }
 }

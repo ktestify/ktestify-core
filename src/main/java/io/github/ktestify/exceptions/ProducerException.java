@@ -15,8 +15,32 @@
  */
 package io.github.ktestify.exceptions;
 
+/**
+ * Thrown when a Kafka producer fails to send a record — e.g. broker unreachable, serialization failure,
+ * interrupted during send, or schema/payload resolution error.
+ *
+ * <p>This is a {@link RuntimeException} so callers are not forced to declare it in their {@code throws} clause.
+ *
+ * @since 0.3.0
+ */
 public class ProducerException extends RuntimeException {
+
+    /**
+     * Constructs a new {@code ProducerException} with the supplied detail message.
+     *
+     * @param message a human-readable description of the producer failure
+     */
     public ProducerException(String message) {
         super(message);
+    }
+
+    /**
+     * Constructs a new {@code ProducerException} with the supplied detail message and cause.
+     *
+     * @param message a human-readable description of the producer failure
+     * @param cause the underlying exception that caused this failure
+     */
+    public ProducerException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
