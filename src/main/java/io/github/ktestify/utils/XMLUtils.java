@@ -309,22 +309,26 @@ public final class XMLUtils {
             // 2. Child-count difference caused by an excluded element being present in one
             //    document but absent in the other.  XMLUnit fires CHILD_NODELIST_LENGTH on
             //    the *parent* node, so the XPath points to the parent (e.g. /order[1]), not
-            //    to the excluded child.  We mark it SIMILAR when the count delta equals the
-            //    number of excluded elements that appear in either document.
+            //    to the excluded child.
+            //
+            //    Without DOM access we cannot determine which excluded elements are actual
+            //    children of this parent.  We conservatively suppress the length difference
+            //    when the delta does not exceed the total number of excluded elements.
+            //    This is safe because XMLUnit also fires CHILD_LOOKUP (point 3 below) for
+            //    each missing/extra child — any non-excluded child will be caught there and
+            //    reported as a real difference.
             if (comparison.getType() == ComparisonType.CHILD_NODELIST_LENGTH) {
                 Object controlVal = comparison.getControlDetails().getValue();
                 Object testVal = comparison.getTestDetails().getValue();
                 if (controlVal instanceof Integer controlCount && testVal instanceof Integer testCount) {
                     int delta = Math.abs(controlCount - testCount);
-                    long excludedPresent = excludedElements.stream()
-                            .filter(el -> xPathBelongsToParent(controlXPath, el) || xPathBelongsToParent(testXPath, el))
-                            .count();
-                    if (delta <= excludedPresent) {
+                    if (delta > 0 && delta <= excludedElements.size()) {
                         LOGGER.debug(
-                                "Suppressing CHILD_NODELIST_LENGTH difference — "
-                                        + "delta {} covered by {} excluded element(s).",
+                                "Suppressing CHILD_NODELIST_LENGTH difference,  "
+                                        + "delta {} within {} excluded element(s); "
+                                        + "non-excluded children will be caught by CHILD_LOOKUP.",
                                 delta,
-                                excludedPresent);
+                                excludedElements.size());
                         return ComparisonResult.SIMILAR;
                     }
                 }
@@ -349,17 +353,6 @@ public final class XMLUtils {
                     .anyMatch(el -> xPath.contains("/" + el + "[")
                             || xPath.contains("/" + el + "/")
                             || xPath.endsWith("/" + el));
-        }
-
-        /**
-         * Returns true if an element named {@code el} would be a direct child of the node identified by
-         * {@code parentXPath} (used for child-count checks). We cannot resolve the actual DOM here, so we use the
-         * parent XPath as a proxy — any excluded element whose name is in our list is considered a potential child.
-         */
-        private boolean xPathBelongsToParent(String parentXPath, String el) {
-            // We can't walk the DOM, so we conservatively consider any excluded element
-            // as a potential contributor to the count difference.
-            return parentXPath != null && !excludedElements.isEmpty();
         }
     }
 }
