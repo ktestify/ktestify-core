@@ -15,47 +15,35 @@
  */
 package io.github.ktestify.io.kafka;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 import io.github.ktestify.config.ConfigBuilder;
 import io.github.ktestify.config.KtestifyConfig;
+import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.kafka.impl.AvroKafkaProducer;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.tests.extentions.KafkaTestExtension;
 import io.github.ktestify.tests.extentions.SchemaRegistryTestExtension;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.Producer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.io.TempDir;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests for AvroKafkaProducer using Testcontainers.
@@ -1007,7 +995,7 @@ class AvroKafkaProducerTest {
             AvroKafkaProducer avroProducer = new AvroKafkaProducer(
                     topic, null, producer, null, Map.of(), null, "com.example.avro.NoPayloadRecord");
 
-            assertThrows(IllegalStateException.class, avroProducer::send);
+            assertThrows(ProducerException.class, avroProducer::send);
         }
 
         @Test

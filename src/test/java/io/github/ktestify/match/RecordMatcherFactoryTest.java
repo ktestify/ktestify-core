@@ -15,10 +15,7 @@
  */
 package io.github.ktestify.match;
 
-import static io.github.ktestify.match.RecordMatcherFactory.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import io.github.ktestify.exceptions.ConsumerException;
+import io.github.ktestify.exceptions.ConfigException;
 import io.github.ktestify.match.impl.*;
 import org.apache.avro.generic.GenericRecord;
 import org.junit.jupiter.api.DisplayName;
@@ -27,6 +24,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
+
+import static io.github.ktestify.match.RecordMatcherFactory.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("RecordMatcherFactory")
 class RecordMatcherFactoryTest {
@@ -101,7 +101,7 @@ class RecordMatcherFactoryTest {
         @Test
         @DisplayName("throws ConsumerException for an unrecognised method name")
         void throwsForUnknown() {
-            assertThrows(ConsumerException.class, () -> RecordMatcherFactory.forRaw("methodDoesNotExist"));
+            assertThrows(ConfigException.class, () -> RecordMatcherFactory.forRaw("methodDoesNotExist"));
         }
     }
 
@@ -158,25 +158,25 @@ class RecordMatcherFactoryTest {
         @Test
         @DisplayName("throws ConsumerException for an unrecognised method name")
         void throwsForUnknown() {
-            assertThrows(ConsumerException.class, () -> RecordMatcherFactory.forAvro("methodDoesNotExist"));
+            assertThrows(ConfigException.class, () -> RecordMatcherFactory.forAvro("methodDoesNotExist"));
         }
 
         @Test
         @DisplayName("throws ConsumerException for XML method (not supported for Avro)")
         void throwsForXml() {
-            assertThrows(ConsumerException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_XML));
+            assertThrows(ConfigException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_XML));
         }
 
         @Test
         @DisplayName("throws ConsumerException for XPath method (not supported for Avro)")
         void throwsForXPath() {
-            assertThrows(ConsumerException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_XPATH));
+            assertThrows(ConfigException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_XPATH));
         }
 
         @Test
         @DisplayName("throws ConsumerException for attribute method (raw transports only)")
         void throwsForAttributes() {
-            assertThrows(ConsumerException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_ATTRIBUTES));
+            assertThrows(ConfigException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_ATTRIBUTES));
         }
     }
 
