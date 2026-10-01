@@ -55,7 +55,7 @@ public class DynamicVariableProcessor {
                 LOGGER.info("Processing dynamic variable: {} with format: {}", variableName, format);
                 DynamicVariable variable = DynamicVariableFactory.getVariable(variableName);
                 String replacement = variable.process(format);
-                sb.append(replacement);
+                matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
             } else {
                 LOGGER.warn("Dynamic variable {} is not registered, keeping it unchanged.", variableName);
                 matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group(0)));

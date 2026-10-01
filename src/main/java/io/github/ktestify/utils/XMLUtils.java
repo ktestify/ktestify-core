@@ -15,27 +15,25 @@
  */
 package io.github.ktestify.utils;
 
-import java.io.StringReader;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import lombok.experimental.UtilityClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xmlunit.builder.DiffBuilder;
-import org.xmlunit.diff.Comparison;
-import org.xmlunit.diff.ComparisonResult;
-import org.xmlunit.diff.ComparisonType;
-import org.xmlunit.diff.DefaultNodeMatcher;
-import org.xmlunit.diff.Diff;
-import org.xmlunit.diff.Difference;
-import org.xmlunit.diff.DifferenceEvaluator;
-import org.xmlunit.diff.ElementSelectors;
+import org.xmlunit.diff.*;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.StringReader;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Utility class for comparing XML documents, with optional element exclusion and XPath-based comparison.
@@ -49,6 +47,77 @@ public final class XMLUtils {
     private static final int XMLNS_PREFIX_LENGTH = "xmlns:".length();
 
     /**
+     * Creates a hardened {@link SAXParserFactory} with XXE protections enabled.
+     *
+     * <p>Disables external general/parameter entities, DOCTYPE declarations, and external DTD loading.
+     *
+     * @return a hardened SAXParserFactory
+     */
+    private static SAXParserFactory newHardenedSAXParserFactory() {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        // Namespace-awareness is intentionally NOT enabled here: getNamespacesFromString
+        // relies on xmlns:* attributes being reported as regular attributes via getQName(),
+        // which namespace-aware mode would suppress. XXE hardening features below are
+        // independent of this setting.
+        try {
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        } catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+            LOGGER.warn("Could not disallow DOCTYPE declarations on SAXParserFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        } catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+            LOGGER.warn("Could not disable external general entities on SAXParserFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        } catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+            LOGGER.warn("Could not disable external parameter entities on SAXParserFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        } catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+            LOGGER.warn("Could not disable external DTD loading on SAXParserFactory: {}", e.getMessage());
+        }
+        return factory;
+    }
+
+    /**
+     * Creates a hardened {@link DocumentBuilderFactory} with XXE protections enabled.
+     *
+     * <p>Disables external general/parameter entities, DOCTYPE declarations, and external DTD loading.
+     * Used by XMLUnit's {@link DiffBuilder} via {@code withDocumentBuilderFactory}.
+     *
+     * @return a hardened DocumentBuilderFactory
+     */
+    private static DocumentBuilderFactory newHardenedDocumentBuilderFactory() {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        try {
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        } catch (ParserConfigurationException e) {
+            LOGGER.warn("Could not disallow DOCTYPE declarations on DocumentBuilderFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        } catch (ParserConfigurationException e) {
+            LOGGER.warn("Could not disable external general entities on DocumentBuilderFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        } catch (ParserConfigurationException e) {
+            LOGGER.warn("Could not disable external parameter entities on DocumentBuilderFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        } catch (ParserConfigurationException e) {
+            LOGGER.warn("Could not disable external DTD loading on DocumentBuilderFactory: {}", e.getMessage());
+        }
+        factory.setExpandEntityReferences(false);
+        factory.setXIncludeAware(false);
+        return factory;
+    }
+
+    /**
      * Extracts XML namespace declarations from a raw XML string.
      *
      * @param xmlContent the XML document as a string
@@ -57,7 +126,7 @@ public final class XMLUtils {
     public static Map<String, String> getNamespacesFromString(String xmlContent) {
         Map<String, String> namespaces = new HashMap<>();
         try {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
+            SAXParserFactory factory = newHardenedSAXParserFactory();
             SAXParser saxParser = factory.newSAXParser();
             saxParser.parse(new InputSource(new StringReader(xmlContent)), new DefaultHandler() {
                 @Override
@@ -88,6 +157,7 @@ public final class XMLUtils {
         LOGGER.debug("Comparing XML:\nActual  : {}\nExpected: {}", actualValue, expectedValue);
         Diff diff = DiffBuilder.compare(actualValue)
                 .withTest(expectedValue)
+                .withDocumentBuilderFactory(newHardenedDocumentBuilderFactory())
                 .withNodeMatcher(new DefaultNodeMatcher(ElementSelectors.byNameAndText))
                 .checkForIdentical()
                 .build();
@@ -118,6 +188,7 @@ public final class XMLUtils {
 
         Diff diff = DiffBuilder.compare(actualValue)
                 .withTest(expectedValue)
+                .withDocumentBuilderFactory(newHardenedDocumentBuilderFactory())
                 .normalizeWhitespace()
                 .ignoreWhitespace()
                 .withNodeMatcher(new DefaultNodeMatcher(ElementSelectors.byNameAndText))
@@ -150,6 +221,7 @@ public final class XMLUtils {
             Map<String, String> namespaces = getNamespacesFromString(expectedValue);
             Diff diff = DiffBuilder.compare(actualValue)
                     .withTest(expectedValue)
+                    .withDocumentBuilderFactory(newHardenedDocumentBuilderFactory())
                     .withNodeMatcher(new DefaultNodeMatcher(
                             ElementSelectors.byXPath(xPathExpression, namespaces, ElementSelectors.byNameAndText)))
                     .checkForIdentical()
