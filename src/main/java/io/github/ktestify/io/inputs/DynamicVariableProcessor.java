@@ -15,15 +15,16 @@
  */
 package io.github.ktestify.io.inputs;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DynamicVariableProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamicVariableProcessor.class);
 
-    private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{(\\w+)(?::([^}]*?))?\\}\\}");
+    private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{(\\w+)(?::([^}]*?))?}}");
     private static final int GROUP_NAME = 1;
     private static final int GROUP_FORMAT = 2;
 
@@ -34,7 +35,7 @@ public class DynamicVariableProcessor {
         }
 
         Matcher matcher = VARIABLE_PATTERN.matcher(input);
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         // Check if any matches exist
         if (!matcher.find()) {
@@ -54,7 +55,7 @@ public class DynamicVariableProcessor {
                 LOGGER.info("Processing dynamic variable: {} with format: {}", variableName, format);
                 DynamicVariable variable = DynamicVariableFactory.getVariable(variableName);
                 String replacement = variable.process(format);
-                matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+                sb.append(replacement);
             } else {
                 LOGGER.warn("Dynamic variable {} is not registered, keeping it unchanged.", variableName);
                 matcher.appendReplacement(sb, Matcher.quoteReplacement(matcher.group(0)));
