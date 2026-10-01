@@ -20,10 +20,9 @@ import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
-
-import java.util.List;
 
 /**
  * Asserts that the Avro record key equals the expected key in {@link MatchContext#getMatchKey()}.

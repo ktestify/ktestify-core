@@ -23,10 +23,9 @@ import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.serdes.AvroDeserializer;
 import io.github.ktestify.utils.serdes.AvroUtils;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
-
-import java.util.List;
 
 /**
  * Asserts both the record <em>key</em> and Avro <em>value</em> against a configured expected key and expected JSON

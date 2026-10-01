@@ -15,6 +15,9 @@
  */
 package io.github.ktestify.match.impl;
 
+import static io.github.ktestify.match.impl.MatcherTestSupport.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import io.github.ktestify.exceptions.ComparisonException;
 import io.github.ktestify.match.KeyMatchStrategy;
 import io.github.ktestify.match.MatchContext;
@@ -22,9 +25,6 @@ import io.github.ktestify.match.MatchResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import static io.github.ktestify.match.impl.MatcherTestSupport.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("KeyRecordMatcher")
 class KeyRecordMatcherTest {
