@@ -20,11 +20,12 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.RestService;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.config.SchemaRegistryConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Factory for creating Schema Registry clients using ktestify configuration.
@@ -57,17 +58,42 @@ public final class SchemaRegistryClientFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(SchemaRegistryClientFactory.class);
 
+    /**
+     * Cached singleton client created from the default configuration. Reused across all callers in the same JVM
+     * to avoid creating a new {@link RestService} (and its HTTP connection pool) on every call.
+     */
+    private static volatile SchemaRegistryClient cachedClient;
+
     private SchemaRegistryClientFactory() {
         // Utility class
     }
 
     /**
-     * Creates a Schema Registry client using default configuration.
+     * Returns a cached Schema Registry client using default configuration.
      *
-     * @return a new Schema Registry client
+     * <p>The first call creates and caches the client; subsequent calls return the same instance.
+     *
+     * @return a cached Schema Registry client
      */
     public static SchemaRegistryClient createClient() {
-        return createClient(KtestifyConfig.getOrLoad());
+        if (cachedClient == null) {
+            synchronized (SchemaRegistryClientFactory.class) {
+                if (cachedClient == null) {
+                    cachedClient = createClient(KtestifyConfig.getOrLoad());
+                }
+            }
+        }
+        return cachedClient;
+    }
+
+    /**
+     * Clears the cached singleton client. Primarily intended for test isolation so that a new config
+     * (e.g. via {@link KtestifyConfig#reset()}) takes effect on the next {@link #createClient()} call.
+     */
+    public static void resetCache() {
+        synchronized (SchemaRegistryClientFactory.class) {
+            cachedClient = null;
+        }
     }
 
     /**
