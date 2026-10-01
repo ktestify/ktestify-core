@@ -23,9 +23,10 @@ import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.serdes.AvroDeserializer;
 import io.github.ktestify.utils.serdes.AvroUtils;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
+
+import java.util.List;
 
 /**
  * Asserts both the record <em>key</em> and Avro <em>value</em> against a configured expected key and expected JSON
@@ -54,13 +55,13 @@ public class AvroFileKeyRecordMatcher implements RecordMatcher<GenericRecord> {
             throw new ComparisonException("AvroFileKeyRecordMatcher requires matchFilePath to be set.");
         }
 
-        ConsumedRecord<GenericRecord> record = records.get(0);
+        ConsumedRecord<GenericRecord> record = records.getFirst();
         String actualKey = record.getKey();
         String expectedKey = context.getMatchKey();
         String expectedValue = FileUtils.getFileContent(FileUtils.getFile(context.getMatchFilePath()));
         String actualValue = toJson(record.getValue());
 
-        boolean keyMatches = expectedKey.equals(actualKey);
+        boolean keyMatches = context.getKeyMatchStrategy().matches(expectedKey, actualKey);
         boolean valueMatches =
                 AvroUtils.doesAvroRecordsSmartMatches(AvroUtils.getPrettyAvroValue(expectedValue), actualValue);
 

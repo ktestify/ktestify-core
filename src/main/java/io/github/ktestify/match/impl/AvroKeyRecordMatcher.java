@@ -20,9 +20,10 @@ import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
+
+import java.util.List;
 
 /**
  * Asserts that the Avro record key equals the expected key in {@link MatchContext#getMatchKey()}.
@@ -41,16 +42,24 @@ public class AvroKeyRecordMatcher implements RecordMatcher<GenericRecord> {
         }
 
         String expectedKey = context.getMatchKey();
-        String actualKey = records.get(0).getKey();
+        String actualKey = records.getFirst().getKey();
 
-        if (expectedKey.equals(actualKey)) {
-            log.info("Avro record key matches expected key '{}'.", expectedKey);
+        if (context.getKeyMatchStrategy().matches(expectedKey, actualKey)) {
+            log.info(
+                    "Avro record key matches expected key '{}' using {} strategy.",
+                    expectedKey,
+                    context.getKeyMatchStrategy());
             return MatchResult.pass(expectedKey, actualKey);
         }
 
-        log.error("Avro record key mismatch — expected: '{}', actual: '{}'", expectedKey, actualKey);
+        log.error(
+                "Avro record key mismatch, expected: '{}', actual: '{}', strategy: {}",
+                expectedKey,
+                actualKey,
+                context.getKeyMatchStrategy());
         return MatchResult.fail(
-                "Avro record key does not match — expected: '" + expectedKey + "', actual: '" + actualKey + "'.",
+                "Avro record key does not match, expected: '" + expectedKey + "', actual: '" + actualKey
+                        + "', strategy: " + context.getKeyMatchStrategy() + ".",
                 expectedKey,
                 actualKey);
     }

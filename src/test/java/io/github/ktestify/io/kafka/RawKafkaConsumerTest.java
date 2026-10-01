@@ -15,39 +15,34 @@
  */
 package io.github.ktestify.io.kafka;
 
-import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_FILE;
-import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_XML;
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.github.ktestify.config.ConfigBuilder;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.io.kafka.impl.RawKafkaConsumer;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.tests.extentions.KafkaTestExtension;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+
+import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_FILE;
+import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_XML;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests for {@link RawKafkaConsumer}.
  *
- * <p>Kafka broker is provided by {@link KafkaTestExtension}. Records are seeded via a plain {@link KafkaProducer} — NOT
- * the project's RawKafkaProducer — keeping the consumer under test fully isolated from the producer implementation.
+ * <p>Kafka broker is provided by {@link KafkaTestExtension}. Records are seeded via a plain {@link KafkaProducer}: NOT
+ * the project's RawKafkaProducer: keeping the consumer under test fully isolated from the producer implementation.
  *
  * <p>Every test gets a fresh, uniquely-named topic and {@link KafkaRecordFetcher#clearMatchedRecords()} is called
  * before each test to prevent deduplication state leaking between tests.
@@ -157,7 +152,7 @@ class RawKafkaConsumerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Consume-only — no matcher")
+    @DisplayName("Consume-only: no matcher")
     class ConsumeOnly {
 
         @Test
@@ -172,7 +167,7 @@ class RawKafkaConsumerTest {
         @Test
         @DisplayName("throws ConsumerException when topic is empty and timeout elapses")
         void throwsWhenTopicEmpty() {
-            // Do NOT seed — consumer must time out
+            // Do NOT seed: consumer must time out
             ConsumerContext<String, String> ctx = ConsumerContext.<String, String>builder()
                     .topic(outputTopic())
                     .consumer(KafkaClientFactory.createRawConsumer(
@@ -190,7 +185,7 @@ class RawKafkaConsumerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("File matching — METHOD_MATCH_FILE")
+    @DisplayName("File matching: METHOD_MATCH_FILE")
     class FileMatching {
 
         @Test
@@ -245,7 +240,7 @@ class RawKafkaConsumerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Key filter — expectedRecordKey")
+    @DisplayName("Key filter: expectedRecordKey")
     class KeyFilter {
 
         @Test
@@ -273,7 +268,7 @@ class RawKafkaConsumerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("XML matching — METHOD_MATCH_XML")
+    @DisplayName("XML matching: METHOD_MATCH_XML")
     class XmlMatching {
 
         @Test
@@ -301,7 +296,7 @@ class RawKafkaConsumerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Batch consumption — isBatchConsumer(true)")
+    @DisplayName("Batch consumption: isBatchConsumer(true)")
     class BatchConsumption {
 
         /** The 4 payloads seeded in every test in this nested class. */
@@ -350,7 +345,7 @@ class RawKafkaConsumerTest {
                                     .topic(outputTopic())
                                     .consumer(KafkaClientFactory.createRawConsumer(
                                             KtestifyConfig.getOrLoad(), "raw-batch-short-" + UUID.randomUUID()))
-                                    .readTimeout(3_000L) // short timeout — we expect a failure
+                                    .readTimeout(3_000L) // short timeout: we expect a failure
                                     .consumerDeltaTime(60_000L)
                                     .isBatchConsumer(true)
                                     .batchSize(4)
@@ -359,7 +354,7 @@ class RawKafkaConsumerTest {
         }
 
         @Test
-        @DisplayName("all 4 records are registered as matched — a second consumer finds nothing")
+        @DisplayName("all 4 records are registered as matched: a second consumer finds nothing")
         void batchRecordsAreDeduplicated() throws Exception {
             seedBatch();
 
@@ -375,7 +370,7 @@ class RawKafkaConsumerTest {
                             .build())
                     .call();
 
-            // Second consumer — all records already matched, so it must time out
+            // Second consumer: all records already matched, so it must time out
             assertThrows(
                     ConsumerException.class,
                     () -> new RawKafkaConsumer(ConsumerContext.<String, String>builder()
@@ -392,12 +387,12 @@ class RawKafkaConsumerTest {
     }
 
     // =========================================================================
-    // referenceTimestamp — pinned "now" fixes clock-drift across delayed fetches
+    // referenceTimestamp: pinned "now" fixes clock-drift across delayed fetches
     // (see https://github.com/ktestify/ktestify-cucumber/issues/38)
     // =========================================================================
 
     @Nested
-    @DisplayName("referenceTimestamp — pinned 'now' avoids clock drift")
+    @DisplayName("referenceTimestamp: pinned 'now' avoids clock drift")
     class ReferenceTimestamp {
 
         /** Narrow enough that a few seconds of drift pushes the seek window past the seeded record. */
@@ -412,7 +407,7 @@ class RawKafkaConsumerTest {
             seedRecord("KEY-1", "{\"orderId\":\"ORD-DRIFT\"}");
 
             // Simulate the delay a slow Cucumber step (or a previous DataTable row) would introduce
-            // before this consumer actually seeks — this is exactly the drift the maintainer described
+            // before this consumer actually seeks: this is exactly the drift the maintainer described
             // in issue #38.
             Thread.sleep(SIMULATED_STEP_DELAY_MS);
 
@@ -422,7 +417,7 @@ class RawKafkaConsumerTest {
                             KtestifyConfig.getOrLoad(), "drift-consumer-" + UUID.randomUUID()))
                     .readTimeout(3_000L)
                     .consumerDeltaTime(NARROW_DELTA_TIME_MS)
-                    // No referenceTimestamp — "now" is resolved live, at seek time.
+                    // No referenceTimestamp: "now" is resolved live, at seek time.
                     .build();
 
             assertThrows(
@@ -467,7 +462,7 @@ class RawKafkaConsumerTest {
             seedRecord("KEY-1", "{\"orderId\":\"ORD-A\"}");
             seedRecord("KEY-2", "{\"orderId\":\"ORD-B\"}");
 
-            // First "row" — simulate a small delay before it runs.
+            // First "row": simulate a small delay before it runs.
             Thread.sleep(1_500L);
             boolean firstResult = new RawKafkaConsumer(ConsumerContext.<String, String>builder()
                             .topic(outputTopic())
@@ -480,7 +475,7 @@ class RawKafkaConsumerTest {
                             .build())
                     .call();
 
-            // Second "row" — additional delay elapses before it runs too.
+            // Second "row": additional delay elapses before it runs too.
             Thread.sleep(1_500L);
             boolean secondResult = new RawKafkaConsumer(ConsumerContext.<String, String>builder()
                             .topic(outputTopic())

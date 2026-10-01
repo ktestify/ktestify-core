@@ -15,15 +15,16 @@
  */
 package io.github.ktestify.match.impl;
 
-import static io.github.ktestify.match.impl.MatcherTestSupport.*;
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.github.ktestify.exceptions.ComparisonException;
+import io.github.ktestify.match.KeyMatchStrategy;
 import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import static io.github.ktestify.match.impl.MatcherTestSupport.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("KeyRecordMatcher")
 class KeyRecordMatcherTest {
@@ -85,6 +86,89 @@ class KeyRecordMatcherTest {
             MatchResult result = matcher.match(rawRecord("ACTUAL", "value"), ctxWithKey("EXPECTED"));
             assertEquals("EXPECTED", result.getExpected());
             assertEquals("ACTUAL", result.getActual());
+        }
+    }
+
+    @Nested
+    @DisplayName("Key match strategies")
+    class KeyStrategies {
+
+        @Test
+        @DisplayName("STARTS_WITH passes when key starts with expected prefix")
+        void startsWithPasses() throws ComparisonException {
+            MatchResult result = matcher.match(
+                    rawRecord("ORD-abc-123", "value"), ctxWithKeyAndStrategy("ORD-", KeyMatchStrategy.STARTS_WITH));
+            assertTrue(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("STARTS_WITH fails when key does not start with expected prefix")
+        void startsWithFails() throws ComparisonException {
+            MatchResult result = matcher.match(
+                    rawRecord("USER-abc-123", "value"), ctxWithKeyAndStrategy("ORD-", KeyMatchStrategy.STARTS_WITH));
+            assertFalse(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("CONTAINS passes when key contains expected substring")
+        void containsPasses() throws ComparisonException {
+            MatchResult result = matcher.match(
+                    rawRecord("order-ABC-123", "value"), ctxWithKeyAndStrategy("ABC", KeyMatchStrategy.CONTAINS));
+            assertTrue(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("CONTAINS fails when key does not contain expected substring")
+        void containsFails() throws ComparisonException {
+            MatchResult result = matcher.match(
+                    rawRecord("order-XYZ-123", "value"), ctxWithKeyAndStrategy("ABC", KeyMatchStrategy.CONTAINS));
+            assertFalse(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("ENDS_WITH passes when key ends with expected suffix")
+        void endsWithPasses() throws ComparisonException {
+            MatchResult result = matcher.match(
+                    rawRecord("ORD-abc-123", "value"), ctxWithKeyAndStrategy("-123", KeyMatchStrategy.ENDS_WITH));
+            assertTrue(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("ENDS_WITH fails when key does not end with expected suffix")
+        void endsWithFails() throws ComparisonException {
+            MatchResult result = matcher.match(
+                    rawRecord("ORD-abc-456", "value"), ctxWithKeyAndStrategy("-123", KeyMatchStrategy.ENDS_WITH));
+            assertFalse(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("REGEX passes when key matches expected pattern")
+        void regexPasses() throws ComparisonException {
+            MatchResult result = matcher.match(
+                    rawRecord("ORD-123456", "value"), ctxWithKeyAndStrategy("ORD-\\d{6}", KeyMatchStrategy.REGEX));
+            assertTrue(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("REGEX fails when key does not match expected pattern")
+        void regexFails() throws ComparisonException {
+            MatchResult result = matcher.match(
+                    rawRecord("ORD-abc", "value"), ctxWithKeyAndStrategy("ORD-\\d{6}", KeyMatchStrategy.REGEX));
+            assertFalse(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("EXACT is the default when strategy is not set")
+        void exactIsDefault() throws ComparisonException {
+            MatchResult result = matcher.match(rawRecord("ORD-123", "value"), ctxWithKey("ORD-123"));
+            assertTrue(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("EXACT fails for partial match (backward compatibility)")
+        void exactFailsForPartial() throws ComparisonException {
+            MatchResult result = matcher.match(rawRecord("ORD-123", "value"), ctxWithKey("ORD"));
+            assertFalse(result.isPassed());
         }
     }
 }

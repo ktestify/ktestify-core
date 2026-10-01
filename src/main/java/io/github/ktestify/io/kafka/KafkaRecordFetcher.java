@@ -15,22 +15,12 @@
  */
 package io.github.ktestify.io.kafka;
 
-import static io.github.ktestify.constants.LogMessagesConstants.*;
-
 import io.github.ktestify.config.FrameworkConfig;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.FetchException;
 import io.github.ktestify.io.core.RecordFetcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.models.MatchedRecord;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -38,6 +28,13 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
+
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import static io.github.ktestify.constants.LogMessagesConstants.*;
 
 /**
  * Kafka implementation of {@link RecordFetcher}.
@@ -337,7 +334,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
 
     /**
      * Returns {@code true} if no key-filter is configured, or if the record key matches the expected key from the
-     * context / properties.
+     * context / properties using the configured {@link io.github.ktestify.match.KeyMatchStrategy}.
      */
     private boolean passesKeyFilter(ConsumerRecord<K, V> record) {
         // Context takes priority over properties map
@@ -351,7 +348,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         }
 
         String recordKey = record.key() != null ? record.key().toString() : null;
-        if (expectedKey.equals(recordKey)) {
+        if (context.getKeyMatchStrategy().matches(expectedKey, recordKey)) {
             log.info(MESSAGE_CONSUMER_RECORD_MATCHES_EXPECTED_KEY, expectedKey);
             return true;
         }

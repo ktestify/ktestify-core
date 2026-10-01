@@ -15,11 +15,12 @@
  */
 package io.github.ktestify.match;
 
+import lombok.Builder;
+import lombok.Value;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import lombok.Builder;
-import lombok.Value;
 
 /**
  * Immutable value object that carries all configuration needed by a {@code RecordMatcher}.
@@ -72,6 +73,18 @@ public class MatchContext {
 
     /** Expected value for {@link #matchKey}. */
     String matchValue;
+
+    /**
+     * Strategy used to compare {@link #matchKey} against the actual record key in key-related matchers
+     * ({@code KeyRecordMatcher}, {@code FileKeyRecordMatcher}, {@code AvroKeyRecordMatcher},
+     * {@code AvroFileKeyRecordMatcher}).
+     *
+     * <p>Defaults to {@link KeyMatchStrategy#EXACT}, preserving the original exact-equality behavior.
+     *
+     * @since 1.1.5
+     */
+    @Builder.Default
+    KeyMatchStrategy keyMatchStrategy = KeyMatchStrategy.EXACT;
 
     /**
      * Multiple key/value pairs for multi-field inline matching.
