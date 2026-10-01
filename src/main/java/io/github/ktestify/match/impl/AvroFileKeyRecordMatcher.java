@@ -22,9 +22,10 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.serdes.AvroUtils;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
+
+import java.util.List;
 
 /**
  * Asserts both the record <em>key</em> and Avro <em>value</em> against a configured expected key and expected JSON
@@ -65,7 +66,7 @@ public class AvroFileKeyRecordMatcher implements RecordMatcher<GenericRecord> {
         GenericRecord value = record.getValue();
         String actualValue = value == null ? null : AvroJson.of(value);
 
-        boolean keyMatches = expectedKey.equals(actualKey);
+        boolean keyMatches = context.getKeyMatchStrategy().matches(expectedKey, actualKey);
         boolean valueMatches = actualValue != null && valueMatches(expectedValue, actualValue, context);
 
         if (!keyMatches) {

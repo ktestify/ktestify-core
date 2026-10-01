@@ -15,16 +15,18 @@
  */
 package io.github.ktestify.match.impl;
 
+import io.github.ktestify.match.KeyMatchStrategy;
 import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
+import org.apache.avro.generic.GenericRecord;
+
 import java.net.URL;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import org.apache.avro.generic.GenericRecord;
 
 /**
  * Shared test helpers for {@link RecordMatcher} unit tests. Keeps each test class lean: no boilerplate record
@@ -105,6 +107,14 @@ final class MatcherTestSupport {
     /** Builds a {@link MatchContext} with only a match key set. */
     static MatchContext ctxWithKey(String matchKey) {
         return MatchContext.builder().matchKey(matchKey).build();
+    }
+
+    /** Builds a {@link MatchContext} with a match key and a key match strategy. */
+    static MatchContext ctxWithKeyAndStrategy(String matchKey, KeyMatchStrategy strategy) {
+        return MatchContext.builder()
+                .matchKey(matchKey)
+                .keyMatchStrategy(strategy)
+                .build();
     }
 
     /** Builds a {@link MatchContext} with a match key and an inline expected value. */

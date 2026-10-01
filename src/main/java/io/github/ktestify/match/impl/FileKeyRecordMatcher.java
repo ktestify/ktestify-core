@@ -22,8 +22,9 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.StringDiffUtils;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 /**
  * Compares both the record <em>key</em> and <em>value</em> against a configured expected key and expected file content.
@@ -60,7 +61,7 @@ public class FileKeyRecordMatcher implements RecordMatcher<String> {
         String expectedKey = context.getMatchKey();
         String actualKey = record.getKey();
 
-        boolean keyMatches = expectedKey.equals(actualKey);
+        boolean keyMatches = context.getKeyMatchStrategy().matches(expectedKey, actualKey);
         boolean valueMatches = expectedValue.equals(actualValue);
 
         if (!keyMatches) {
