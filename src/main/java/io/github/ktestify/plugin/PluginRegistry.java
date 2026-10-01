@@ -16,14 +16,13 @@
 package io.github.ktestify.plugin;
 
 import io.github.ktestify.exceptions.PluginException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Discovers, loads, initializes, and holds all active {@link KtestifyPlugin} instances for the current JVM run.
@@ -74,6 +73,7 @@ public final class PluginRegistry {
 
     /**
      * The {@link URLClassLoader} created for external plugin JARs, or {@code null} if no external plugins were loaded.
+     *
      * <p>Kept open for the lifetime of the registry because loaded plugin classes reference it. It is closed in
      * {@link #shutdown()} after all plugins have been shut down.
      */
@@ -157,8 +157,8 @@ public final class PluginRegistry {
     }
 
     /**
-     * Shuts down all plugins in reverse initialization order, then closes the external plugin {@link URLClassLoader}
-     * if one was created.
+     * Shuts down all plugins in reverse initialization order, then closes the external plugin {@link URLClassLoader} if
+     * one was created.
      *
      * <p>Exceptions thrown by individual plugins are caught, logged as warnings, and swallowed so the remaining plugins
      * can still be shut down cleanly.
@@ -210,7 +210,7 @@ public final class PluginRegistry {
      * discovers plugins inside each JAR.
      *
      * @return the {@link URLClassLoader} created for the external JARs, or {@code null} if no external plugins were
-     *         loaded (directory not configured, missing, or empty)
+     *     loaded (directory not configured, missing, or empty)
      */
     private static URLClassLoader loadFromDirectory(String dirPath, PluginContext ctx, List<KtestifyPlugin> target) {
         if (dirPath == null || dirPath.isBlank()) {

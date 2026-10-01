@@ -16,10 +16,9 @@
 package io.github.ktestify.io.inputs.types;
 
 import io.github.ktestify.io.inputs.DynamicVariable;
-import org.apache.commons.lang3.RandomStringUtils;
-
 import java.util.Random;
 import java.util.UUID;
+import org.apache.commons.lang3.RandomStringUtils;
 
 public class RandomVariable implements DynamicVariable {
 

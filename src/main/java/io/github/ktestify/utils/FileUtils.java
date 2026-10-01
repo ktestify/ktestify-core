@@ -17,13 +17,12 @@ package io.github.ktestify.utils;
 
 import io.github.ktestify.exceptions.ComparisonException;
 import io.github.ktestify.io.inputs.DynamicVariableProcessor;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 
 @UtilityClass
 public final class FileUtils {

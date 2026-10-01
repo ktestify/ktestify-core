@@ -21,6 +21,10 @@ import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.core.AbstractProducer;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.utils.FileUtils;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -28,11 +32,6 @@ import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 public abstract class AbstractKafkaProducer<K, V> extends AbstractProducer {
 

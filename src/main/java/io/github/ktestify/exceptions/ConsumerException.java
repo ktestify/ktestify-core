@@ -21,8 +21,8 @@ package io.github.ktestify.exceptions;
  * <p>Typically wraps a {@link FetchException} from the transport layer. Also thrown for orchestration-level
  * configuration errors such as consuming from an INPUT topic or a null consumer context.
  *
- * <p>This is the only exception that test-framework adapters (Cucumber steps, Robot Framework keywords, …)
- * are expected to catch and surface as a human-readable assertion failure.
+ * <p>This is the only exception that test-framework adapters (Cucumber steps, Robot Framework keywords, …) are expected
+ * to catch and surface as a human-readable assertion failure.
  *
  * @since 0.3.0
  * @see FetchException

@@ -15,6 +15,14 @@
  */
 package io.github.ktestify.utils;
 
+import java.io.StringReader;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import lombok.experimental.UtilityClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,15 +33,6 @@ import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xmlunit.builder.DiffBuilder;
 import org.xmlunit.diff.*;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import java.io.StringReader;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Utility class for comparing XML documents, with optional element exclusion and XPath-based comparison.
@@ -85,8 +84,8 @@ public final class XMLUtils {
     /**
      * Creates a hardened {@link DocumentBuilderFactory} with XXE protections enabled.
      *
-     * <p>Disables external general/parameter entities, DOCTYPE declarations, and external DTD loading.
-     * Used by XMLUnit's {@link DiffBuilder} via {@code withDocumentBuilderFactory}.
+     * <p>Disables external general/parameter entities, DOCTYPE declarations, and external DTD loading. Used by
+     * XMLUnit's {@link DiffBuilder} via {@code withDocumentBuilderFactory}.
      *
      * @return a hardened DocumentBuilderFactory
      */
