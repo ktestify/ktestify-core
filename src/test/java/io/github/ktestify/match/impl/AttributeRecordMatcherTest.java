@@ -15,19 +15,20 @@
  */
 package io.github.ktestify.match.impl;
 
-import static io.github.ktestify.match.impl.MatcherTestSupport.ctxWithAttributes;
-import static io.github.ktestify.match.impl.MatcherTestSupport.rawRecordWithAttributes;
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.github.ktestify.exceptions.ComparisonException;
 import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static io.github.ktestify.match.impl.MatcherTestSupport.ctxWithAttributes;
+import static io.github.ktestify.match.impl.MatcherTestSupport.rawRecordWithAttributes;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("AttributeRecordMatcher")
 class AttributeRecordMatcherTest {
@@ -147,10 +148,12 @@ class AttributeRecordMatcherTest {
     class Misconfiguration {
 
         @Test
-        @DisplayName("throws ComparisonException when there is no record to inspect")
-        void throwsWithoutRecords() {
+        @DisplayName("fails with noRecords when there is no record to inspect, like every other matcher")
+        void failsWithoutRecords() throws ComparisonException {
             MatchContext context = ctxWithAttributes(Map.of("statusCode", "200"));
-            assertThrows(ComparisonException.class, () -> matcher.match(List.of(), context));
+            MatchResult result = matcher.match(List.of(), context);
+            assertFalse(result.isPassed());
+            assertEquals(MatchResult.noRecords().getDiff(), result.getDiff());
         }
     }
 }
