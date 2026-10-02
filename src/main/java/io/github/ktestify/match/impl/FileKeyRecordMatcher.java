@@ -22,8 +22,9 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.StringDiffUtils;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 /**
  * Compares both the record <em>key</em> and <em>value</em> against a configured expected key and expected file content.
@@ -31,9 +32,11 @@ import lombok.extern.slf4j.Slf4j;
  * <p>Requires:
  *
  * <ul>
- *   <li>{@link MatchContext#getMatchKey()} — expected record key
- *   <li>{@link MatchContext#getMatchFilePath()} — path to the expected value file
+ *   <li>{@link MatchContext#getMatchKey()}: the expected record key
+ *   <li>{@link MatchContext#getMatchFilePath()}: the path to the expected value file
  * </ul>
+ *
+ * <p>A record with a {@code null} value (tombstone) never matches; the key is still compared and reported.
  *
  * @since 0.3.0
  */
@@ -42,7 +45,9 @@ public class FileKeyRecordMatcher implements RecordMatcher<String> {
 
     @Override
     public MatchResult match(List<ConsumedRecord<String>> records, MatchContext context) throws ComparisonException {
-
+        if (records == null || records.isEmpty()) {
+            return MatchResult.noRecords();
+        }
         if (context.getMatchKey() == null || context.getMatchKey().isBlank()) {
             throw new ComparisonException("FileKeyRecordMatcher requires matchKey to be set.");
         }
@@ -50,19 +55,21 @@ public class FileKeyRecordMatcher implements RecordMatcher<String> {
             throw new ComparisonException("FileKeyRecordMatcher requires matchFilePath to be set.");
         }
 
-        ConsumedRecord<String> record = records.get(0);
+        ConsumedRecord<String> record = records.getFirst();
         String expectedValue = FileUtils.getFileContent(FileUtils.getFile(context.getMatchFilePath()));
         String actualValue = record.getValue();
         String expectedKey = context.getMatchKey();
         String actualKey = record.getKey();
 
         boolean keyMatches = expectedKey.equals(actualKey);
-        boolean valueMatches = actualValue.equals(expectedValue);
+        boolean valueMatches = expectedValue.equals(actualValue);
 
         if (!keyMatches) {
-            log.error("Key mismatch — expected: '{}', actual: '{}'", expectedKey, actualKey);
+            log.error("Key mismatch, expected: '{}', actual: '{}'", expectedKey, actualKey);
         }
-        if (!valueMatches) {
+        if (actualValue == null) {
+            log.error("Value mismatch: record value is null (tombstone).");
+        } else if (!valueMatches) {
             log.error(
                     "Value mismatch.\nExpected diff:\n{}\nActual diff:\n{}",
                     StringDiffUtils.getPrettyStringDiff(expectedValue, actualValue, StringDiffUtils.Type.EXPECTED),
@@ -73,9 +80,8 @@ public class FileKeyRecordMatcher implements RecordMatcher<String> {
             log.info("Record key and value both match.");
             return MatchResult.pass(expectedValue, actualValue);
         }
-        return MatchResult.fail(
-                "Key match: " + keyMatches + ", value match: " + valueMatches,
-                expectedKey + " / " + expectedValue,
-                actualKey + " / " + actualValue);
+        String diff = "Key match: " + keyMatches + ", value match: " + valueMatches
+                + (actualValue == null ? " (" + MatchResult.NULL_VALUE_MESSAGE + ")" : "");
+        return MatchResult.fail(diff, expectedKey + " / " + expectedValue, actualKey + " / " + actualValue);
     }
 }

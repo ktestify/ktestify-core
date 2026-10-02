@@ -19,15 +19,17 @@ import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 /**
  * A {@link RecordMatcher} that always passes.
  *
  * <p>Use this when the test only needs to verify that a record was <em>produced</em> to the source (i.e. it exists),
  * without asserting anything about its content. It is also the safe default when no {@code matchMethod} has been
- * configured.
+ * configured. Existence is guaranteed by the transport layer, which throws when no record arrives; this matcher never
+ * inspects the list, so a tombstone or an empty list both pass.
  *
  * @param <V> the type of the record value
  * @since 0.3.0
@@ -38,7 +40,8 @@ public class NoOpRecordMatcher<V> implements RecordMatcher<V> {
     @Override
     public MatchResult match(List<ConsumedRecord<V>> records, MatchContext context) {
         log.debug(
-                "NoOpRecordMatcher: skipping assertion on {} record(s) — no match method configured.", records.size());
+                "NoOpRecordMatcher: skipping assertion on {} record(s), no match method configured.",
+                records == null ? 0 : records.size());
         return MatchResult.pass();
     }
 }

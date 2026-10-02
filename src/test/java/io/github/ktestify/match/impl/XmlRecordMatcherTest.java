@@ -15,16 +15,17 @@
  */
 package io.github.ktestify.match.impl;
 
-import static io.github.ktestify.match.impl.MatcherTestSupport.*;
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.github.ktestify.exceptions.ComparisonException;
 import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
-import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static io.github.ktestify.match.impl.MatcherTestSupport.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("XmlRecordMatcher")
 class XmlRecordMatcherTest {
@@ -106,7 +107,7 @@ class XmlRecordMatcherTest {
         @Test
         @DisplayName("fails when differing element is not in the exclusion list")
         void failsWhenNotExcluded() throws ComparisonException {
-            // status differs but only orderId is excluded — should still fail
+            // status differs but only orderId is excluded: should still fail
             MatchResult result = matcher.match(
                     rawRecord(STATUS_ONLY_DIFF_XML),
                     ctxWithFileAndExclusions("expected-order.xml", List.of("orderId")));
