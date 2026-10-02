@@ -122,6 +122,8 @@ public class MatchResult {
      * @since 1.1.4
      */
     public static MatchResult nullValue(String expected) {
-        return new MatchResult(false, "Record value is null (tombstone).", expected, null);
+        return new MatchResult(false, NULL_VALUE_MESSAGE, expected, null);
     }
+
+    public static final String NULL_VALUE_MESSAGE = "Record value is null (tombstone).";
 }
