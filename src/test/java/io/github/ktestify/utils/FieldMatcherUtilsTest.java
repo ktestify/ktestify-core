@@ -15,10 +15,10 @@
  */
 package io.github.ktestify.utils;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FieldMatcherUtilsTest {
     @Test
@@ -31,7 +31,14 @@ public class FieldMatcherUtilsTest {
     @Test
     void testGetLineOutOfBounds() {
         String content = "First line\nSecond line";
-        assertThrows(ArrayIndexOutOfBoundsException.class, () -> FieldMatcherUtils.getLine(content, 2));
+        assertThrows(IllegalArgumentException.class, () -> FieldMatcherUtils.getLine(content, 2));
+        assertThrows(IllegalArgumentException.class, () -> FieldMatcherUtils.getLine(content, -1));
+    }
+
+    @Test
+    void testGetLineStripsCarriageReturn() {
+        String content = "First line\r\nSecond line\r\n";
+        Assertions.assertEquals("Second line", FieldMatcherUtils.getLine(content, 1));
     }
 
     @Test
