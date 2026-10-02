@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
  * mechanics to {@link io.github.ktestify.io.kafka.KafkaRecordFetcher} and all assertion logic to the supplied
  * {@link RecordMatcher}.
  *
- * <p>Typical usage — consume and assert against a file:
+ * <p>Typical usage: consume and assert against a file:
  *
  * <pre>
  * Consumer&lt;String, String&gt; kafkaConsumer = KafkaClientFactory.createRawConsumer();

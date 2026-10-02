@@ -37,8 +37,8 @@ import java.util.Map;
  * responsibilities belong exclusively to their respective collaborators. The only decision made here is: fetch → match
  * → return result.
  *
- * <p>Concrete subclasses only need to supply a {@link RecordMatcher} — typically resolved by
- * {@code RecordMatcherFactory} — and call the {@link #AbstractKafkaConsumer(ConsumerContext, RecordMatcher)}
+ * <p>Concrete subclasses only need to supply a {@link RecordMatcher}: typically resolved by
+ * {@code RecordMatcherFactory}: and call the {@link #AbstractKafkaConsumer(ConsumerContext, RecordMatcher)}
  * constructor.
  *
  * @param <K> the Kafka record key type
@@ -96,7 +96,7 @@ public abstract class AbstractKafkaConsumer<K, V> extends AbstractConsumer {
      *
      * <ol>
      *   <li>Create a {@link KafkaRecordFetcher} for this invocation.
-     *   <li>Call {@link KafkaRecordFetcher#fetch()} — blocks until records arrive or timeout.
+     *   <li>Call {@link KafkaRecordFetcher#fetch()}: blocks until records arrive or timeout.
      *   <li>Pass the fetched records to {@link RecordMatcher#match(List, MatchContext)}.
      *   <li>Close the fetcher unconditionally in a {@code finally} block.
      * </ol>

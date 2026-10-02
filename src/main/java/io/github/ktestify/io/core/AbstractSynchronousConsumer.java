@@ -94,7 +94,7 @@ public abstract class AbstractSynchronousConsumer<Req, V> extends AbstractConsum
      *
      * <ol>
      *   <li>Build the request via {@link #buildRequest()}.
-     *   <li>Call {@link RequestResponseClient#execute(Object)} — blocks until the response arrives or fails.
+     *   <li>Call {@link RequestResponseClient#execute(Object)}: blocks until the response arrives or fails.
      *   <li>Pass the resulting records to {@link RecordMatcher#match(List, MatchContext)}.
      * </ol>
      *

@@ -16,7 +16,7 @@
 package io.github.ktestify.exceptions;
 
 /**
- * Thrown when a Kafka producer fails to send a record — e.g. broker unreachable, serialization failure, interrupted
+ * Thrown when a Kafka producer fails to send a record: e.g. broker unreachable, serialization failure, interrupted
  * during send, or schema/payload resolution error.
  *
  * <p>This is a {@link RuntimeException} so callers are not forced to declare it in their {@code throws} clause.

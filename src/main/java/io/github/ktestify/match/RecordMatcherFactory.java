@@ -27,8 +27,8 @@ import org.apache.avro.generic.GenericRecord;
  * <p>Two typed factory methods are provided so the compiler can enforce type safety:
  *
  * <ul>
- *   <li>{@link #forRaw(String)} — for {@code String}-valued topics
- *   <li>{@link #forAvro(String)} — for {@code GenericRecord}-valued (Avro) topics
+ *   <li>{@link #forRaw(String)}: for {@code String}-valued topics
+ *   <li>{@link #forAvro(String)}: for {@code GenericRecord}-valued (Avro) topics
  * </ul>
  *
  * <p>When {@code matchMethod} is {@code null} or blank a {@link NoOpRecordMatcher} is returned, making "consume-only"

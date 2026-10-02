@@ -15,9 +15,6 @@
  */
 package io.github.ktestify.match;
 
-import static io.github.ktestify.match.RecordMatcherFactory.*;
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.github.ktestify.exceptions.ConfigException;
 import io.github.ktestify.match.impl.*;
 import org.apache.avro.generic.GenericRecord;
@@ -28,6 +25,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static io.github.ktestify.match.RecordMatcherFactory.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 @DisplayName("RecordMatcherFactory")
 class RecordMatcherFactoryTest {
 
@@ -36,7 +36,7 @@ class RecordMatcherFactoryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("forRaw — known methods")
+    @DisplayName("forRaw: known methods")
     class ForRawKnownMethods {
 
         @Test
@@ -83,7 +83,7 @@ class RecordMatcherFactoryTest {
     }
 
     @Nested
-    @DisplayName("forRaw — null/blank → NoOpRecordMatcher")
+    @DisplayName("forRaw: null/blank → NoOpRecordMatcher")
     class ForRawNullBlank {
 
         @ParameterizedTest(name = "forRaw(\"{0}\") → NoOpRecordMatcher")
@@ -95,7 +95,7 @@ class RecordMatcherFactoryTest {
     }
 
     @Nested
-    @DisplayName("forRaw — unknown method → ConsumerException")
+    @DisplayName("forRaw: unknown method → ConsumerException")
     class ForRawUnknown {
 
         @Test
@@ -110,7 +110,7 @@ class RecordMatcherFactoryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("forAvro — known methods")
+    @DisplayName("forAvro: known methods")
     class ForAvroKnownMethods {
 
         @Test
@@ -139,7 +139,7 @@ class RecordMatcherFactoryTest {
     }
 
     @Nested
-    @DisplayName("forAvro — null/blank → NoOpRecordMatcher")
+    @DisplayName("forAvro: null/blank → NoOpRecordMatcher")
     class ForAvroNullBlank {
 
         @ParameterizedTest(name = "forAvro(\"{0}\") → NoOpRecordMatcher")
@@ -152,7 +152,7 @@ class RecordMatcherFactoryTest {
     }
 
     @Nested
-    @DisplayName("forAvro — unknown method → ConsumerException")
+    @DisplayName("forAvro: unknown method → ConsumerException")
     class ForAvroUnknown {
 
         @Test

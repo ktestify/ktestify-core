@@ -19,8 +19,8 @@ package io.github.ktestify.exceptions;
  * Thrown when a {@code RecordFetcher} fails to retrieve records from an IO source (timeout, connectivity issue,
  * authentication failure, etc.).
  *
- * <p>This exception is transport-agnostic — Kafka, IBM MQ, and any future IO adapter all throw {@code FetchException}
- * so higher layers do not need to catch transport-specific exceptions.
+ * <p>This exception is transport-agnostic: Kafka, IBM MQ, and any future IO adapter all throw {@code FetchException} so
+ * higher layers do not need to catch transport-specific exceptions.
  *
  * @since 0.3.0
  */

@@ -78,7 +78,7 @@ public final class AvroDeserializer {
     /** Deserializes a {@link GenericRecord} into an ordered {@link Map}, preserving schema field order. */
     public static Map<String, Object> recordDeserializer(GenericRecord record) {
         if (record.getSchema() == null || record.getSchema().getFields() == null) {
-            LOGGER.error("Record schema or fields are null — returning empty map.");
+            LOGGER.error("Record schema or fields are null: returning empty map.");
             return new HashMap<>();
         }
         return record.getSchema().getFields().stream()
@@ -114,7 +114,7 @@ public final class AvroDeserializer {
     }
 
     // =========================================================================
-    // Private — primitive / compound
+    // Private: primitive / compound
     // =========================================================================
 
     @SuppressWarnings("unchecked")
@@ -175,7 +175,7 @@ public final class AvroDeserializer {
     }
 
     // =========================================================================
-    // Private — logical types
+    // Private: logical types
     // =========================================================================
 
     private static Instant timestampMicrosDeserializer(Object v, Schema s, Type t, LogicalType l) {

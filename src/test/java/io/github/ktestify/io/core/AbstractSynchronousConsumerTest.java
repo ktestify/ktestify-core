@@ -15,25 +15,26 @@
  */
 package io.github.ktestify.io.core;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
-
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.exceptions.FetchException;
 import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @DisplayName("AbstractSynchronousConsumer")
 class AbstractSynchronousConsumerTest {
@@ -61,7 +62,7 @@ class AbstractSynchronousConsumerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("call — success")
+    @DisplayName("call: success")
     class Success {
 
         @Test
@@ -97,7 +98,7 @@ class AbstractSynchronousConsumerTest {
         }
 
         @Test
-        @DisplayName("does not close the client — the client outlives a single call")
+        @DisplayName("does not close the client: the client outlives a single call")
         void doesNotCloseClient() {
             when(client.execute(anyString())).thenReturn(records());
             when(matcher.match(any(), any())).thenReturn(MatchResult.pass());
@@ -113,7 +114,7 @@ class AbstractSynchronousConsumerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("call — failure")
+    @DisplayName("call: failure")
     class Failure {
 
         @Test

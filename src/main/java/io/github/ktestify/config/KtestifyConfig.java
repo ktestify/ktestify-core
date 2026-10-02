@@ -17,14 +17,15 @@ package io.github.ktestify.config;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
-import java.io.File;
-import java.util.Optional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
+
+import java.io.File;
+import java.util.Optional;
 
 /**
  * Main configuration class for ktestify framework.
@@ -80,11 +81,11 @@ public final class KtestifyConfig {
      * <p>Supported keys and their environment variable overrides:
      *
      * <ul>
-     *   <li>{@code level} / {@code KTESTIFY_LOG_LEVEL} — {@code io.github.ktestify.*}
-     *   <li>{@code root-level} / {@code KTESTIFY_ROOT_LOG_LEVEL} — root logger
-     *   <li>{@code kafka-level} / {@code KTESTIFY_KAFKA_LOG_LEVEL} — {@code org.apache.kafka.*}
-     *   <li>{@code testcontainers-level} / {@code KTESTIFY_TC_LOG_LEVEL} — Testcontainers + Docker Java
-     *   <li>{@code confluent-level} / {@code KTESTIFY_CONFLUENT_LOG_LEVEL} — {@code io.confluent.*}
+     *   <li>{@code level} / {@code KTESTIFY_LOG_LEVEL}: {@code io.github.ktestify.*}
+     *   <li>{@code root-level} / {@code KTESTIFY_ROOT_LOG_LEVEL}: root logger
+     *   <li>{@code kafka-level} / {@code KTESTIFY_KAFKA_LOG_LEVEL}: {@code org.apache.kafka.*}
+     *   <li>{@code testcontainers-level} / {@code KTESTIFY_TC_LOG_LEVEL}: Testcontainers + Docker Java
+     *   <li>{@code confluent-level} / {@code KTESTIFY_CONFLUENT_LOG_LEVEL}: {@code io.confluent.*}
      * </ul>
      */
     private static void applyLogLevels(Config config) {
@@ -107,7 +108,7 @@ public final class KtestifyConfig {
         ctx.updateLoggers(log4jConfig);
 
         log.debug(
-                "Log levels applied — ktestify={} root={} kafka={} confluent={}",
+                "Log levels applied: ktestify={} root={} kafka={} confluent={}",
                 lc.getString("level"),
                 lc.getString("root-level"),
                 lc.getString("kafka-level"),
@@ -145,7 +146,7 @@ public final class KtestifyConfig {
      * <ul>
      *   <li>{@code location} / {@code KTESTIFY_JVM_TRUSTSTORE_LOCATION}
      *   <li>{@code password} / {@code KTESTIFY_JVM_TRUSTSTORE_PASSWORD}
-     *   <li>{@code type} / {@code KTESTIFY_JVM_TRUSTSTORE_TYPE} — {@code JKS} or {@code PKCS12}
+     *   <li>{@code type} / {@code KTESTIFY_JVM_TRUSTSTORE_TYPE}: {@code JKS} or {@code PKCS12}
      * </ul>
      *
      * @param config the resolved Config object containing {@code ktestify.jvm.truststore}
@@ -166,7 +167,7 @@ public final class KtestifyConfig {
         }
 
         log.info(
-                "JVM truststore applied — location={} type={}",
+                "JVM truststore applied: location={} type={}",
                 location,
                 config.getString("ktestify.jvm.truststore.type"));
     }

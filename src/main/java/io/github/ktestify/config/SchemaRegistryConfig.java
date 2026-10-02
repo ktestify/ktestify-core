@@ -16,13 +16,14 @@
 package io.github.ktestify.config;
 
 import com.typesafe.config.Config;
+import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import lombok.Getter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Schema Registry configuration.
@@ -74,7 +75,7 @@ public final class SchemaRegistryConfig {
         this.sslKeystorePassword = getOptionalString(sslConfig, "keystore-password");
 
         LOG.debug(
-                "SchemaRegistryConfig loaded — url={}, autoRegister={}, auth.credentialsSource={}, auth.userInfo={}",
+                "SchemaRegistryConfig loaded: url={}, autoRegister={}, auth.credentialsSource={}, auth.userInfo={}",
                 this.url,
                 this.autoRegisterSchemas,
                 this.basicAuthCredentialsSource.orElse("<not set>"),

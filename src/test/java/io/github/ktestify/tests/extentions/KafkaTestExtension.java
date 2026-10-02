@@ -15,9 +15,6 @@
  */
 package io.github.ktestify.tests.extentions;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -27,6 +24,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.Network;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * JUnit 5 extension that starts a Kafka broker via Testcontainers for the duration of the test class, and exposes
@@ -49,7 +50,7 @@ public class KafkaTestExtension
         implements BeforeAllCallback, AfterAllCallback, ExtensionContext.Store.CloseableResource {
 
     // -----------------------------------------------------------------
-    // Testcontainers image – pin to a specific Confluent Platform version
+    // Testcontainers image: pin to a specific Confluent Platform version
     // so that builds are reproducible. Bump when you need a newer Kafka.
     // -----------------------------------------------------------------
     private static final DockerImageName KAFKA_IMAGE = DockerImageName.parse("apache/kafka:4.2.0");
