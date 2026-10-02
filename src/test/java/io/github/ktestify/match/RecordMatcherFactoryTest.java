@@ -15,6 +15,9 @@
  */
 package io.github.ktestify.match;
 
+import static io.github.ktestify.match.RecordMatcherFactory.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import io.github.ktestify.exceptions.ConfigException;
 import io.github.ktestify.match.impl.*;
 import org.apache.avro.generic.GenericRecord;
@@ -24,9 +27,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
-
-import static io.github.ktestify.match.RecordMatcherFactory.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("RecordMatcherFactory")
 class RecordMatcherFactoryTest {

@@ -15,17 +15,16 @@
  */
 package io.github.ktestify.match.impl;
 
+import static io.github.ktestify.match.impl.MatcherTestSupport.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import io.github.ktestify.exceptions.ComparisonException;
 import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
-import static io.github.ktestify.match.impl.MatcherTestSupport.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("XmlRecordMatcher")
 class XmlRecordMatcherTest {

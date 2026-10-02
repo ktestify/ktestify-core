@@ -15,18 +15,12 @@
  */
 package io.github.ktestify.utils.serdes;
 
+import static io.github.ktestify.constants.LogMessagesConstants.*;
+
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import io.github.ktestify.exceptions.ComparisonException;
 import io.github.ktestify.exceptions.ProducerException;
-import lombok.NonNull;
-import org.apache.avro.LogicalTypes;
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -40,8 +34,13 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
-
-import static io.github.ktestify.constants.LogMessagesConstants.*;
+import lombok.NonNull;
+import org.apache.avro.LogicalTypes;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility class for Apache Avro operations, providing comprehensive functionality for:

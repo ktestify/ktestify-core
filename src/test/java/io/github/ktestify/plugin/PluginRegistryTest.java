@@ -15,12 +15,11 @@
  */
 package io.github.ktestify.plugin;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.typesafe.config.ConfigFactory;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.PluginException;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.io.TempDir;
-
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,8 +29,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * Unit tests for {@link PluginRegistry} and {@link KtestifyPlugin}.

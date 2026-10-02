@@ -22,9 +22,8 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.XMLUtils;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Compares the record value as XML against an expected file using a set of XPath expressions. All XPath comparisons

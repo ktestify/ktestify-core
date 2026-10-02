@@ -22,10 +22,9 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.serdes.AvroUtils;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
-
-import java.util.List;
 
 /**
  * Compares an Avro record's value against the content of an expected JSON file using smart matching. Supports optional

@@ -22,9 +22,8 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FieldMatcherUtils;
 import io.github.ktestify.utils.FileUtils;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Matches a fixed-position field extracted from a positional record against either an inline expected value

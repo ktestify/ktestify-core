@@ -15,12 +15,12 @@
  */
 package io.github.ktestify.models;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.typesafe.config.ConfigFactory;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ConfigException;
 import org.junit.jupiter.api.*;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link Topic#validateTopic(Topic)}: focusing on the namespace auto-injection logic:

@@ -15,6 +15,14 @@
  */
 package io.github.ktestify.utils.serdes;
 
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.apache.avro.Conversions.DecimalConversion;
 import org.apache.avro.Conversions.UUIDConversion;
 import org.apache.avro.LogicalType;
@@ -26,15 +34,6 @@ import org.apache.avro.generic.GenericFixed;
 import org.apache.avro.generic.GenericRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Deserializes Avro {@link GenericRecord} instances into plain Java {@link Map} representations, handling all Avro

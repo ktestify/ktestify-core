@@ -19,14 +19,13 @@ import io.github.ktestify.io.inputs.types.DateVariable;
 import io.github.ktestify.io.inputs.types.EnvironmentVariable;
 import io.github.ktestify.io.inputs.types.RandomVariable;
 import io.github.ktestify.io.inputs.types.TimestampVariable;
-import lombok.experimental.UtilityClass;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.experimental.UtilityClass;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Thread-safe registry of {@link DynamicVariable} implementations, keyed by variable name.

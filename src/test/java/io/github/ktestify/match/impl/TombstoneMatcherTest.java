@@ -15,18 +15,17 @@
  */
 package io.github.ktestify.match.impl;
 
+import static io.github.ktestify.match.impl.MatcherTestSupport.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 import io.github.ktestify.exceptions.ComparisonException;
 import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-import java.util.Map;
-
-import static io.github.ktestify.match.impl.MatcherTestSupport.*;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Checks that every matcher handles a tombstone (record with a {@code null} value) the same way: value matchers fail

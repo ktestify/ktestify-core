@@ -15,6 +15,9 @@
  */
 package io.github.ktestify.tests.extentions;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -24,10 +27,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.Network;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * JUnit 5 extension that starts a Kafka broker via Testcontainers for the duration of the test class, and exposes
