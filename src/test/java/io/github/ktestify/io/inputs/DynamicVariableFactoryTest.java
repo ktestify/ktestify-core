@@ -15,16 +15,17 @@
  */
 package io.github.ktestify.io.inputs;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DynamicVariableFactoryTest {
 
@@ -48,8 +49,31 @@ public class DynamicVariableFactoryTest {
 
     @AfterEach
     public void tearDown() {
-        // Clean up after each test to avoid interference
-        DynamicVariableFactory.clearRegisteredVariables();
+        // Restore the built-ins so other test classes are not affected
+        DynamicVariableFactory.resetToDefaults();
+    }
+
+    @Test
+    public void testLookupIsCaseInsensitive() {
+        DynamicVariableFactory.resetToDefaults();
+
+        assertTrue(DynamicVariableFactory.isRegistered("env"));
+        assertTrue(DynamicVariableFactory.isRegistered("ENV"));
+        assertTrue(DynamicVariableFactory.isRegistered("Env"));
+        assertSame(DynamicVariableFactory.getVariable("env"), DynamicVariableFactory.getVariable("ENV"));
+    }
+
+    @Test
+    public void testGetVariableWithNullNameReturnsNull() {
+        assertNull(DynamicVariableFactory.getVariable(null));
+        assertFalse(DynamicVariableFactory.isRegistered(null));
+    }
+
+    @Test
+    public void testResetToDefaultsRestoresBuiltIns() {
+        DynamicVariableFactory.resetToDefaults();
+
+        assertEquals(Set.of("date", "timestamp", "random", "env"), DynamicVariableFactory.getRegisteredVariableNames());
     }
 
     @Test
