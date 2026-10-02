@@ -15,14 +15,6 @@
  */
 package io.github.ktestify.utils;
 
-import java.io.StringReader;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import lombok.experimental.UtilityClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +25,15 @@ import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xmlunit.builder.DiffBuilder;
 import org.xmlunit.diff.*;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.StringReader;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Utility class for comparing XML documents, with optional element exclusion and XPath-based comparison.
@@ -48,16 +49,23 @@ public final class XMLUtils {
     /**
      * Creates a hardened {@link SAXParserFactory} with XXE protections enabled.
      *
-     * <p>Disables external general/parameter entities, DOCTYPE declarations, and external DTD loading.
+     * <p>Enables secure processing and disables external general/parameter entities, DOCTYPE declarations, and external
+     * DTD loading. Use this factory for every SAX parse of test data, including expected template files.
      *
-     * @return a hardened SAXParserFactory
+     * @return a hardened, non-namespace-aware SAXParserFactory
+     * @since 1.1.4
      */
-    private static SAXParserFactory newHardenedSAXParserFactory() {
+    public static SAXParserFactory newHardenedSAXParserFactory() {
         SAXParserFactory factory = SAXParserFactory.newInstance();
         // Namespace-awareness is intentionally NOT enabled here: getNamespacesFromString
         // relies on xmlns:* attributes being reported as regular attributes via getQName(),
         // which namespace-aware mode would suppress. XXE hardening features below are
         // independent of this setting.
+        try {
+            factory.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        } catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+            LOGGER.warn("Could not enable secure processing on SAXParserFactory: {}", e.getMessage());
+        }
         try {
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         } catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
@@ -300,7 +308,7 @@ public final class XMLUtils {
             String controlXPath = comparison.getControlDetails().getXPath();
             String testXPath = comparison.getTestDetails().getXPath();
 
-            // 1. Direct hit — the differing node IS an excluded element
+            // 1. Direct hit: the differing node IS an excluded element
             if (isExcluded(controlXPath) || isExcluded(testXPath)) {
                 return ComparisonResult.SIMILAR;
             }
@@ -314,7 +322,7 @@ public final class XMLUtils {
             //    children of this parent.  We conservatively suppress the length difference
             //    when the delta does not exceed the total number of excluded elements.
             //    This is safe because XMLUnit also fires CHILD_LOOKUP (point 3 below) for
-            //    each missing/extra child — any non-excluded child will be caught there and
+            //    each missing/extra child: any non-excluded child will be caught there and
             //    reported as a real difference.
             if (comparison.getType() == ComparisonType.CHILD_NODELIST_LENGTH) {
                 Object controlVal = comparison.getControlDetails().getValue();
@@ -333,7 +341,7 @@ public final class XMLUtils {
                 }
             }
 
-            // 3. CHILD_LOOKUP — one side is null (node absent in one document)
+            // 3. CHILD_LOOKUP: one side is null (node absent in one document)
             //    Check whichever side is non-null.
             if (comparison.getType() == ComparisonType.CHILD_LOOKUP) {
                 String nonNullXPath = controlXPath != null ? controlXPath : testXPath;
