@@ -27,6 +27,9 @@ public class TimestampVariable implements DynamicVariable {
 
     @Override
     public String process(String format) {
+        if(format == null || format.isEmpty()) {
+            return process();
+        }
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern(format));
     }
 
