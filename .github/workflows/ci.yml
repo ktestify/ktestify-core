@@ -34,7 +34,7 @@ permissions:
 jobs:
   ci:
     name: Maven CI
-    uses: ktestify/ktestify/.github/workflows/reusable-maven-ci.yml@main
+    uses: ktestify/.github/.github/workflows/reusable-maven-ci.yml@main
     with:
       java-version: "25"
       run-integration-tests: ${{ github.event_name == 'workflow_dispatch' && inputs.run-integration-tests || false }}
