@@ -15,27 +15,28 @@
  */
 package io.github.ktestify.io.kafka;
 
-import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_FILE;
-import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_XML;
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.github.ktestify.config.ConfigBuilder;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.io.kafka.impl.RawKafkaConsumer;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.tests.extentions.KafkaTestExtension;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
+
+import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_FILE;
+import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_XML;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests for {@link RawKafkaConsumer}.
@@ -48,7 +49,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  */
 @ExtendWith(KafkaTestExtension.class)
 @DisplayName("RawKafkaConsumer Integration Tests")
-class RawKafkaConsumerTest {
+class RawKafkaConsumerITTests {
 
     private static final String TOPIC_PREFIX = "test-raw-consumer-";
 
@@ -130,7 +131,7 @@ class RawKafkaConsumerTest {
 
     /** Absolute path of a classpath resource under {@code match/}. */
     private static String resourcePath(String filename) {
-        URL url = RawKafkaConsumerTest.class.getClassLoader().getResource("match/" + filename);
+        URL url = RawKafkaConsumerITTests.class.getClassLoader().getResource("match/" + filename);
         assertNotNull(url, "Test resource not found: match/" + filename);
         return url.getPath();
     }
@@ -193,7 +194,7 @@ class RawKafkaConsumerTest {
             // The file content has a trailing newline; trim so the raw value sent
             // over Kafka equals what FileUtils reads from the file.
             String fileContent = new String(
-                    RawKafkaConsumerTest.class
+                    RawKafkaConsumerITTests.class
                             .getClassLoader()
                             .getResourceAsStream("match/expected-order.json")
                             .readAllBytes(),

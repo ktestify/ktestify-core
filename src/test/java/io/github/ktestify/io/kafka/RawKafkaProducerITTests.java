@@ -15,8 +15,6 @@
  */
 package io.github.ktestify.io.kafka;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.github.ktestify.config.ConfigBuilder;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ConfigException;
@@ -24,13 +22,6 @@ import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.kafka.impl.RawKafkaProducer;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.tests.extentions.KafkaTestExtension;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Duration;
-import java.util.*;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -38,6 +29,16 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests for RawKafkaProducer using Testcontainers.
@@ -55,7 +56,7 @@ import org.junit.jupiter.api.io.TempDir;
  */
 @ExtendWith(KafkaTestExtension.class)
 @DisplayName("RawKafkaProducer Integration Tests")
-class RawKafkaProducerTest {
+class RawKafkaProducerITTests {
 
     private static final String TEST_TOPIC_PREFIX = "test-raw-producer-";
 

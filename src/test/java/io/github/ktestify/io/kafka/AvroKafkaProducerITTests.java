@@ -15,8 +15,6 @@
  */
 package io.github.ktestify.io.kafka;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
@@ -27,13 +25,6 @@ import io.github.ktestify.io.kafka.impl.AvroKafkaProducer;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.tests.extentions.KafkaTestExtension;
 import io.github.ktestify.tests.extentions.SchemaRegistryTestExtension;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Duration;
-import java.util.*;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.consumer.*;
@@ -43,6 +34,16 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests for AvroKafkaProducer using Testcontainers.
@@ -66,7 +67,7 @@ import org.junit.jupiter.api.io.TempDir;
  */
 @ExtendWith({KafkaTestExtension.class, SchemaRegistryTestExtension.class})
 @DisplayName("AvroKafkaProducer Integration Tests")
-class AvroKafkaProducerTest {
+class AvroKafkaProducerITTests {
 
     private static final String TEST_TOPIC_PREFIX = "test-avro-producer-";
 
