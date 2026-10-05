@@ -20,4 +20,4 @@ permissions:
 
 jobs:
   review:
-    uses: ktestify/.github/workflows/reusable-dependency-review.yml@main
+    uses: ktestify/.github/.github/workflows/reusable-dependency-review.yml@main

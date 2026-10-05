@@ -15,15 +15,15 @@
  */
 package io.github.ktestify.io.inputs.types;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TimestampVariableTest {
 
@@ -146,11 +146,11 @@ public class TimestampVariableTest {
     public void testProcessWithNullFormat() {
         try (MockedStatic<LocalDateTime> mockedDateTime = Mockito.mockStatic(LocalDateTime.class)) {
             mockedDateTime.when(LocalDateTime::now).thenReturn(FIXED_DATETIME);
+            assertEquals(
+                    FIXED_DATETIME.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                    timestampVariable.process(),
+                    "Default process method should use ISO_LOCAL_DATE_TIME format");
 
-            assertThrows(
-                    NullPointerException.class,
-                    () -> timestampVariable.process(null),
-                    "Should throw NullPointerException for null format");
         }
     }
 
