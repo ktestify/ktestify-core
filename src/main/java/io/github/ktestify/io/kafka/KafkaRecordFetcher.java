@@ -15,19 +15,13 @@
  */
 package io.github.ktestify.io.kafka;
 
-import static io.github.ktestify.constants.LogMessagesConstants.*;
-
 import io.github.ktestify.config.FrameworkConfig;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.FetchException;
+import io.github.ktestify.exceptions.FetchTimeoutException;
 import io.github.ktestify.io.core.RecordFetcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.models.MatchedRecord;
-import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -35,6 +29,14 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
+
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static io.github.ktestify.constants.LogMessagesConstants.*;
 
 /**
  * Kafka implementation of {@link RecordFetcher}.
@@ -179,7 +181,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         long pollIntervalMs = frameworkConfig.getPollIntervalMillis();
         while (kafkaConsumer.assignment().isEmpty()) {
             if (System.nanoTime() >= deadlineNanos) {
-                throw new FetchException("Timed out after " + readTimeoutMs
+                throw new FetchTimeoutException("Timed out after " + readTimeoutMs
                         + "ms waiting for partition assignment on topic '" + namespacedTopic
                         + "'. Check that the broker is reachable and the topic exists.");
             }
@@ -337,12 +339,12 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         if (!accumulated.isEmpty()) {
             // Partial batch: give the claimed records back before reporting the timeout.
             accumulated.forEach(this::release);
-            throw new FetchException("Timed out after " + readTimeoutMs + "ms waiting for " + targetSize
+            throw new FetchTimeoutException("Timed out after " + readTimeoutMs + "ms waiting for " + targetSize
                     + " record(s) on topic '" + namespacedTopic
                     + "': only " + accumulated.size() + " collected.");
         }
 
-        throw new FetchException(
+        throw new FetchTimeoutException(
                 "Timed out after " + readTimeoutMs + "ms waiting for a record on topic '" + namespacedTopic + "'.");
     }
 
