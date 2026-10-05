@@ -15,6 +15,9 @@
  */
 package io.github.ktestify.io.kafka;
 
+import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_FILE;
+import static org.junit.jupiter.api.Assertions.*;
+
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
@@ -25,6 +28,10 @@ import io.github.ktestify.io.kafka.impl.AvroKafkaConsumer;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.tests.extentions.KafkaTestExtension;
 import io.github.ktestify.tests.extentions.SchemaRegistryTestExtension;
+import java.net.URL;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
@@ -38,14 +45,6 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.net.URL;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
-
-import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_FILE;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests for {@link AvroKafkaConsumer}.
