@@ -15,15 +15,14 @@
  */
 package io.github.ktestify.io.inputs.types;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TimestampVariableTest {
 
@@ -150,7 +149,6 @@ public class TimestampVariableTest {
                     FIXED_DATETIME.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
                     timestampVariable.process(),
                     "Default process method should use ISO_LOCAL_DATE_TIME format");
-
         }
     }
 
