@@ -2,7 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.2.1] — 2026-10-06
+
 ### ♻️ Refactoring
 
 - Enhance plugin loading and shutdown logic — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
