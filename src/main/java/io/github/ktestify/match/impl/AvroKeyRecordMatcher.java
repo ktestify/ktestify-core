@@ -48,14 +48,22 @@ public class AvroKeyRecordMatcher implements RecordMatcher<GenericRecord> {
         String expectedKey = context.getMatchKey();
         String actualKey = records.getFirst().getKey();
 
-        if (expectedKey.equals(actualKey)) {
-            log.info("Avro record key matches expected key '{}'.", expectedKey);
+        if (context.getKeyMatchStrategy().matches(expectedKey, actualKey)) {
+            log.info(
+                    "Avro record key matches expected key '{}' using {} strategy.",
+                    expectedKey,
+                    context.getKeyMatchStrategy());
             return MatchResult.pass(expectedKey, actualKey);
         }
 
-        log.error("Avro record key mismatch, expected: '{}', actual: '{}'", expectedKey, actualKey);
+        log.error(
+                "Avro record key mismatch, expected: '{}', actual: '{}', strategy: {}",
+                expectedKey,
+                actualKey,
+                context.getKeyMatchStrategy());
         return MatchResult.fail(
-                "Avro record key does not match, expected: '" + expectedKey + "', actual: '" + actualKey + "'.",
+                "Avro record key does not match, expected: '" + expectedKey + "', actual: '" + actualKey
+                        + "', strategy: " + context.getKeyMatchStrategy() + ".",
                 expectedKey,
                 actualKey);
     }

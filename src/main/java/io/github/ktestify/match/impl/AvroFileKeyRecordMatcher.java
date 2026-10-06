@@ -65,7 +65,7 @@ public class AvroFileKeyRecordMatcher implements RecordMatcher<GenericRecord> {
         GenericRecord value = record.getValue();
         String actualValue = value == null ? null : AvroJson.of(value);
 
-        boolean keyMatches = expectedKey.equals(actualKey);
+        boolean keyMatches = context.getKeyMatchStrategy().matches(expectedKey, actualKey);
         boolean valueMatches = actualValue != null && valueMatches(expectedValue, actualValue, context);
 
         if (!keyMatches) {

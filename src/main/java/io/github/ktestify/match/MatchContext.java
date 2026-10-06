@@ -74,6 +74,18 @@ public class MatchContext {
     String matchValue;
 
     /**
+     * Strategy used to compare {@link #matchKey} against the actual record key in key-related matchers
+     * ({@code KeyRecordMatcher}, {@code FileKeyRecordMatcher}, {@code AvroKeyRecordMatcher},
+     * {@code AvroFileKeyRecordMatcher}).
+     *
+     * <p>Defaults to {@link KeyMatchStrategy#EXACT}, preserving the original exact-equality behavior.
+     *
+     * @since 1.1.5
+     */
+    @Builder.Default
+    KeyMatchStrategy keyMatchStrategy = KeyMatchStrategy.EXACT;
+
+    /**
      * Multiple key/value pairs for multi-field inline matching.
      *
      * <p>When non-empty, the matcher validates that <em>every</em> key in the map has the corresponding expected value

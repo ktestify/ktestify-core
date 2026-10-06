@@ -22,11 +22,8 @@ import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
-import io.github.ktestify.models.Topic;
 import java.util.List;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.Consumer;
 
 /**
  * Thin coordinator that wires a {@link KafkaRecordFetcher} (transport) with a {@link RecordMatcher} (assertion) and
@@ -64,28 +61,6 @@ public abstract class AbstractKafkaConsumer<K, V> extends AbstractConsumer {
                 "AbstractKafkaConsumer created for topic '{}' with matcher '{}'",
                 context.getTopic().getNamespacedTopic(),
                 matcher.getClass().getSimpleName());
-    }
-
-    /**
-     * Legacy convenience constructor for callers that previously passed topic + consumer + properties.
-     *
-     * @param topic the topic to consume from
-     * @param consumer the Kafka consumer instance
-     * @param properties the consumer properties map
-     * @param matcher the assertion strategy
-     * @deprecated Build a {@link ConsumerContext} and use {@link #AbstractKafkaConsumer(ConsumerContext,
-     *     RecordMatcher)} instead.
-     */
-    @Deprecated
-    protected AbstractKafkaConsumer(
-            Topic topic, Consumer<K, V> consumer, Map<String, String> properties, RecordMatcher<V> matcher) {
-        this(
-                ConsumerContext.<K, V>builder()
-                        .topic(topic)
-                        .consumer(consumer)
-                        .properties(properties)
-                        .build(),
-                matcher);
     }
 
     /**
@@ -137,6 +112,7 @@ public abstract class AbstractKafkaConsumer<K, V> extends AbstractConsumer {
                 .matchFilePaths(context.getMatchFilePaths())
                 .excludedFields(context.getExcludedFields())
                 .strictMatching(false)
+                .keyMatchStrategy(context.getKeyMatchStrategy())
                 .build();
     }
 }

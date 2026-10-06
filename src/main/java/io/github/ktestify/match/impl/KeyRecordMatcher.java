@@ -46,14 +46,22 @@ public class KeyRecordMatcher implements RecordMatcher<String> {
         String expectedKey = context.getMatchKey();
         String actualKey = records.getFirst().getKey();
 
-        if (expectedKey.equals(actualKey)) {
-            log.info("Record key matches expected key '{}'.", expectedKey);
+        if (context.getKeyMatchStrategy().matches(expectedKey, actualKey)) {
+            log.info(
+                    "Record key matches expected key '{}' using {} strategy.",
+                    expectedKey,
+                    context.getKeyMatchStrategy());
             return MatchResult.pass(expectedKey, actualKey);
         }
 
-        log.error("Record key mismatch, expected: '{}', actual: '{}'", expectedKey, actualKey);
+        log.error(
+                "Record key mismatch, expected: '{}', actual: '{}', using {} strategy.",
+                expectedKey,
+                actualKey,
+                context.getKeyMatchStrategy());
         return MatchResult.fail(
-                "Record key does not match, expected: '" + expectedKey + "', actual: '" + actualKey + "'.",
+                "Record key does not match, expected: '" + expectedKey + "', actual: '" + actualKey + "', using "
+                        + context.getKeyMatchStrategy() + " strategy.",
                 expectedKey,
                 actualKey);
     }

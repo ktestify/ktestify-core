@@ -376,7 +376,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
 
     /**
      * Returns {@code true} if no key-filter is configured, or if the record key matches the expected key from the
-     * context / properties.
+     * context / properties using the configured {@link io.github.ktestify.match.KeyMatchStrategy}.
      */
     private boolean passesKeyFilter(ConsumerRecord<K, V> record) {
         // Context takes priority over properties map
@@ -390,7 +390,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         }
 
         String recordKey = record.key() != null ? record.key().toString() : null;
-        if (expectedKey.equals(recordKey)) {
+        if (context.getKeyMatchStrategy().matches(expectedKey, recordKey)) {
             log.info(MESSAGE_CONSUMER_RECORD_MATCHES_EXPECTED_KEY, expectedKey);
             return true;
         }

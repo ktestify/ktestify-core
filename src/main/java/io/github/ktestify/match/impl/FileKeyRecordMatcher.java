@@ -60,7 +60,7 @@ public class FileKeyRecordMatcher implements RecordMatcher<String> {
         String expectedKey = context.getMatchKey();
         String actualKey = record.getKey();
 
-        boolean keyMatches = expectedKey.equals(actualKey);
+        boolean keyMatches = context.getKeyMatchStrategy().matches(expectedKey, actualKey);
         boolean valueMatches = expectedValue.equals(actualValue);
 
         if (!keyMatches) {

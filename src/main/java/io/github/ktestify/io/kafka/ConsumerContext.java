@@ -17,6 +17,7 @@ package io.github.ktestify.io.kafka;
 
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ConsumerException;
+import io.github.ktestify.match.KeyMatchStrategy;
 import io.github.ktestify.models.Topic;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +32,7 @@ public final class ConsumerContext<K, V> {
     private final Map<String, String> properties;
     private final Consumer<K, V> consumer;
     private final String expectedRecordKey;
+    private final KeyMatchStrategy keyMatchStrategy;
     private final String matchMethod;
     private final List<String> matchFilePaths;
     private final List<String> excludedFields;
@@ -45,6 +47,7 @@ public final class ConsumerContext<K, V> {
             Map<String, String> properties,
             Consumer<K, V> consumer,
             String expectedRecordKey,
+            KeyMatchStrategy keyMatchStrategy,
             String matchMethod,
             List<String> matchFilePaths,
             List<String> excludedFields,
@@ -57,6 +60,7 @@ public final class ConsumerContext<K, V> {
         this.properties = properties;
         this.consumer = consumer;
         this.expectedRecordKey = expectedRecordKey;
+        this.keyMatchStrategy = keyMatchStrategy != null ? keyMatchStrategy : KeyMatchStrategy.EXACT;
         this.matchMethod = matchMethod;
         this.matchFilePaths = matchFilePaths != null ? matchFilePaths : Collections.emptyList();
         this.excludedFields = excludedFields != null ? excludedFields : Collections.emptyList();
@@ -85,6 +89,7 @@ public final class ConsumerContext<K, V> {
         private Map<String, String> properties;
         private Consumer<K, V> consumer;
         private String expectedRecordKey;
+        private KeyMatchStrategy keyMatchStrategy;
         private String matchMethod;
         private List<String> matchFilePaths;
         private List<String> excludedFields;
@@ -111,6 +116,21 @@ public final class ConsumerContext<K, V> {
 
         public Builder<K, V> expectedRecordKey(String expectedRecordKey) {
             this.expectedRecordKey = expectedRecordKey;
+            return this;
+        }
+
+        /**
+         * Sets the strategy used to compare {@link #expectedRecordKey} against the actual record key during the
+         * fetch-time pre-filter in {@code KafkaRecordFetcher.passesKeyFilter()}.
+         *
+         * <p>Defaults to {@link KeyMatchStrategy#EXACT} when not set, preserving backward compatibility.
+         *
+         * @param keyMatchStrategy the match strategy, or {@code null} to use the default
+         * @return this builder
+         * @since 1.1.5
+         */
+        public Builder<K, V> keyMatchStrategy(KeyMatchStrategy keyMatchStrategy) {
+            this.keyMatchStrategy = keyMatchStrategy;
             return this;
         }
 
@@ -196,6 +216,7 @@ public final class ConsumerContext<K, V> {
                     validatedProps,
                     validatedConsumer,
                     expectedRecordKey,
+                    keyMatchStrategy,
                     matchMethod,
                     matchFilePaths,
                     excludedFields,

@@ -15,6 +15,7 @@
  */
 package io.github.ktestify.match.impl;
 
+import io.github.ktestify.match.KeyMatchStrategy;
 import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
@@ -105,6 +106,14 @@ final class MatcherTestSupport {
     /** Builds a {@link MatchContext} with only a match key set. */
     static MatchContext ctxWithKey(String matchKey) {
         return MatchContext.builder().matchKey(matchKey).build();
+    }
+
+    /** Builds a {@link MatchContext} with a match key and a key match strategy. */
+    static MatchContext ctxWithKeyAndStrategy(String matchKey, KeyMatchStrategy strategy) {
+        return MatchContext.builder()
+                .matchKey(matchKey)
+                .keyMatchStrategy(strategy)
+                .build();
     }
 
     /** Builds a {@link MatchContext} with a match key and an inline expected value. */
