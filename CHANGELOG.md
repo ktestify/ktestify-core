@@ -12,6 +12,19 @@ All notable changes to this project will be documented in this file.
 - Extract null value message to constant in MatchResult — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
 
 
+### ✨ Features
+
+- Add AvroJson and AvroLogicalTypesSerializationTest for JSON conversion of Avro logical types — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Enhance DynamicVariableFactory for thread-safety and case-insensitivity — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Added two new MatchResult noRecords and nullValue — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Introduce FetchTimeoutException for clearer timeout handling — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Introduce key matching strategies for record assertions (#62) — [@nil-malh](https://github.com/nil-malh) ([#62](https://github.com/ktestify/ktestify-core/pull/62))
+
+
 ### ⬆️ Dependency Updates
 
 - Bump ktestify-parent version from 1.0.4 to 1.0.5 — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
@@ -51,6 +64,10 @@ All notable changes to this project will be documented in this file.
 
 - Update dependency review workflow path — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
 
+- Add missing TimeUnit import in KafkaRecordFetcher — [@nil-malh](https://github.com/nil-malh) ([#62](https://github.com/ktestify/ktestify-core/pull/62))
+
+- Fixed changelog commit — [@nil-malh](https://github.com/nil-malh)
+
 
 ### 🔧 Miscellaneous
 
@@ -74,6 +91,8 @@ All notable changes to this project will be documented in this file.
 
 - Feat/multiple match fields (#59) — [@nil-malh](https://github.com/nil-malh) ([#59](https://github.com/ktestify/ktestify-core/pull/59))
 
+- Add multi-field inline matching support in AvroFieldsRecordMatcher — [@nil-malh](https://github.com/nil-malh) ([#59](https://github.com/ktestify/ktestify-core/pull/59))
+
 
 ## [1.1.2] — 2026-08-10
 
@@ -84,6 +103,15 @@ All notable changes to this project will be documented in this file.
 - Refactored plugin init logs — [@nil-malh](https://github.com/nil-malh)
 
 
+## [1.1.1] — 2026-08-09
+
+### ✨ Features
+
+- Add attributes support to ConsumedRecord and related matchers — [@nil-malh](https://github.com/nil-malh)
+
+- Reorganize imports for consistency and clarity across multiple files — [@nil-malh](https://github.com/nil-malh)
+
+
 ## [1.1.0] — 2026-08-06
 
 ### ♻️ Refactoring
@@ -91,7 +119,23 @@ All notable changes to this project will be documented in this file.
 - Remove date content-sniffing and implement type-driven date comparison — [@nil-malh](https://github.com/nil-malh)
 
 
+### ✨ Features
+
+- Switched to centralised GH Actions — [@nil-malh](https://github.com/nil-malh)
+
+- Enhance deepEquals method to support dot-notation for excluded keys — [@nil-malh](https://github.com/nil-malh)
+
+- Add referenceTimestamp to ConsumerContext to prevent clock drift in fetches — [@nil-malh](https://github.com/nil-malh)
+
+- Update release permissions and add CI workflow for main branch — [@nil-malh](https://github.com/nil-malh)
+
+
 ## [1.0.3] — 2026-07-07
+
+### ✨ Features
+
+- Switch to a parent pom to manage dependencies — [@nil-malh](https://github.com/nil-malh)
+
 
 ### ⬆️ Dependency Updates
 
@@ -99,6 +143,11 @@ All notable changes to this project will be documented in this file.
 
 
 ## [0.1.2] — 2026-07-05
+
+### ✨ Features
+
+- Add JVM wide truststore configuration and tests — [@nil-malh](https://github.com/nil-malh)
+
 
 ### ⬆️ Dependency Updates
 
@@ -155,6 +204,25 @@ All notable changes to this project will be documented in this file.
 
 
 ## [0.1.0] — 2026-05-17
+
+### ✨ Features
+
+- Added topic namespace configuration to KafkaConfig and reference.conf — [@nil-malh](https://github.com/nil-malh)
+
+- Migrated to Log4j2 update dependencies — [@nil-malh](https://github.com/nil-malh)
+
+- Enhance logging in AvroKafkaProducer and RawKafkaProducer for better traceability — [@nil-malh](https://github.com/nil-malh)
+
+- Enhance XmlRecordMatcher to support automatic exclusion of elements marked as EXCLUDED in XML templates — [@nil-malh](https://github.com/nil-malh)
+
+- Added report output path in the FrameworkConfig — [@nil-malh](https://github.com/nil-malh)
+
+- Added Log4J config in KTestify Config — [@nil-malh](https://github.com/nil-malh)
+
+- Implement plugin system with KtestifyPlugin interface and PluginRegistry — [@nil-malh](https://github.com/nil-malh)
+
+- Migrated from custom GitHub PAT to GITHUB_TOKEN — [@nil-malh](https://github.com/nil-malh)
+
 
 ### ⬆️ Dependency Updates
 
