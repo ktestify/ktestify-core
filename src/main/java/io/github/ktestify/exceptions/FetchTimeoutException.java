@@ -16,21 +16,18 @@
 package io.github.ktestify.exceptions;
 
 /**
- * Thrown when a {@code RecordFetcher} fails to retrieve records from an IO source (timeout, connectivity issue,
- * authentication failure, etc.).
+ * Specialized {@link FetchException} signaling that the fetch failed due to timeout budget exhaustion.
  *
- * <p>This exception is transport-agnostic: Kafka, IBM MQ, and any future IO adapter all throw {@code FetchException} so
- * higher layers do not need to catch transport-specific exceptions.
- *
- * @since 0.3.0
+ * <p>This lets higher layers distinguish expected timeout outcomes from other infra/config failures using type checks
+ * instead of parsing error messages.
  */
-public class FetchException extends RuntimeException {
+public class FetchTimeoutException extends FetchException {
 
-    public FetchException(String message) {
+    public FetchTimeoutException(String message) {
         super(message);
     }
 
-    public FetchException(String message, Throwable cause) {
+    public FetchTimeoutException(String message, Throwable cause) {
         super(message, cause);
     }
 }

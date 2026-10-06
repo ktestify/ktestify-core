@@ -15,6 +15,7 @@
  */
 package io.github.ktestify.io.inputs.types;
 
+import io.github.ktestify.exceptions.ConfigException;
 import io.github.ktestify.io.inputs.DynamicVariable;
 
 public class EnvironmentVariable implements DynamicVariable {
@@ -26,8 +27,14 @@ public class EnvironmentVariable implements DynamicVariable {
     @Override
     public String process(String format) {
         if (format == null || format.isEmpty()) {
-            throw new IllegalArgumentException("Environment variable name cannot be null or empty");
+            throw ConfigException.missingValue("env");
         }
-        return System.getenv(format);
+
+        String value = System.getenv(format);
+        if (value == null) {
+            throw new ConfigException("Environment variable '" + format + "' is not set");
+        }
+
+        return value;
     }
 }

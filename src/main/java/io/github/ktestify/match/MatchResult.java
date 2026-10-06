@@ -96,4 +96,34 @@ public class MatchResult {
     public static MatchResult fail(String message) {
         return new MatchResult(false, message, "", "");
     }
+
+    /**
+     * Creates a failing result for the case where the transport delivered no record to compare.
+     *
+     * <p>Matchers return this instead of throwing {@link IndexOutOfBoundsException} when they receive an empty or
+     * {@code null} record list.
+     *
+     * @return a failing {@code MatchResult}
+     * @since 1.1.4
+     */
+    public static MatchResult noRecords() {
+        return fail("No record was available to match.");
+    }
+
+    /**
+     * Creates a failing result for a record whose value is {@code null}, for example a Kafka tombstone.
+     *
+     * <p>Every matcher that inspects the record value returns this instead of throwing a {@link NullPointerException}.
+     * Matchers that only inspect the key or transport attributes do not use it, because a tombstone still carries a
+     * key.
+     *
+     * @param expected the expected value, used for reporting; may be {@code null}
+     * @return a failing {@code MatchResult}
+     * @since 1.1.4
+     */
+    public static MatchResult nullValue(String expected) {
+        return new MatchResult(false, NULL_VALUE_MESSAGE, expected, null);
+    }
+
+    public static final String NULL_VALUE_MESSAGE = "Record value is null (tombstone).";
 }

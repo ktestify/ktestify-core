@@ -20,16 +20,14 @@ import static io.github.ktestify.constants.LogMessagesConstants.*;
 import io.github.ktestify.config.FrameworkConfig;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.FetchException;
+import io.github.ktestify.exceptions.FetchTimeoutException;
 import io.github.ktestify.io.core.RecordFetcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.models.MatchedRecord;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -52,7 +50,7 @@ import org.apache.kafka.common.errors.WakeupException;
  * </ul>
  *
  * <p>This class knows <strong>nothing</strong> about matching or assertions. It produces {@link ConsumedRecord} objects
- * and hands them to whoever called {@link #fetch()} — typically an {@code AbstractKafkaConsumer} subclass.
+ * and hands them to whoever called {@link #fetch()}: typically an {@code AbstractKafkaConsumer} subclass.
  *
  * @param <K> the Kafka record key type
  * @param <V> the Kafka record value type
@@ -105,22 +103,29 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
     /**
      * {@inheritDoc}
      *
-     * <p>Blocks until at least one record that passes the key-filter is found, or {@code readTimeoutMs} elapses.
+     * <p>Blocks until at least one record that passes the key-filter is found, or {@code readTimeoutMs} elapses. The
+     * read timeout is a single budget that covers partition assignment, offset lookup, and polling.
      *
-     * @throws FetchException if the timeout expires without a matching record, or if the Kafka consumer is woken up
-     *     externally
+     * @throws FetchException if the timeout expires without a matching record, if partition assignment or offset lookup
+     *     does not complete in time, or if the Kafka consumer is woken up externally
      */
     @Override
     public List<ConsumedRecord<V>> fetch() throws FetchException {
+        long deadlineNanos = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(readTimeoutMs);
         try {
-            subscribeAndAwaitAssignment();
+            subscribeAndAwaitAssignment(deadlineNanos);
             long delta = calculateDeltaTime();
-            seekToOffset(delta);
-            return pollUntilRecordFound();
+            seekToOffset(delta, deadlineNanos);
+            return pollUntilRecordFound(deadlineNanos);
         } catch (WakeupException e) {
             throw new FetchException(
                     "Kafka consumer was woken up for shutdown on topic '"
                             + context.getTopic().getNamespacedTopic() + "'",
+                    e);
+        } catch (org.apache.kafka.common.errors.TimeoutException e) {
+            throw new FetchException(
+                    "Kafka operation timed out on topic '" + context.getTopic().getNamespacedTopic() + "': "
+                            + e.getMessage(),
                     e);
         }
     }
@@ -148,8 +153,9 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
     /**
      * Clears the shared deduplication registry.
      *
-     * <p>Call this at the start of each independent test scenario (e.g. in a {@code @Before} / {@code Before} hook) to
-     * ensure records from a previous scenario are not filtered out.
+     * <p>The registry is intentionally <strong>not</strong> cleared automatically between scenarios, so that a record
+     * already matched by an earlier scenario cannot be matched again later in the same run. Call this method only for
+     * an explicit reset, for example from the {@code clear known messages} step.
      */
     public static void clearMatchedRecords() {
         MATCHED_RECORDS.clear();
@@ -157,17 +163,27 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
     }
 
     // =========================================================================
-    // Private — Kafka mechanics (previously inside AbstractKafkaConsumer)
+    // Private: Kafka mechanics
     // =========================================================================
 
-    /** Subscribes to the configured topic and blocks until Kafka assigns partitions. */
-    private void subscribeAndAwaitAssignment() {
+    /**
+     * Subscribes to the configured topic and blocks until Kafka assigns partitions or the deadline passes.
+     *
+     * @param deadlineNanos absolute {@link System#nanoTime()} deadline
+     * @throws FetchException if no partition is assigned before the deadline
+     */
+    private void subscribeAndAwaitAssignment(long deadlineNanos) throws FetchException {
         String namespacedTopic = context.getTopic().getNamespacedTopic();
         kafkaConsumer.subscribe(Collections.singletonList(namespacedTopic));
         log.info(MESSAGE_CONSUMER_SUBSCRIBED_TO_TOPIC, namespacedTopic);
 
         long pollIntervalMs = frameworkConfig.getPollIntervalMillis();
         while (kafkaConsumer.assignment().isEmpty()) {
+            if (System.nanoTime() >= deadlineNanos) {
+                throw new FetchTimeoutException("Timed out after " + readTimeoutMs
+                        + "ms waiting for partition assignment on topic '" + namespacedTopic
+                        + "'. Check that the broker is reachable and the topic exists.");
+            }
             kafkaConsumer.poll(Duration.ofMillis(pollIntervalMs));
         }
         log.debug("Partition assignment received for topic '{}'.", namespacedTopic);
@@ -177,7 +193,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
      * Calculates the earliest timestamp to read from.
      *
      * <p>The "now" reference used below is either {@link ConsumerContext#getReferenceTimestamp()}, when the caller has
-     * pinned it — or the live {@code System.currentTimeMillis()} otherwise. Pinning "now" lets a single Cucumber step
+     * pinned it: or the live {@code System.currentTimeMillis()} otherwise. Pinning "now" lets a single Cucumber step
      * spawn several internal fetches (e.g. a batch consumer, or multiple {@code Then} steps executed in quick
      * succession) without the seek offset drifting forward as wall-clock time advances between them.
      *
@@ -200,7 +216,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
             return delta;
         }
 
-        // 2. Properties map value (in seconds — convert to ms)
+        // 2. Properties map value (in seconds: convert to ms)
         long defaultDeltaMs = frameworkConfig.getConsumerDeltaTime().toMillis();
         String deltaTimeStr = properties.get(CONSUMER_DELTA_TIME);
         if (deltaTimeStr != null && !deltaTimeStr.isEmpty()) {
@@ -222,14 +238,19 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
     /**
      * Seeks each assigned partition to the offset corresponding to {@code deltaTimestamp}. Partitions with no messages
      * after that timestamp are seeked to the end.
+     *
+     * @param deltaTimestamp the epoch-millisecond timestamp to seek to
+     * @param deadlineNanos absolute {@link System#nanoTime()} deadline bounding the offset lookup
      */
-    private void seekToOffset(long deltaTimestamp) {
+    private void seekToOffset(long deltaTimestamp, long deadlineNanos) {
         Set<TopicPartition> assignments = kafkaConsumer.assignment();
         log.debug(MESSAGE_CONSUMER_SEEKING_TO_OFFSET, deltaTimestamp);
 
         Map<TopicPartition, Long> timestampMap =
                 assignments.stream().collect(Collectors.toMap(tp -> tp, tp -> deltaTimestamp));
-        Map<TopicPartition, OffsetAndTimestamp> offsets = kafkaConsumer.offsetsForTimes(timestampMap);
+        long remainingMs = Math.max(1L, TimeUnit.NANOSECONDS.toMillis(deadlineNanos - System.nanoTime()));
+        Map<TopicPartition, OffsetAndTimestamp> offsets =
+                kafkaConsumer.offsetsForTimes(timestampMap, Duration.ofMillis(remainingMs));
         log.trace(MESSAGE_CONSUMER_RETRIEVED_OFFSETS, timestampMap);
 
         offsets.forEach((topicPartition, offsetAndTimestamp) -> {
@@ -244,24 +265,31 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
     }
 
     /**
-     * Polls Kafka until a candidate record is found or {@link #readTimeoutMs} expires.
+     * Polls Kafka until a candidate record is found or the deadline passes.
      *
      * <p>In <em>single-record mode</em> (default) the method returns as soon as at least one candidate passes the
-     * key-filter and deduplication check.
+     * key-filter and is successfully claimed in the deduplication registry.
      *
      * <p>In <em>batch mode</em> ({@link ConsumerContext#isBatchConsumer()} == {@code true}) the method keeps polling
-     * until {@link ConsumerContext#getBatchSize()} distinct candidates have been collected, or the timeout expires.
+     * until {@link ConsumerContext#getBatchSize()} distinct candidates have been collected, or the deadline passes. If
+     * the batch is incomplete at the deadline, the records it claimed are released so other consumers can still match
+     * them.
      *
+     * @param deadlineNanos absolute {@link System#nanoTime()} deadline
      * @return non-empty, unmodifiable list of {@link ConsumedRecord} ready for matching
-     * @throws FetchException if the timeout expires before the required number of records is found
+     * @throws FetchException if the batch size is invalid, or the deadline passes before the required number of records
+     *     is found
      */
-    private List<ConsumedRecord<V>> pollUntilRecordFound() throws FetchException {
-        long startTime = System.currentTimeMillis();
+    private List<ConsumedRecord<V>> pollUntilRecordFound(long deadlineNanos) throws FetchException {
         long pollIntervalMs = frameworkConfig.getPollIntervalMillis();
         String namespacedTopic = context.getTopic().getNamespacedTopic();
 
         boolean batchMode = context.isBatchConsumer();
         int targetSize = batchMode ? context.getBatchSize() : 1;
+        if (targetSize < 1) {
+            throw new FetchException(
+                    "Invalid batch size " + targetSize + " for topic '" + namespacedTopic + "': must be at least 1.");
+        }
         List<ConsumedRecord<V>> accumulated = new ArrayList<>();
 
         log.debug(
@@ -270,36 +298,34 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
                 batchMode ? "BATCH" : "SINGLE",
                 targetSize);
 
-        while (System.currentTimeMillis() - startTime < readTimeoutMs) {
+        while (System.nanoTime() < deadlineNanos) {
             ConsumerRecords<K, V> batch = kafkaConsumer.poll(Duration.ofMillis(pollIntervalMs));
 
             if (!batch.isEmpty()) {
                 log.debug(MESSAGE_CONSUMER_RECORDS_IN_TOPIC_NOT_EMPTY, namespacedTopic);
 
                 for (ConsumerRecord<K, V> record : batch) {
-                    ConsumedRecord<V> consumed = ConsumedRecord.fromKafkaRecord(record);
-
-                    if (isAlreadyMatched(consumed)) {
-                        log.debug(MESSAGE_CONSUMER_RECORD_ALREADY_MATCHED, consumed.toMatchedRecord());
+                    if (!passesKeyFilter(record)) {
                         continue;
                     }
-                    if (!passesKeyFilter(record)) {
+                    ConsumedRecord<V> consumed = ConsumedRecord.fromKafkaRecord(record);
+                    if (!tryClaim(consumed)) {
+                        log.debug(MESSAGE_CONSUMER_RECORD_ALREADY_MATCHED, consumed.toMatchedRecord());
                         continue;
                     }
 
                     log.info(MESSAGE_CONSUMER_GOT_RECORD_WITH_KEY_AND_VALUE, record.key(), record.value());
-                    registerAsMatched(consumed);
                     accumulated.add(consumed);
 
                     // In SINGLE mode return immediately on the first passing record.
-                    // In BATCH mode stop as soon as targetSize is reached — do NOT
+                    // In BATCH mode stop as soon as targetSize is reached: do NOT
                     // continue draining the current poll batch beyond the target.
                     if (!batchMode) {
                         return Collections.unmodifiableList(accumulated);
                     }
                     if (accumulated.size() >= targetSize) {
                         log.info(
-                                "Batch complete — collected {} / {} records from topic '{}'.",
+                                "Batch complete: collected {} / {} records from topic '{}'.",
                                 accumulated.size(),
                                 targetSize,
                                 namespacedTopic);
@@ -310,29 +336,42 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         }
 
         if (!accumulated.isEmpty()) {
-            // Partial batch collected — treat as a timeout with context
-            throw new FetchException("Timed out after " + readTimeoutMs + "ms waiting for " + targetSize
+            // Partial batch: give the claimed records back before reporting the timeout.
+            accumulated.forEach(this::release);
+            throw new FetchTimeoutException("Timed out after " + readTimeoutMs + "ms waiting for " + targetSize
                     + " record(s) on topic '" + namespacedTopic
-                    + "' — only " + accumulated.size() + " collected.");
+                    + "': only " + accumulated.size() + " collected.");
         }
 
-        throw new FetchException(
+        throw new FetchTimeoutException(
                 "Timed out after " + readTimeoutMs + "ms waiting for a record on topic '" + namespacedTopic + "'.");
     }
 
     // =========================================================================
-    // Private — filters and deduplication
+    // Private: filters and deduplication
     // =========================================================================
 
-    /** Returns {@code true} if the record has already been claimed by another consumer in this test execution. */
-    private boolean isAlreadyMatched(ConsumedRecord<V> record) {
-        return MATCHED_RECORDS.contains(record.toMatchedRecord());
+    /**
+     * Atomically claims a record in the shared deduplication registry.
+     *
+     * <p>The check and the registration happen in a single {@link Set#add(Object)} call on a concurrent set, so two
+     * fetchers running in parallel can never both claim the same record.
+     *
+     * @param record the candidate record
+     * @return {@code true} if this fetcher claimed the record, {@code false} if it was already claimed
+     */
+    private boolean tryClaim(ConsumedRecord<V> record) {
+        MatchedRecord token = record.toMatchedRecord();
+        boolean claimed = MATCHED_RECORDS.add(token);
+        if (claimed) {
+            log.debug(MESSAGE_CONSUMER_RECORD_NOT_MATCHED_YET, token);
+        }
+        return claimed;
     }
 
-    /** Registers a record in the shared deduplication registry. */
-    private void registerAsMatched(ConsumedRecord<V> record) {
-        MATCHED_RECORDS.add(record.toMatchedRecord());
-        log.debug(MESSAGE_CONSUMER_RECORD_NOT_MATCHED_YET, record.toMatchedRecord());
+    /** Removes a previously claimed record from the shared deduplication registry. */
+    private void release(ConsumedRecord<V> record) {
+        MATCHED_RECORDS.remove(record.toMatchedRecord());
     }
 
     /**
@@ -347,7 +386,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         }
 
         if (expectedKey == null || expectedKey.isEmpty()) {
-            return true; // No filter configured — accept any key
+            return true; // No filter configured: accept any key
         }
 
         String recordKey = record.key() != null ? record.key().toString() : null;
@@ -361,7 +400,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
     }
 
     // =========================================================================
-    // Private — timeout resolution
+    // Private: timeout resolution
     // =========================================================================
 
     private long resolveReadTimeout() {

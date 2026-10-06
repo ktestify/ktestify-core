@@ -27,6 +27,9 @@ import org.apache.avro.generic.GenericRecord;
 /**
  * Asserts that the Avro record key equals the expected key in {@link MatchContext#getMatchKey()}.
  *
+ * <p>The record value is never inspected, so a tombstone ({@code null} value) with the expected key passes. A
+ * {@code null} key never matches.
+ *
  * @since 0.3.0
  */
 @Slf4j
@@ -35,22 +38,24 @@ public class AvroKeyRecordMatcher implements RecordMatcher<GenericRecord> {
     @Override
     public MatchResult match(List<ConsumedRecord<GenericRecord>> records, MatchContext context)
             throws ComparisonException {
-
+        if (records == null || records.isEmpty()) {
+            return MatchResult.noRecords();
+        }
         if (context.getMatchKey() == null || context.getMatchKey().isBlank()) {
             throw new ComparisonException("AvroKeyRecordMatcher requires matchKey to be set.");
         }
 
         String expectedKey = context.getMatchKey();
-        String actualKey = records.get(0).getKey();
+        String actualKey = records.getFirst().getKey();
 
         if (expectedKey.equals(actualKey)) {
             log.info("Avro record key matches expected key '{}'.", expectedKey);
             return MatchResult.pass(expectedKey, actualKey);
         }
 
-        log.error("Avro record key mismatch — expected: '{}', actual: '{}'", expectedKey, actualKey);
+        log.error("Avro record key mismatch, expected: '{}', actual: '{}'", expectedKey, actualKey);
         return MatchResult.fail(
-                "Avro record key does not match — expected: '" + expectedKey + "', actual: '" + actualKey + "'.",
+                "Avro record key does not match, expected: '" + expectedKey + "', actual: '" + actualKey + "'.",
                 expectedKey,
                 actualKey);
     }

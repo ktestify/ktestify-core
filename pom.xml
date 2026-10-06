@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.github.ktestify</groupId>
         <artifactId>ktestify-parent</artifactId>
-        <version>1.0.2</version>
+        <version>1.0.5</version>
     </parent>
 
     <!-- Project Coordinates -->
@@ -40,7 +40,7 @@
     <!-- SCM Information -->
     <scm>
         <connection>scm:git:git://github.com/ktestify/ktestify-core.git</connection>
-        <developerConnection>scm:git:ssh://github.com:ktestify/ktestify-core.git</developerConnection>
+        <developerConnection>scm:git:ssh://git@github.com/ktestify/ktestify-core.git</developerConnection>
         <url>https://github.com/ktestify/ktestify-core/tree/main</url>
     </scm>
 
@@ -105,7 +105,7 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
 
-        <!-- Log4j2 — SLF4J 2.x binding -->
+        <!-- Log4j2: SLF4J 2.x binding -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j2-impl</artifactId>
@@ -152,7 +152,7 @@
         <!-- Test Dependencies                     -->
         <!-- ===================================== -->
 
-        <!-- JUnit 5 -->
+        <!-- JUnit Jupiter -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -196,34 +196,12 @@
 
         <plugins>
             <!-- ===================================== -->
-            <!-- JaCoCo for Code Coverage              -->
+            <!-- JaCoCo: agent, report and 70% line    -->
+            <!-- coverage gate inherited from parent   -->
             <!-- ===================================== -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>jacoco-check</id>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                        <phase>verify</phase>
-                        <configuration>
-                            <rules>
-                                <rule>
-                                    <element>BUNDLE</element>
-                                    <limits>
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.70</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

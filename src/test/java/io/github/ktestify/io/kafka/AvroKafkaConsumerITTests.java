@@ -43,13 +43,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
@@ -58,24 +52,24 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * <p>Infrastructure:
  *
  * <ul>
- *   <li>{@link KafkaTestExtension} — Kafka broker via Testcontainers
- *   <li>{@link SchemaRegistryTestExtension} — Confluent Schema Registry via Testcontainers
+ *   <li>{@link KafkaTestExtension}: Kafka broker via Testcontainers
+ *   <li>{@link SchemaRegistryTestExtension}: Confluent Schema Registry via Testcontainers
  * </ul>
  *
- * <p>Records are seeded via a plain {@link KafkaProducer} with {@link KafkaAvroSerializer} — NOT the project's
- * {@code AvroKafkaProducer} — keeping the consumer under test fully isolated from the producer implementation.
+ * <p>Records are seeded via a plain {@link KafkaProducer} with {@link KafkaAvroSerializer}: NOT the project's
+ * {@code AvroKafkaProducer}: keeping the consumer under test fully isolated from the producer implementation.
  *
  * <p>{@link KafkaRecordFetcher#clearMatchedRecords()} is called before every test to prevent deduplication state
  * leaking between tests.
  */
 @ExtendWith({KafkaTestExtension.class, SchemaRegistryTestExtension.class})
 @DisplayName("AvroKafkaConsumer Integration Tests")
-class AvroKafkaConsumerTest {
+class AvroKafkaConsumerITTests {
 
     private static final String TOPIC_PREFIX = "test-avro-consumer-";
 
     // -------------------------------------------------------------------------
-    // Shared Avro schema — same shape as expected-order.json
+    // Shared Avro schema: same shape as expected-order.json
     // -------------------------------------------------------------------------
     static final Schema ORDER_SCHEMA = SchemaBuilder.record("Order")
             .namespace("io.github.ktestify.test")
@@ -162,7 +156,7 @@ class AvroKafkaConsumerTest {
 
     /** Absolute path of a classpath resource under {@code match/}. */
     private static String resourcePath(String filename) {
-        URL url = AvroKafkaConsumerTest.class.getClassLoader().getResource("match/" + filename);
+        URL url = AvroKafkaConsumerITTests.class.getClassLoader().getResource("match/" + filename);
         assertNotNull(url, "Test resource not found: match/" + filename);
         return url.getPath();
     }
@@ -204,7 +198,7 @@ class AvroKafkaConsumerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Consume-only — no matcher")
+    @DisplayName("Consume-only: no matcher")
     class ConsumeOnly {
 
         @Test
@@ -231,11 +225,11 @@ class AvroKafkaConsumerTest {
     }
 
     // =========================================================================
-    // File matching — AvroFileRecordMatcher
+    // File matching: AvroFileRecordMatcher
     // =========================================================================
 
     @Nested
-    @DisplayName("File matching — METHOD_MATCH_FILE")
+    @DisplayName("File matching: METHOD_MATCH_FILE")
     class FileMatching {
 
         @Test
@@ -280,7 +274,7 @@ class AvroKafkaConsumerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Key filter — expectedRecordKey")
+    @DisplayName("Key filter: expectedRecordKey")
     class KeyFilter {
 
         @Test
@@ -307,7 +301,7 @@ class AvroKafkaConsumerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("Batch consumption — isBatchConsumer(true)")
+    @DisplayName("Batch consumption: isBatchConsumer(true)")
     class BatchConsumption {
 
         /** 4 orders with distinct keys and field values. */
@@ -376,7 +370,7 @@ class AvroKafkaConsumerTest {
         }
 
         @Test
-        @DisplayName("all 4 Avro records are registered as matched — a second consumer finds nothing")
+        @DisplayName("all 4 Avro records are registered as matched: a second consumer finds nothing")
         void batchRecordsAreDeduplicated() throws Exception {
             seedBatch();
 
@@ -391,7 +385,7 @@ class AvroKafkaConsumerTest {
                             .build())
                     .call();
 
-            // Second consumer — all records already matched, must time out
+            // Second consumer: all records already matched, must time out
             assertThrows(
                     ConsumerException.class,
                     () -> new AvroKafkaConsumer(ConsumerContext.<String, GenericRecord>builder()

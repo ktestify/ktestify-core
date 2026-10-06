@@ -32,8 +32,8 @@ import java.util.List;
  * <p>Implementations exist per transport:
  *
  * <ul>
- *   <li>{@code HttpRequestResponseClient} — HTTP / HTTPS (ktestify-plugin-http)
- *   <li>{@code GrpcRequestResponseClient} — gRPC (future)
+ *   <li>{@code HttpRequestResponseClient}: HTTP / HTTPS (ktestify-plugin-http)
+ *   <li>{@code GrpcRequestResponseClient}: gRPC (future)
  * </ul>
  *
  * @param <Req> the request type specific to the transport (e.g. an HTTP request spec)

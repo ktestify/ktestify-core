@@ -17,6 +17,7 @@ package io.github.ktestify.io.kafka.impl;
 
 import com.google.gson.JsonObject;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
+import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.kafka.AbstractKafkaProducer;
 import io.github.ktestify.io.kafka.ProducerContext;
 import io.github.ktestify.models.Topic;
@@ -83,12 +84,12 @@ public class AvroKafkaProducer extends AbstractKafkaProducer<String, GenericReco
                     metadata.timestamp());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException("Interrupted while producing Avro message", e);
+            throw new ProducerException("Interrupted while producing Avro message", e);
 
         } catch (ExecutionException e) {
-            throw new RuntimeException("Failed to produce Avro message", e.getCause());
+            throw new ProducerException("Failed to produce Avro message", e.getCause());
         } catch (IOException | RestClientException e) {
-            throw new RuntimeException("Failed to read schema or payload for Avro message", e);
+            throw new ProducerException("Failed to read schema or payload for Avro message", e);
         }
     }
 }
