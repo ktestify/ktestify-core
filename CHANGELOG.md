@@ -2,11 +2,77 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### ♻️ Refactoring
+
+- Enhance plugin loading and shutdown logic — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Enhance timeout handling and improve documentation in KafkaRecordFetcher — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Extract null value message to constant in MatchResult — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+
+### ⬆️ Dependency Updates
+
+- Bump ktestify-parent version from 1.0.4 to 1.0.5 — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+
+### 🐛 Bug Fixes
+
+- Fixed a lot of bugs — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Fixed an issue where a NullPointerException was thrown on unset environment variables — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Close URLClassLoader in PluginRegistry to prevent file handle leak — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Add missing schemas directory default to reference.conf — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Harden XML parsers against XXE attacks in XMLUtils — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Enforce error taxonomy and add missing exception constructors — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Correct over-suppression of CHILD_NODELIST_LENGTH in XMLUtils — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Fixed an issue where a SchemaRegistryClient was instantiated at each call instead of being cached — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Improve byte buffer handling in AvroDeserializer — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Include cause in ConsumerException for better error handling — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Handle null values in record matchers and improve logging — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Enhance security in SAXParserFactory and improve documentation — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Improve handling of empty records in AttributeRecordMatcher — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Improve getLine method to handle null content and out-of-bounds indices — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Null pointer exception on empty TimestampVariable when format is null — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Update dependency review workflow path — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+
+### 🔧 Miscellaneous
+
+- Fixed some tests — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+
+### 🧪 Tests
+
+- Add ClasspathTestPlugin for lifecycle call assertions — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Add TombstoneMatcherTest to verify tombstone handling across matchers — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Rename integration tests with *ITTests — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+- Rename integration tests with *ITTests — [@nil-malh](https://github.com/nil-malh) ([#64](https://github.com/ktestify/ktestify-core/pull/64))
+
+
 ## [1.1.3] — 2026-09-20
 
 ### ✨ Features
 
-- Feat/multiple match fields (#59)
+- Feat/multiple match fields (#59) — [@nil-malh](https://github.com/nil-malh) ([#59](https://github.com/ktestify/ktestify-core/pull/59))
 
 
 ## [1.1.2] — 2026-08-10
@@ -18,15 +84,6 @@ All notable changes to this project will be documented in this file.
 - Refactored plugin init logs — [@nil-malh](https://github.com/nil-malh)
 
 
-## [1.1.1] — 2026-08-09
-
-### ✨ Features
-
-- Add attributes support to ConsumedRecord and related matchers — [@nil-malh](https://github.com/nil-malh)
-
-- Reorganize imports for consistency and clarity across multiple files — [@nil-malh](https://github.com/nil-malh)
-
-
 ## [1.1.0] — 2026-08-06
 
 ### ♻️ Refactoring
@@ -34,23 +91,7 @@ All notable changes to this project will be documented in this file.
 - Remove date content-sniffing and implement type-driven date comparison — [@nil-malh](https://github.com/nil-malh)
 
 
-### ✨ Features
-
-- Switched to centralised GH Actions — [@nil-malh](https://github.com/nil-malh)
-
-- Enhance deepEquals method to support dot-notation for excluded keys — [@nil-malh](https://github.com/nil-malh)
-
-- Add referenceTimestamp to ConsumerContext to prevent clock drift in fetches — [@nil-malh](https://github.com/nil-malh)
-
-- Update release permissions and add CI workflow for main branch — [@nil-malh](https://github.com/nil-malh)
-
-
 ## [1.0.3] — 2026-07-07
-
-### ✨ Features
-
-- Switch to a parent pom to manage dependencies — [@nil-malh](https://github.com/nil-malh)
-
 
 ### ⬆️ Dependency Updates
 
@@ -58,11 +99,6 @@ All notable changes to this project will be documented in this file.
 
 
 ## [0.1.2] — 2026-07-05
-
-### ✨ Features
-
-- Add JVM wide truststore configuration and tests — [@nil-malh](https://github.com/nil-malh)
-
 
 ### ⬆️ Dependency Updates
 
@@ -84,6 +120,8 @@ All notable changes to this project will be documented in this file.
 
 
 ### 🐛 Bug Fixes
+
+- Fix links in bug report template — [@nil-malh](https://github.com/nil-malh)
 
 - Fixed an issue where KTESTIFY_ROOT_LOG_LEVEL did not set the desired log level — [@nil-malh](https://github.com/nil-malh)
 
@@ -117,25 +155,6 @@ All notable changes to this project will be documented in this file.
 
 
 ## [0.1.0] — 2026-05-17
-
-### ✨ Features
-
-- Added topic namespace configuration to KafkaConfig and reference.conf — [@nil-malh](https://github.com/nil-malh)
-
-- Migrated to Log4j2 update dependencies — [@nil-malh](https://github.com/nil-malh)
-
-- Enhance logging in AvroKafkaProducer and RawKafkaProducer for better traceability — [@nil-malh](https://github.com/nil-malh)
-
-- Enhance XmlRecordMatcher to support automatic exclusion of elements marked as EXCLUDED in XML templates — [@nil-malh](https://github.com/nil-malh)
-
-- Added report output path in the FrameworkConfig — [@nil-malh](https://github.com/nil-malh)
-
-- Added Log4J config in KTestify Config — [@nil-malh](https://github.com/nil-malh)
-
-- Implement plugin system with KtestifyPlugin interface and PluginRegistry — [@nil-malh](https://github.com/nil-malh)
-
-- Migrated from custom GitHub PAT to GITHUB_TOKEN — [@nil-malh](https://github.com/nil-malh)
-
 
 ### ⬆️ Dependency Updates
 
