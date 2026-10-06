@@ -27,16 +27,16 @@ import java.util.List;
  * {@link MatchContext}.
  *
  * <p>Implementations have <strong>zero dependency</strong> on Kafka, IBM MQ, or any other transport. They only know
- * about {@link ConsumedRecord}: the common currency produced by every fetcher. This means every matcher works unchanged
- * for Kafka today and IBM MQ tomorrow.
+ * about {@link ConsumedRecord} — the common currency produced by every fetcher. This means every matcher works
+ * unchanged for Kafka today and IBM MQ tomorrow.
  *
  * <p>Concrete implementations live in {@code io.github.ktestify.match.impl}:
  *
  * <ul>
- *   <li>{@code NoOpRecordMatcher}: always passes; use when only consumption matters
- *   <li>{@code FileRecordMatcher}: compares record value against a file (String diff)
- *   <li>{@code JsonRecordMatcher}: structural JSON comparison with excluded-field support
- *   <li>{@code AvroRecordMatcher}: delegates to {@code AvroUtils} for Avro records
+ *   <li>{@code NoOpRecordMatcher} — always passes; use when only consumption matters
+ *   <li>{@code FileRecordMatcher} — compares record value against a file (String diff)
+ *   <li>{@code JsonRecordMatcher} — structural JSON comparison with excluded-field support
+ *   <li>{@code AvroRecordMatcher} — delegates to {@code AvroUtils} for Avro records
  * </ul>
  *
  * @param <V> the type of the record value (e.g. {@code String}, {@code GenericRecord})

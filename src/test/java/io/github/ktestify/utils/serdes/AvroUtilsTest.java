@@ -765,7 +765,7 @@ class AvroUtilsTest {
         Map<String, Object> jsonMap = AvroUtils.convertJsonToMap(json);
         Map<String, Object> result = AvroUtils.convertDatesToTimestamps(jsonMap);
 
-        // Recursion into nested maps now works, but no conversion is performed: the nested date-like string
+        // Recursion into nested maps now works, but no conversion is performed — the nested date-like string
         // must remain untouched.
         assertEquals("2025-01-02T00:00:00Z", ((Map<?, ?>) result.get("nested")).get("date"));
     }
@@ -791,7 +791,7 @@ class AvroUtilsTest {
 
         List<?> list = (List<?>) result.get("list");
 
-        // Recursion into nested list items works, but no conversion is performed: dates remain untouched.
+        // Recursion into nested list items works, but no conversion is performed — dates remain untouched.
         assertEquals("2025-01-02T00:00:00Z", ((Map<?, ?>) list.get(0)).get("date"));
         assertEquals("2025-01-03T00:00:00Z", ((Map<?, ?>) list.get(1)).get("date"));
     }
@@ -1176,7 +1176,7 @@ class AvroUtilsTest {
 
         Map<String, Object> result = AvroUtils.convertDatesToTimestamps(inputMap);
 
-        // No conversion is performed anymore (content-sniffing removed): dates remain untouched at all levels,
+        // No conversion is performed anymore (content-sniffing removed) — dates remain untouched at all levels,
         // but the recursion still produces a correctly structured (deep-copied) map.
         assertEquals("2022-01-03T00:00:00Z", result.get("date"), "Top level date should remain unconverted");
         assertEquals(
@@ -2499,14 +2499,14 @@ class AvroUtilsTest {
         @Test
         @DisplayName("Should return true when expected has an extra key that is excluded (core bug regression)")
         void shouldReturnTrue_WhenExpectedHasExtraExcludedKey() {
-            // expected has key3 which is excluded: old code failed here (size 3 != 2)
+            // expected has key3 which is excluded — old code failed here (size 3 != 2)
             String expected = "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}";
             String actual = "{\"key1\":\"value1\",\"key2\":\"value2\"}";
             List<String> excludedKeys = List.of("key3");
 
             assertTrue(
                     AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
-                    "Expected map has an extra key that is excluded: effective sizes are equal, should match");
+                    "Expected map has an extra key that is excluded — effective sizes are equal, should match");
         }
 
         @Test
@@ -2519,7 +2519,7 @@ class AvroUtilsTest {
 
             assertTrue(
                     AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
-                    "Actual map has an extra key that is excluded: effective sizes are equal, should match");
+                    "Actual map has an extra key that is excluded — effective sizes are equal, should match");
         }
 
         @Test
@@ -2533,20 +2533,20 @@ class AvroUtilsTest {
 
             assertTrue(
                     AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
-                    "Each map carries a different extra excluded key: effective sizes are equal, should match");
+                    "Each map carries a different extra excluded key — effective sizes are equal, should match");
         }
 
         @Test
         @DisplayName("Should return false when effective sizes still differ after accounting for excluded keys")
         void shouldReturnFalse_WhenEffectiveSizesStillDifferAfterExclusion() {
-            // expected has key2 + key3 (key3 excluded), actual has only key1: effective 2 vs 1
+            // expected has key2 + key3 (key3 excluded), actual has only key1 — effective 2 vs 1
             String expected = "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}";
             String actual = "{\"key1\":\"value1\"}";
             List<String> excludedKeys = List.of("key3");
 
             assertFalse(
                     AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
-                    "Even after excluding key3, expected still has more non-excluded keys than actual: should not match");
+                    "Even after excluding key3, expected still has more non-excluded keys than actual — should not match");
         }
 
         @Test
@@ -2559,7 +2559,7 @@ class AvroUtilsTest {
 
             assertTrue(
                     AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
-                    "An excluded key absent from both maps must not distort effective sizes: equal maps should still match");
+                    "An excluded key absent from both maps must not distort effective sizes — equal maps should still match");
         }
 
         @Test
@@ -2572,7 +2572,7 @@ class AvroUtilsTest {
 
             assertTrue(
                     AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expected, actual, excludedKeys),
-                    "Multiple extra excluded keys only in expected: effective sizes both 2, should match");
+                    "Multiple extra excluded keys only in expected — effective sizes both 2, should match");
         }
     }
 
@@ -2584,7 +2584,7 @@ class AvroUtilsTest {
         @DisplayName("Should compare literally when both sides are plain strings, even if date-like")
         void shouldCompareLiterally_WhenBothSidesAreDateLikeStrings() {
             // A genuine Avro `string` field whose content happens to look like a date/timestamp must never be
-            // converted or reinterpreted: it must be compared as a literal string on both sides.
+            // converted or reinterpreted — it must be compared as a literal string on both sides.
             Map<String, Object> expected = new HashMap<>();
             expected.put("MyDate", "2026-02-10T16:19:14.123Z");
 

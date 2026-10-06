@@ -15,7 +15,7 @@
  */
 package io.github.ktestify.match;
 
-import io.github.ktestify.exceptions.ConfigException;
+import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.match.impl.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
@@ -27,8 +27,8 @@ import org.apache.avro.generic.GenericRecord;
  * <p>Two typed factory methods are provided so the compiler can enforce type safety:
  *
  * <ul>
- *   <li>{@link #forRaw(String)}: for {@code String}-valued topics
- *   <li>{@link #forAvro(String)}: for {@code GenericRecord}-valued (Avro) topics
+ *   <li>{@link #forRaw(String)} — for {@code String}-valued topics
+ *   <li>{@link #forAvro(String)} — for {@code GenericRecord}-valued (Avro) topics
  * </ul>
  *
  * <p>When {@code matchMethod} is {@code null} or blank a {@link NoOpRecordMatcher} is returned, making "consume-only"
@@ -66,11 +66,11 @@ public final class RecordMatcherFactory {
      * @param matchMethod one of the {@code METHOD_*} constants in {@code ConfigConstants}, or {@code null} / blank for
      *     no-op
      * @return the appropriate matcher; never {@code null}
-     * @throws ConfigException if the method name is non-blank but unrecognised
+     * @throws ConsumerException if the method name is non-blank but unrecognised
      */
     public static RecordMatcher<String> forRaw(String matchMethod) {
         if (matchMethod == null || matchMethod.isBlank()) {
-            log.debug("No matchMethod specified, using NoOpRecordMatcher.");
+            log.debug("No matchMethod specified — using NoOpRecordMatcher.");
             return new NoOpRecordMatcher<>();
         }
         log.debug("Resolving raw RecordMatcher for method '{}'.", matchMethod);
@@ -83,7 +83,7 @@ public final class RecordMatcherFactory {
             case METHOD_RECORD_KEY_MATCH -> new KeyRecordMatcher();
             case METHOD_MATCH_ATTRIBUTES -> new AttributeRecordMatcher<>();
             default ->
-                throw new ConfigException("Unknown raw matchMethod '" + matchMethod + "'. "
+                throw new ConsumerException("Unknown raw matchMethod '" + matchMethod + "'. "
                         + "Valid values: methodMatchFile, methodMatchKeyValue, methodFieldsToMatch, "
                         + "methodMatchXML, methodMatchXPath, methodRecordKeyMatch, methodMatchAttributes.");
         };
@@ -99,11 +99,11 @@ public final class RecordMatcherFactory {
      * @param matchMethod one of the {@code METHOD_*} constants in {@code ConfigConstants}, or {@code null} / blank for
      *     no-op
      * @return the appropriate matcher; never {@code null}
-     * @throws ConfigException if the method name is non-blank but unrecognised
+     * @throws ConsumerException if the method name is non-blank but unrecognised
      */
     public static RecordMatcher<GenericRecord> forAvro(String matchMethod) {
         if (matchMethod == null || matchMethod.isBlank()) {
-            log.debug("No matchMethod specified, using NoOpRecordMatcher.");
+            log.debug("No matchMethod specified — using NoOpRecordMatcher.");
             return new NoOpRecordMatcher<>();
         }
         log.debug("Resolving Avro RecordMatcher for method '{}'.", matchMethod);
@@ -113,7 +113,7 @@ public final class RecordMatcherFactory {
             case METHOD_FIELDS_TO_MATCH -> new AvroFieldsRecordMatcher();
             case METHOD_RECORD_KEY_MATCH -> new AvroKeyRecordMatcher();
             default ->
-                throw new ConfigException("Unknown Avro matchMethod '" + matchMethod + "'. "
+                throw new ConsumerException("Unknown Avro matchMethod '" + matchMethod + "'. "
                         + "Valid values: methodMatchFile, methodMatchKeyValue, "
                         + "methodFieldsToMatch, methodRecordKeyMatch.");
         };

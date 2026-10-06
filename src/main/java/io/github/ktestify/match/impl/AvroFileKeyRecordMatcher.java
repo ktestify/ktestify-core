@@ -21,6 +21,7 @@ import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
+import io.github.ktestify.utils.serdes.AvroDeserializer;
 import io.github.ktestify.utils.serdes.AvroUtils;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -28,17 +29,14 @@ import org.apache.avro.generic.GenericRecord;
 
 /**
  * Asserts both the record <em>key</em> and Avro <em>value</em> against a configured expected key and expected JSON
- * file. Supports optional field exclusion via {@link MatchContext#getExcludedFields()}, like
- * {@link AvroFileRecordMatcher}.
+ * file.
  *
  * <p>Requires:
  *
  * <ul>
- *   <li>{@link MatchContext#getMatchKey()}: the expected record key
- *   <li>{@link MatchContext#getMatchFilePath()}: the path to the expected value JSON file
+ *   <li>{@link MatchContext#getMatchKey()} — the expected record key
+ *   <li>{@link MatchContext#getMatchFilePath()} — path to the expected value JSON file
  * </ul>
- *
- * <p>A record with a {@code null} value (tombstone) never matches; the key is still compared and reported.
  *
  * @since 0.3.0
  */
@@ -48,9 +46,7 @@ public class AvroFileKeyRecordMatcher implements RecordMatcher<GenericRecord> {
     @Override
     public MatchResult match(List<ConsumedRecord<GenericRecord>> records, MatchContext context)
             throws ComparisonException {
-        if (records == null || records.isEmpty()) {
-            return MatchResult.noRecords();
-        }
+
         if (context.getMatchKey() == null || context.getMatchKey().isBlank()) {
             throw new ComparisonException("AvroFileKeyRecordMatcher requires matchKey to be set.");
         }
@@ -62,18 +58,16 @@ public class AvroFileKeyRecordMatcher implements RecordMatcher<GenericRecord> {
         String actualKey = record.getKey();
         String expectedKey = context.getMatchKey();
         String expectedValue = FileUtils.getFileContent(FileUtils.getFile(context.getMatchFilePath()));
-        GenericRecord value = record.getValue();
-        String actualValue = value == null ? null : AvroJson.of(value);
+        String actualValue = toJson(record.getValue());
 
         boolean keyMatches = context.getKeyMatchStrategy().matches(expectedKey, actualKey);
-        boolean valueMatches = actualValue != null && valueMatches(expectedValue, actualValue, context);
+        boolean valueMatches =
+                AvroUtils.doesAvroRecordsSmartMatches(AvroUtils.getPrettyAvroValue(expectedValue), actualValue);
 
         if (!keyMatches) {
-            log.error("Avro key mismatch, expected: '{}', actual: '{}'", expectedKey, actualKey);
+            log.error("Avro key mismatch — expected: '{}', actual: '{}'", expectedKey, actualKey);
         }
-        if (actualValue == null) {
-            log.error("Avro value mismatch: record value is null (tombstone).");
-        } else if (!valueMatches) {
+        if (!valueMatches) {
             log.error(
                     "Avro value does not match file '{}'.\nExpected:\n{}\nActual:\n{}",
                     context.getMatchFilePath(),
@@ -85,17 +79,17 @@ public class AvroFileKeyRecordMatcher implements RecordMatcher<GenericRecord> {
             log.info("Avro record key and value both match.");
             return MatchResult.pass(expectedKey + " / " + expectedValue, actualKey + " / " + actualValue);
         }
-        String diff = "Key match: " + keyMatches + ", value match: " + valueMatches
-                + (actualValue == null ? " (" + MatchResult.NULL_VALUE_MESSAGE + ")" : "");
-        return MatchResult.fail(diff, expectedKey + " / " + expectedValue, actualKey + " / " + actualValue);
+        return MatchResult.fail(
+                "Key match: " + keyMatches + ", value match: " + valueMatches,
+                expectedKey + " / " + expectedValue,
+                actualKey + " / " + actualValue);
     }
 
-    private static boolean valueMatches(String expectedValue, String actualValue, MatchContext context) {
-        List<String> excluded = context.getExcludedFields();
-        if (excluded != null && !excluded.isEmpty()) {
-            log.debug("Excluding Avro fields: {}", excluded);
-            return AvroUtils.doesAvroRecordsSmartMatchesWithExclusions(expectedValue, actualValue, excluded);
+    private String toJson(GenericRecord value) {
+        if (value.getSchema() != null) {
+            return AvroUtils.getPrettyAvroValue(
+                    AvroUtils.convertMapToJsonString(AvroDeserializer.recordDeserializer(value)));
         }
-        return AvroUtils.doesAvroRecordsSmartMatches(AvroUtils.getPrettyAvroValue(expectedValue), actualValue);
+        return AvroUtils.getPrettyAvroValue(value.toString());
     }
 }

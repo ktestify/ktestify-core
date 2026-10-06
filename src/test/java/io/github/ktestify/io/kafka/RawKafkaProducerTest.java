@@ -30,12 +30,25 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.*;
-import org.apache.kafka.clients.consumer.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.UUID;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -55,7 +68,7 @@ import org.junit.jupiter.api.io.TempDir;
  */
 @ExtendWith(KafkaTestExtension.class)
 @DisplayName("RawKafkaProducer Integration Tests")
-class RawKafkaProducerITTests {
+class RawKafkaProducerTest {
 
     private static final String TEST_TOPIC_PREFIX = "test-raw-producer-";
 
@@ -217,7 +230,7 @@ class RawKafkaProducerITTests {
 
             // Then - empty string payload should throw IllegalStateException
             // because resolvePayload() treats empty string as no payload
-            assertThrows(ProducerException.class, rawProducer::send);
+            assertThrows(IllegalStateException.class, rawProducer::send);
         }
     }
 
@@ -558,7 +571,7 @@ class RawKafkaProducerITTests {
             RawKafkaProducer rawProducer = new RawKafkaProducer(context);
 
             // When/Then
-            assertThrows(ProducerException.class, rawProducer::send);
+            assertThrows(IllegalStateException.class, rawProducer::send);
         }
     }
 

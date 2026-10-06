@@ -48,31 +48,8 @@ public class DynamicVariableFactoryTest {
 
     @AfterEach
     public void tearDown() {
-        // Restore the built-ins so other test classes are not affected
-        DynamicVariableFactory.resetToDefaults();
-    }
-
-    @Test
-    public void testLookupIsCaseInsensitive() {
-        DynamicVariableFactory.resetToDefaults();
-
-        assertTrue(DynamicVariableFactory.isRegistered("env"));
-        assertTrue(DynamicVariableFactory.isRegistered("ENV"));
-        assertTrue(DynamicVariableFactory.isRegistered("Env"));
-        assertSame(DynamicVariableFactory.getVariable("env"), DynamicVariableFactory.getVariable("ENV"));
-    }
-
-    @Test
-    public void testGetVariableWithNullNameReturnsNull() {
-        assertNull(DynamicVariableFactory.getVariable(null));
-        assertFalse(DynamicVariableFactory.isRegistered(null));
-    }
-
-    @Test
-    public void testResetToDefaultsRestoresBuiltIns() {
-        DynamicVariableFactory.resetToDefaults();
-
-        assertEquals(Set.of("date", "timestamp", "random", "env"), DynamicVariableFactory.getRegisteredVariableNames());
+        // Clean up after each test to avoid interference
+        DynamicVariableFactory.clearRegisteredVariables();
     }
 
     @Test

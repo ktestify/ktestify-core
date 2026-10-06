@@ -32,11 +32,9 @@ import lombok.extern.slf4j.Slf4j;
  * <p>Requires:
  *
  * <ul>
- *   <li>{@link MatchContext#getMatchFilePath()}: the path to the expected XML file
- *   <li>{@link MatchContext#getExcludedFields()}: repurposed here as the list of XPath expressions to evaluate
+ *   <li>{@link MatchContext#getMatchFilePath()} — path to the expected XML file
+ *   <li>{@link MatchContext#getExcludedFields()} — repurposed here as the list of XPath expressions to evaluate
  * </ul>
- *
- * <p>A record with a {@code null} value (tombstone) fails with {@link MatchResult#nullValue(String)}.
  *
  * @since 0.3.0
  */
@@ -45,9 +43,7 @@ public class XPathRecordMatcher implements RecordMatcher<String> {
 
     @Override
     public MatchResult match(List<ConsumedRecord<String>> records, MatchContext context) throws ComparisonException {
-        if (records == null || records.isEmpty()) {
-            return MatchResult.noRecords();
-        }
+
         if (context.getExcludedFields() == null || context.getExcludedFields().isEmpty()) {
             throw new ComparisonException(
                     "XPathRecordMatcher requires xPath expressions to be set via excludedFields.");
@@ -57,13 +53,9 @@ public class XPathRecordMatcher implements RecordMatcher<String> {
         }
 
         String expected = FileUtils.getFileContent(FileUtils.getFile(context.getMatchFilePath()));
-        String actual = records.getFirst().getValue();
-        if (actual == null) {
-            log.error("Record value is null (tombstone), expected XML from '{}'.", context.getMatchFilePath());
-            return MatchResult.nullValue(expected);
-        }
+        String actual = records.get(0).getValue();
         log.debug(
-                "XPath comparison, XPaths: {}\nActual:\n{}\nExpected:\n{}",
+                "XPath comparison — XPaths: {}\nActual:\n{}\nExpected:\n{}",
                 context.getExcludedFields(),
                 actual,
                 expected);

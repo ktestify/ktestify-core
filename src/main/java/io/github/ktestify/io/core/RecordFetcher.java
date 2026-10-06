@@ -25,8 +25,8 @@ import java.util.List;
  * <p>Implementations exist per transport:
  *
  * <ul>
- *   <li>{@code KafkaRecordFetcher}: Apache Kafka
- *   <li>{@code IbmMqRecordFetcher}: IBM MQ (future)
+ *   <li>{@code KafkaRecordFetcher} — Apache Kafka
+ *   <li>{@code IbmMqRecordFetcher} — IBM MQ (future)
  * </ul>
  *
  * <p>The return type {@link ConsumedRecord} is the common currency shared between the transport layer and the assertion
@@ -48,7 +48,7 @@ public interface RecordFetcher<V> extends AutoCloseable {
     List<ConsumedRecord<V>> fetch() throws FetchException;
 
     /**
-     * Releases all resources held by this fetcher (connections, threads, etc.). Idempotent: calling {@code close()}
+     * Releases all resources held by this fetcher (connections, threads, etc.). Idempotent — calling {@code close()}
      * more than once must be safe.
      */
     @Override

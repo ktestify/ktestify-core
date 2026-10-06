@@ -28,7 +28,7 @@ import java.util.Map;
 import org.apache.avro.generic.GenericRecord;
 
 /**
- * Shared test helpers for {@link RecordMatcher} unit tests. Keeps each test class lean: no boilerplate record
+ * Shared test helpers for {@link RecordMatcher} unit tests. Keeps each test class lean — no boilerplate record
  * construction.
  */
 final class MatcherTestSupport {
@@ -63,7 +63,7 @@ final class MatcherTestSupport {
 
     /**
      * Returns the absolute path of a classpath resource inside {@code src/test/resources/match/}. Throws
-     * {@link IllegalStateException} if the resource is not found: catches typos early.
+     * {@link IllegalStateException} if the resource is not found — catches typos early.
      */
     static String resourcePath(String filename) {
         String path = "match/" + filename;

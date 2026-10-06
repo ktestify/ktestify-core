@@ -28,7 +28,7 @@ import org.apache.avro.generic.GenericRecord;
  * <p>Delegates all Kafka mechanics to {@link io.github.ktestify.io.kafka.KafkaRecordFetcher} and all assertion logic to
  * the {@link RecordMatcher} resolved by {@link RecordMatcherFactory#forAvro(String)}.
  *
- * <p>Typical usage: consume and match against an expected JSON file:
+ * <p>Typical usage — consume and match against an expected JSON file:
  *
  * <pre>
  * Consumer&lt;String, GenericRecord&gt; kafkaConsumer = KafkaClientFactory.createAvroConsumer();
