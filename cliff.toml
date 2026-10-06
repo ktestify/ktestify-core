@@ -76,8 +76,10 @@ commit_parsers = [
     { message = "^deps",                 group = "⬆️ Dependency Updates" },
 
     # ── conventional types → sections ───────────────────────────────────────
+    { message = "^feat",               group = "✨ Features"       },
     { message = "^[Ff]eat/",           group = "✨ Features"       },
-    { message = "^[Ff]ix",                group = "🐛 Bug Fixes"      },
+    { message = "^fix",                group = "🐛 Bug Fixes"      },
+    { message = "^[Ff]ix",             group = "🐛 Bug Fixes"      },
     { message = "^perf",               group = "⚡ Performance"    },
     { message = "^refactor",           group = "♻️ Refactoring"    },
     { message = "^test",               group = "🧪 Tests"          },
