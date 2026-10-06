@@ -29,7 +29,7 @@ package io.github.ktestify.match;
  * <p>The default strategy is {@link #EXACT}, which preserves the original {@code String.equals()} behavior. Other
  * strategies allow matching dynamically generated keys by prefix, suffix, substring, or regular expression.
  *
- * @since 1.1.1
+ * @since 1.1.4
  */
 public enum KeyMatchStrategy {
 
@@ -39,7 +39,7 @@ public enum KeyMatchStrategy {
      * <p>This is the default and preserves backward compatibility for feature files that do not specify a
      * {@code keyMatchStrategy} column.
      *
-     * @since 1.1.1
+     * @since 1.1.4
      */
     EXACT {
         @Override
@@ -53,7 +53,7 @@ public enum KeyMatchStrategy {
      *
      * <p>Useful when the record key contains a known fragment embedded in a larger dynamically generated value.
      *
-     * @since 1.1.1
+     * @since 1.1.4
      */
     CONTAINS {
         @Override
@@ -68,7 +68,7 @@ public enum KeyMatchStrategy {
      * <p>Useful when the record key starts with a known prefix followed by a dynamically generated suffix (e.g.
      * {@code ORD-<uuid>}).
      *
-     * @since 1.1.1
+     * @since 1.1.4
      */
     STARTS_WITH {
         @Override
@@ -82,7 +82,7 @@ public enum KeyMatchStrategy {
      *
      * <p>Useful when the record key ends with a known suffix preceded by a dynamically generated prefix.
      *
-     * @since 1.1.1
+     * @since 1.1.4
      */
     ENDS_WITH {
         @Override
@@ -97,7 +97,7 @@ public enum KeyMatchStrategy {
      * <p>The {@code expected} string is interpreted as a Java regular expression. Useful for arbitrary patterns such as
      * {@code ORD-\d{6}} that cannot be expressed with prefix, suffix, or substring matching.
      *
-     * @since 1.1.1
+     * @since 1.1.4
      */
     REGEX {
         @Override
@@ -112,7 +112,7 @@ public enum KeyMatchStrategy {
      * @param expected the expected key value (or pattern for {@link #REGEX})
      * @param actual the actual record key, may be {@code null} when the Kafka record has no key
      * @return {@code true} if the actual key matches according to this strategy
-     * @since 1.1.1
+     * @since 1.1.4
      */
     public abstract boolean matches(String expected, String actual);
 
@@ -124,7 +124,7 @@ public enum KeyMatchStrategy {
      *
      * @param value the raw column value, may be {@code null} or blank
      * @return the parsed strategy, or {@link #EXACT} when the value is {@code null}, blank, or unrecognized
-     * @since 1.1.1
+     * @since 1.1.4
      */
     public static KeyMatchStrategy fromString(String value) {
         if (value == null || value.isBlank()) {
