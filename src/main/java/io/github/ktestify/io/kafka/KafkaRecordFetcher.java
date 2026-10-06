@@ -33,6 +33,7 @@ import org.apache.kafka.common.errors.WakeupException;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.github.ktestify.constants.LogMessagesConstants.*;
