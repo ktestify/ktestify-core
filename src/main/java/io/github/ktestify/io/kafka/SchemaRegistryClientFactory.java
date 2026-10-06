@@ -57,42 +57,17 @@ public final class SchemaRegistryClientFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(SchemaRegistryClientFactory.class);
 
-    /**
-     * Cached singleton client created from the default configuration. Reused across all callers in the same JVM to
-     * avoid creating a new {@link RestService} (and its HTTP connection pool) on every call.
-     */
-    private static volatile SchemaRegistryClient cachedClient;
-
     private SchemaRegistryClientFactory() {
         // Utility class
     }
 
     /**
-     * Returns a cached Schema Registry client using default configuration.
+     * Creates a Schema Registry client using default configuration.
      *
-     * <p>The first call creates and caches the client; subsequent calls return the same instance.
-     *
-     * @return a cached Schema Registry client
+     * @return a new Schema Registry client
      */
     public static SchemaRegistryClient createClient() {
-        if (cachedClient == null) {
-            synchronized (SchemaRegistryClientFactory.class) {
-                if (cachedClient == null) {
-                    cachedClient = createClient(KtestifyConfig.getOrLoad());
-                }
-            }
-        }
-        return cachedClient;
-    }
-
-    /**
-     * Clears the cached singleton client. Primarily intended for test isolation so that a new config (e.g. via
-     * {@link KtestifyConfig#reset()}) takes effect on the next {@link #createClient()} call.
-     */
-    public static void resetCache() {
-        synchronized (SchemaRegistryClientFactory.class) {
-            cachedClient = null;
-        }
+        return createClient(KtestifyConfig.getOrLoad());
     }
 
     /**

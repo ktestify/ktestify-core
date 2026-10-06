@@ -106,7 +106,7 @@ class XmlRecordMatcherTest {
         @Test
         @DisplayName("fails when differing element is not in the exclusion list")
         void failsWhenNotExcluded() throws ComparisonException {
-            // status differs but only orderId is excluded: should still fail
+            // status differs but only orderId is excluded — should still fail
             MatchResult result = matcher.match(
                     rawRecord(STATUS_ONLY_DIFF_XML),
                     ctxWithFileAndExclusions("expected-order.xml", List.of("orderId")));

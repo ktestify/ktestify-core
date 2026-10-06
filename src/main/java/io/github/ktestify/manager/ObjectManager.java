@@ -47,7 +47,7 @@ public class ObjectManager<T> {
      * used to retrieve it.
      *
      * @param name the canonical name
-     * @param alias the alias (may be {@code null} or blank: ignored if so)
+     * @param alias the alias (may be {@code null} or blank — ignored if so)
      * @param object the object to store
      */
     public void register(String name, String alias, T object) {

@@ -18,7 +18,7 @@ package io.github.ktestify.match;
 import static io.github.ktestify.match.RecordMatcherFactory.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.github.ktestify.exceptions.ConfigException;
+import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.match.impl.*;
 import org.apache.avro.generic.GenericRecord;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +36,7 @@ class RecordMatcherFactoryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("forRaw: known methods")
+    @DisplayName("forRaw — known methods")
     class ForRawKnownMethods {
 
         @Test
@@ -83,7 +83,7 @@ class RecordMatcherFactoryTest {
     }
 
     @Nested
-    @DisplayName("forRaw: null/blank → NoOpRecordMatcher")
+    @DisplayName("forRaw — null/blank → NoOpRecordMatcher")
     class ForRawNullBlank {
 
         @ParameterizedTest(name = "forRaw(\"{0}\") → NoOpRecordMatcher")
@@ -95,13 +95,13 @@ class RecordMatcherFactoryTest {
     }
 
     @Nested
-    @DisplayName("forRaw: unknown method → ConsumerException")
+    @DisplayName("forRaw — unknown method → ConsumerException")
     class ForRawUnknown {
 
         @Test
         @DisplayName("throws ConsumerException for an unrecognised method name")
         void throwsForUnknown() {
-            assertThrows(ConfigException.class, () -> RecordMatcherFactory.forRaw("methodDoesNotExist"));
+            assertThrows(ConsumerException.class, () -> RecordMatcherFactory.forRaw("methodDoesNotExist"));
         }
     }
 
@@ -110,7 +110,7 @@ class RecordMatcherFactoryTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("forAvro: known methods")
+    @DisplayName("forAvro — known methods")
     class ForAvroKnownMethods {
 
         @Test
@@ -139,7 +139,7 @@ class RecordMatcherFactoryTest {
     }
 
     @Nested
-    @DisplayName("forAvro: null/blank → NoOpRecordMatcher")
+    @DisplayName("forAvro — null/blank → NoOpRecordMatcher")
     class ForAvroNullBlank {
 
         @ParameterizedTest(name = "forAvro(\"{0}\") → NoOpRecordMatcher")
@@ -152,31 +152,31 @@ class RecordMatcherFactoryTest {
     }
 
     @Nested
-    @DisplayName("forAvro: unknown method → ConsumerException")
+    @DisplayName("forAvro — unknown method → ConsumerException")
     class ForAvroUnknown {
 
         @Test
         @DisplayName("throws ConsumerException for an unrecognised method name")
         void throwsForUnknown() {
-            assertThrows(ConfigException.class, () -> RecordMatcherFactory.forAvro("methodDoesNotExist"));
+            assertThrows(ConsumerException.class, () -> RecordMatcherFactory.forAvro("methodDoesNotExist"));
         }
 
         @Test
         @DisplayName("throws ConsumerException for XML method (not supported for Avro)")
         void throwsForXml() {
-            assertThrows(ConfigException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_XML));
+            assertThrows(ConsumerException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_XML));
         }
 
         @Test
         @DisplayName("throws ConsumerException for XPath method (not supported for Avro)")
         void throwsForXPath() {
-            assertThrows(ConfigException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_XPATH));
+            assertThrows(ConsumerException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_XPATH));
         }
 
         @Test
         @DisplayName("throws ConsumerException for attribute method (raw transports only)")
         void throwsForAttributes() {
-            assertThrows(ConfigException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_ATTRIBUTES));
+            assertThrows(ConsumerException.class, () -> RecordMatcherFactory.forAvro(METHOD_MATCH_ATTRIBUTES));
         }
     }
 

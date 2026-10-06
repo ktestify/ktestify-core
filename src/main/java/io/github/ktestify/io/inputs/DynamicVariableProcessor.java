@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 public class DynamicVariableProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamicVariableProcessor.class);
 
-    private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{(\\w+)(?::([^}]*?))?}}");
+    private static final Pattern VARIABLE_PATTERN = Pattern.compile("\\{\\{(\\w+)(?::([^}]*?))?\\}\\}");
     private static final int GROUP_NAME = 1;
     private static final int GROUP_FORMAT = 2;
 
@@ -34,7 +34,7 @@ public class DynamicVariableProcessor {
         }
 
         Matcher matcher = VARIABLE_PATTERN.matcher(input);
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
 
         // Check if any matches exist
         if (!matcher.find()) {

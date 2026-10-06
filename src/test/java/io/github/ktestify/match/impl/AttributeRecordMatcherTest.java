@@ -147,12 +147,10 @@ class AttributeRecordMatcherTest {
     class Misconfiguration {
 
         @Test
-        @DisplayName("fails with noRecords when there is no record to inspect, like every other matcher")
-        void failsWithoutRecords() throws ComparisonException {
+        @DisplayName("throws ComparisonException when there is no record to inspect")
+        void throwsWithoutRecords() {
             MatchContext context = ctxWithAttributes(Map.of("statusCode", "200"));
-            MatchResult result = matcher.match(List.of(), context);
-            assertFalse(result.isPassed());
-            assertEquals(MatchResult.noRecords().getDiff(), result.getDiff());
+            assertThrows(ComparisonException.class, () -> matcher.match(List.of(), context));
         }
     }
 }

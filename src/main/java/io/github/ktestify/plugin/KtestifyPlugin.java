@@ -18,7 +18,7 @@ package io.github.ktestify.plugin;
 /**
  * Service Provider Interface (SPI) for ktestify plugins.
  *
- * <p>A plugin extends ktestify with new capabilities: typically a new transport (e.g. Azure Blob Storage, IBM MQ,
+ * <p>A plugin extends ktestify with new capabilities — typically a new transport (e.g. Azure Blob Storage, IBM MQ,
  * Amazon S3) plus a set of Cucumber step definitions that exercise it.
  *
  * <h2>How to implement a plugin</h2>
@@ -45,9 +45,9 @@ package io.github.ktestify.plugin;
  * <h2>Lifecycle</h2>
  *
  * <ol>
- *   <li>{@link #initialize(PluginContext)}: called once at JVM startup, before any Cucumber scenario runs.
+ *   <li>{@link #initialize(PluginContext)} — called once at JVM startup, before any Cucumber scenario runs.
  *   <li>Plugin steps execute normally during scenario runs.
- *   <li>{@link #shutdown()}: called once on JVM shutdown.
+ *   <li>{@link #shutdown()} — called once on JVM shutdown.
  * </ol>
  *
  * @since 1.1.0
@@ -61,7 +61,7 @@ public interface KtestifyPlugin {
      *
      * <p>This ID is used in log messages and as the HOCON config subtree key ({@code ktestify.plugins.<id>}).
      *
-     * @return the plugin identifier: never {@code null} or blank
+     * @return the plugin identifier — never {@code null} or blank
      */
     String getId();
 
@@ -78,7 +78,7 @@ public interface KtestifyPlugin {
      * <p>Shown in the ktestify startup banner alongside the plugin ID and version so operators can immediately identify
      * who is responsible for each loaded plugin. Override this in your implementation to provide a real name.
      *
-     * @return the author name: {@code "unknown"} by default
+     * @return the author name — {@code "unknown"} by default
      */
     default String getAuthorName() {
         return "unknown";
@@ -90,7 +90,7 @@ public interface KtestifyPlugin {
      * <p>Displayed next to {@link #getAuthorName()} in the plugin registry startup log. Override this to provide a real
      * email address.
      *
-     * @return the author email: empty string by default
+     * @return the author email — empty string by default
      */
     default String getAuthorEmail() {
         return "";
@@ -101,7 +101,7 @@ public interface KtestifyPlugin {
      * {@code "io.github.ktestify.azureblob.steps"}).
      *
      * <p>The ktestify runtime injects this package as a {@code --glue} argument to the Cucumber CLI so step definitions
-     * are discovered automatically: no manual configuration required.
+     * are discovered automatically — no manual configuration required.
      *
      * <p>Return {@code null} or an empty string if the plugin does not contribute any step definitions.
      *
@@ -123,7 +123,7 @@ public interface KtestifyPlugin {
     /**
      * Shuts down the plugin. Called once on JVM shutdown, after all Cucumber scenarios have finished.
      *
-     * <p>Implementations should release all resources (connections, thread pools, etc.) and must not throw exceptions:
+     * <p>Implementations should release all resources (connections, thread pools, etc.) and must not throw exceptions —
      * log and swallow instead.
      */
     void shutdown();
