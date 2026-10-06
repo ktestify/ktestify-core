@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.3] — 2026-09-20
+
+### ✨ Features
+
+- Feat/multiple match fields (#59)
+
+
 ## [1.1.2] — 2026-08-10
 
 ### ♻️ Refactoring

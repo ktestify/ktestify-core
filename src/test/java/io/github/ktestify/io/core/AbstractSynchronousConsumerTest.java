@@ -61,7 +61,7 @@ class AbstractSynchronousConsumerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("call — success")
+    @DisplayName("call: success")
     class Success {
 
         @Test
@@ -97,7 +97,7 @@ class AbstractSynchronousConsumerTest {
         }
 
         @Test
-        @DisplayName("does not close the client — the client outlives a single call")
+        @DisplayName("does not close the client: the client outlives a single call")
         void doesNotCloseClient() {
             when(client.execute(anyString())).thenReturn(records());
             when(matcher.match(any(), any())).thenReturn(MatchResult.pass());
@@ -113,7 +113,7 @@ class AbstractSynchronousConsumerTest {
     // =========================================================================
 
     @Nested
-    @DisplayName("call — failure")
+    @DisplayName("call: failure")
     class Failure {
 
         @Test

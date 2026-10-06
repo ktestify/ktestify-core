@@ -125,7 +125,14 @@ public final class AvroUtils {
             return "{}";
         }
 
-        var gson = new GsonBuilder().setPrettyPrinting().create();
+        // AvroDeserializer emits java.time values for logical types. Gson has no adapters for them and cannot
+        // reflect into JDK classes, so they are written as their ISO-8601 string form.
+        var gson = new GsonBuilder()
+                .setPrettyPrinting()
+                .registerTypeHierarchyAdapter(
+                        java.time.temporal.TemporalAccessor.class, (JsonSerializer<java.time.temporal.TemporalAccessor>)
+                                (src, typeOfSrc, context) -> new JsonPrimitive(src.toString()))
+                .create();
         return gson.toJson(map);
     }
 
@@ -286,8 +293,7 @@ public final class AvroUtils {
      *
      * <ul>
      *   <li>A simple field name (e.g. {@code "timestamp"}), which excludes any field with that exact name at any
-     *       nesting depth (top-level object, nested object, or inside array elements) — this is the historical
-     *       behavior.
+     *       nesting depth (top-level object, nested object, or inside array elements): this is the historical behavior.
      *   <li>A dot-notation path (e.g. {@code "RootField.NestedField"}), which excludes only the field found at that
      *       exact nested location, leaving sibling fields (and the parent object itself) subject to normal comparison.
      *       Paths can be nested arbitrarily deep (e.g. {@code "a.b.c"}), and also apply within array elements (e.g.
@@ -635,7 +641,7 @@ public final class AvroUtils {
      * guessing whether a string "looks like" a date and instead relies on the actual side's real Java type, which is
      * only ever a date/time type when the underlying Avro schema declares a logical type.
      *
-     * <p>When both values are plain {@link String} instances, no date detection or conversion is attempted — they are
+     * <p>When both values are plain {@link String} instances, no date detection or conversion is attempted: they are
      * compared literally, so genuine Avro {@code string} fields whose content happens to look like a date are never
      * misinterpreted.
      *
@@ -730,7 +736,7 @@ public final class AvroUtils {
      *
      * <p>Since the actual side has already been resolved to an {@link Instant} by {@link AvroDeserializer} (i.e. this
      * is genuinely a timestamp-millis/timestamp-micros logical-type field), we know for certain the expected string is
-     * meant to represent a timestamp, so no content-sniffing/guessing is required — only parsing.
+     * meant to represent a timestamp, so no content-sniffing/guessing is required: only parsing.
      *
      * @param expectedValue the expected date string
      * @return the parsed {@link Instant}, or null if it could not be parsed with any supported format
@@ -1152,6 +1158,12 @@ public final class AvroUtils {
      */
     private static Object handleUnionType(JsonElement jsonElement, Schema fieldSchema) {
         LOGGER.debug("Found a UNION Type in the field schema");
+
+        boolean nullable = fieldSchema.getTypes().stream().anyMatch(s -> s.getType() == Schema.Type.NULL);
+        if (nullable && (jsonElement == null || jsonElement.isJsonNull())) {
+            LOGGER.debug("JSON value is null and the union accepts NULL");
+            return null;
+        }
 
         for (var schema : fieldSchema.getTypes()) {
             if (schema.getType() != Schema.Type.NULL) {

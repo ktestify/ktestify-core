@@ -19,6 +19,8 @@ import java.io.StringReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import lombok.experimental.UtilityClass;
@@ -26,16 +28,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xmlunit.builder.DiffBuilder;
-import org.xmlunit.diff.Comparison;
-import org.xmlunit.diff.ComparisonResult;
-import org.xmlunit.diff.ComparisonType;
-import org.xmlunit.diff.DefaultNodeMatcher;
-import org.xmlunit.diff.Diff;
-import org.xmlunit.diff.Difference;
-import org.xmlunit.diff.DifferenceEvaluator;
-import org.xmlunit.diff.ElementSelectors;
+import org.xmlunit.diff.*;
 
 /**
  * Utility class for comparing XML documents, with optional element exclusion and XPath-based comparison.
@@ -49,6 +46,84 @@ public final class XMLUtils {
     private static final int XMLNS_PREFIX_LENGTH = "xmlns:".length();
 
     /**
+     * Creates a hardened {@link SAXParserFactory} with XXE protections enabled.
+     *
+     * <p>Enables secure processing and disables external general/parameter entities, DOCTYPE declarations, and external
+     * DTD loading. Use this factory for every SAX parse of test data, including expected template files.
+     *
+     * @return a hardened, non-namespace-aware SAXParserFactory
+     * @since 1.1.4
+     */
+    public static SAXParserFactory newHardenedSAXParserFactory() {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        // Namespace-awareness is intentionally NOT enabled here: getNamespacesFromString
+        // relies on xmlns:* attributes being reported as regular attributes via getQName(),
+        // which namespace-aware mode would suppress. XXE hardening features below are
+        // independent of this setting.
+        try {
+            factory.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        } catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+            LOGGER.warn("Could not enable secure processing on SAXParserFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        } catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+            LOGGER.warn("Could not disallow DOCTYPE declarations on SAXParserFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        } catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+            LOGGER.warn("Could not disable external general entities on SAXParserFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        } catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+            LOGGER.warn("Could not disable external parameter entities on SAXParserFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        } catch (ParserConfigurationException | SAXNotRecognizedException | SAXNotSupportedException e) {
+            LOGGER.warn("Could not disable external DTD loading on SAXParserFactory: {}", e.getMessage());
+        }
+        return factory;
+    }
+
+    /**
+     * Creates a hardened {@link DocumentBuilderFactory} with XXE protections enabled.
+     *
+     * <p>Disables external general/parameter entities, DOCTYPE declarations, and external DTD loading. Used by
+     * XMLUnit's {@link DiffBuilder} via {@code withDocumentBuilderFactory}.
+     *
+     * @return a hardened DocumentBuilderFactory
+     */
+    private static DocumentBuilderFactory newHardenedDocumentBuilderFactory() {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        try {
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        } catch (ParserConfigurationException e) {
+            LOGGER.warn("Could not disallow DOCTYPE declarations on DocumentBuilderFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        } catch (ParserConfigurationException e) {
+            LOGGER.warn("Could not disable external general entities on DocumentBuilderFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        } catch (ParserConfigurationException e) {
+            LOGGER.warn("Could not disable external parameter entities on DocumentBuilderFactory: {}", e.getMessage());
+        }
+        try {
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        } catch (ParserConfigurationException e) {
+            LOGGER.warn("Could not disable external DTD loading on DocumentBuilderFactory: {}", e.getMessage());
+        }
+        factory.setExpandEntityReferences(false);
+        factory.setXIncludeAware(false);
+        return factory;
+    }
+
+    /**
      * Extracts XML namespace declarations from a raw XML string.
      *
      * @param xmlContent the XML document as a string
@@ -57,7 +132,7 @@ public final class XMLUtils {
     public static Map<String, String> getNamespacesFromString(String xmlContent) {
         Map<String, String> namespaces = new HashMap<>();
         try {
-            SAXParserFactory factory = SAXParserFactory.newInstance();
+            SAXParserFactory factory = newHardenedSAXParserFactory();
             SAXParser saxParser = factory.newSAXParser();
             saxParser.parse(new InputSource(new StringReader(xmlContent)), new DefaultHandler() {
                 @Override
@@ -88,6 +163,7 @@ public final class XMLUtils {
         LOGGER.debug("Comparing XML:\nActual  : {}\nExpected: {}", actualValue, expectedValue);
         Diff diff = DiffBuilder.compare(actualValue)
                 .withTest(expectedValue)
+                .withDocumentBuilderFactory(newHardenedDocumentBuilderFactory())
                 .withNodeMatcher(new DefaultNodeMatcher(ElementSelectors.byNameAndText))
                 .checkForIdentical()
                 .build();
@@ -118,6 +194,7 @@ public final class XMLUtils {
 
         Diff diff = DiffBuilder.compare(actualValue)
                 .withTest(expectedValue)
+                .withDocumentBuilderFactory(newHardenedDocumentBuilderFactory())
                 .normalizeWhitespace()
                 .ignoreWhitespace()
                 .withNodeMatcher(new DefaultNodeMatcher(ElementSelectors.byNameAndText))
@@ -150,6 +227,7 @@ public final class XMLUtils {
             Map<String, String> namespaces = getNamespacesFromString(expectedValue);
             Diff diff = DiffBuilder.compare(actualValue)
                     .withTest(expectedValue)
+                    .withDocumentBuilderFactory(newHardenedDocumentBuilderFactory())
                     .withNodeMatcher(new DefaultNodeMatcher(
                             ElementSelectors.byXPath(xPathExpression, namespaces, ElementSelectors.byNameAndText)))
                     .checkForIdentical()
@@ -229,7 +307,7 @@ public final class XMLUtils {
             String controlXPath = comparison.getControlDetails().getXPath();
             String testXPath = comparison.getTestDetails().getXPath();
 
-            // 1. Direct hit — the differing node IS an excluded element
+            // 1. Direct hit: the differing node IS an excluded element
             if (isExcluded(controlXPath) || isExcluded(testXPath)) {
                 return ComparisonResult.SIMILAR;
             }
@@ -237,28 +315,32 @@ public final class XMLUtils {
             // 2. Child-count difference caused by an excluded element being present in one
             //    document but absent in the other.  XMLUnit fires CHILD_NODELIST_LENGTH on
             //    the *parent* node, so the XPath points to the parent (e.g. /order[1]), not
-            //    to the excluded child.  We mark it SIMILAR when the count delta equals the
-            //    number of excluded elements that appear in either document.
+            //    to the excluded child.
+            //
+            //    Without DOM access we cannot determine which excluded elements are actual
+            //    children of this parent.  We conservatively suppress the length difference
+            //    when the delta does not exceed the total number of excluded elements.
+            //    This is safe because XMLUnit also fires CHILD_LOOKUP (point 3 below) for
+            //    each missing/extra child: any non-excluded child will be caught there and
+            //    reported as a real difference.
             if (comparison.getType() == ComparisonType.CHILD_NODELIST_LENGTH) {
                 Object controlVal = comparison.getControlDetails().getValue();
                 Object testVal = comparison.getTestDetails().getValue();
                 if (controlVal instanceof Integer controlCount && testVal instanceof Integer testCount) {
                     int delta = Math.abs(controlCount - testCount);
-                    long excludedPresent = excludedElements.stream()
-                            .filter(el -> xPathBelongsToParent(controlXPath, el) || xPathBelongsToParent(testXPath, el))
-                            .count();
-                    if (delta <= excludedPresent) {
+                    if (delta > 0 && delta <= excludedElements.size()) {
                         LOGGER.debug(
-                                "Suppressing CHILD_NODELIST_LENGTH difference — "
-                                        + "delta {} covered by {} excluded element(s).",
+                                "Suppressing CHILD_NODELIST_LENGTH difference,  "
+                                        + "delta {} within {} excluded element(s); "
+                                        + "non-excluded children will be caught by CHILD_LOOKUP.",
                                 delta,
-                                excludedPresent);
+                                excludedElements.size());
                         return ComparisonResult.SIMILAR;
                     }
                 }
             }
 
-            // 3. CHILD_LOOKUP — one side is null (node absent in one document)
+            // 3. CHILD_LOOKUP: one side is null (node absent in one document)
             //    Check whichever side is non-null.
             if (comparison.getType() == ComparisonType.CHILD_LOOKUP) {
                 String nonNullXPath = controlXPath != null ? controlXPath : testXPath;
@@ -277,17 +359,6 @@ public final class XMLUtils {
                     .anyMatch(el -> xPath.contains("/" + el + "[")
                             || xPath.contains("/" + el + "/")
                             || xPath.endsWith("/" + el));
-        }
-
-        /**
-         * Returns true if an element named {@code el} would be a direct child of the node identified by
-         * {@code parentXPath} (used for child-count checks). We cannot resolve the actual DOM here, so we use the
-         * parent XPath as a proxy — any excluded element whose name is in our list is considered a potential child.
-         */
-        private boolean xPathBelongsToParent(String parentXPath, String el) {
-            // We can't walk the DOM, so we conservatively consider any excluded element
-            // as a potential contributor to the count difference.
-            return parentXPath != null && !excludedElements.isEmpty();
         }
     }
 }

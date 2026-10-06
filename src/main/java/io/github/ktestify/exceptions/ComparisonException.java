@@ -45,4 +45,16 @@ public class ComparisonException extends RuntimeException {
     public ComparisonException(String message) {
         super(message);
     }
+
+    /**
+     * Constructs a new {@code ComparisonException} with the supplied detail message and cause.
+     *
+     * @param message a human-readable description of the comparison failure; shown directly in test reports so it
+     *     should be as specific as possible
+     * @param cause the underlying exception that caused this comparison failure (e.g. an {@code IOException} from
+     *     reading an expected file)
+     */
+    public ComparisonException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

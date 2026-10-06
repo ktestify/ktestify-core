@@ -51,7 +51,7 @@ public class SchemaRegistryTestExtension
         implements BeforeAllCallback, AfterAllCallback, ExtensionContext.Store.CloseableResource {
 
     // -----------------------------------------------------------------
-    // Testcontainers image – pin to a specific Confluent Platform version
+    // Testcontainers image: pin to a specific Confluent Platform version
     // so that builds are reproducible. Bump when you need a newer version.
     // -----------------------------------------------------------------
     private static final DockerImageName SCHEMA_REGISTRY_IMAGE =
