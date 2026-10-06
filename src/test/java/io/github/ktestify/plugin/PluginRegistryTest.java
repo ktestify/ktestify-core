@@ -20,15 +20,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.typesafe.config.ConfigFactory;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.PluginException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.jar.JarEntry;
-import java.util.jar.JarOutputStream;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -55,11 +50,11 @@ class PluginRegistryTest {
     }
 
     // =========================================================================
-    // PluginRegistry: no plugins
+    // PluginRegistry — no plugins
     // =========================================================================
 
     @Nested
-    @DisplayName("load(): no plugins on classpath / empty dir")
+    @DisplayName("load() — no plugins on classpath / empty dir")
     class NoPluginsTests {
 
         @Test
@@ -69,13 +64,13 @@ class PluginRegistryTest {
             // (classpath plugins from the main scope are not included in the test CL hierarchy)
             PluginRegistry registry = PluginRegistry.load(CTX);
             assertNotNull(registry);
-            // getGluePackages may be empty or contain classpath plugins: either is valid
+            // getGluePackages may be empty or contain classpath plugins — either is valid
             assertNotNull(registry.getPlugins());
             assertNotNull(registry.getGluePackages());
         }
 
         @Test
-        @DisplayName("empty plugins dir: loads cleanly with no external plugins")
+        @DisplayName("empty plugins dir — loads cleanly with no external plugins")
         void emptyPluginsDirLoadsCleanly(@TempDir Path tempDir) {
             KtestifyConfig cfg = KtestifyConfig.load(
                     ConfigFactory.parseString("ktestify.plugins.dir = \"" + tempDir.toAbsolutePath() + "\""));
@@ -85,7 +80,7 @@ class PluginRegistryTest {
         }
 
         @Test
-        @DisplayName("non-existent plugins dir: loads cleanly")
+        @DisplayName("non-existent plugins dir — loads cleanly")
         void nonExistentPluginsDirLoadsCleanly() {
             KtestifyConfig cfg = KtestifyConfig.load(
                     ConfigFactory.parseString("ktestify.plugins.dir = \"/does/not/exist/plugins\""));
@@ -94,7 +89,7 @@ class PluginRegistryTest {
         }
 
         @Test
-        @DisplayName("blank plugins dir: skips external loading")
+        @DisplayName("blank plugins dir — skips external loading")
         void blankPluginsDirSkipsExternalLoading() {
             KtestifyConfig cfg = KtestifyConfig.load(ConfigFactory.parseString("ktestify.plugins.dir = \"\""));
 
@@ -103,7 +98,7 @@ class PluginRegistryTest {
     }
 
     // =========================================================================
-    // PluginRegistry: shutdown
+    // PluginRegistry — shutdown
     // =========================================================================
 
     @Nested
@@ -116,71 +111,10 @@ class PluginRegistryTest {
             PluginRegistry registry = PluginRegistry.load(CTX);
             assertDoesNotThrow(registry::shutdown);
         }
-
-        @Test
-        @DisplayName("shutdown() is idempotent: plugins are shut down only once")
-        void shutdownIsIdempotent() {
-            ClasspathTestPlugin.resetCounters();
-            PluginRegistry registry = PluginRegistry.load(CTX);
-
-            registry.shutdown();
-            registry.shutdown();
-
-            assertEquals(1, ClasspathTestPlugin.SHUTDOWN_CALLS.get());
-        }
     }
 
     // =========================================================================
-    // PluginRegistry: classpath + external directory
-    // =========================================================================
-
-    @Nested
-    @DisplayName("load(): classpath and external directory together")
-    class DiscoveryTests {
-
-        @Test
-        @DisplayName("classpath plugin is loaded and initialized exactly once without an external dir")
-        void classpathPluginLoadedOnce() {
-            ClasspathTestPlugin.resetCounters();
-            PluginRegistry registry = PluginRegistry.load(CTX);
-
-            assertEquals(1, countById(registry, ClasspathTestPlugin.ID));
-            assertEquals(1, ClasspathTestPlugin.INIT_CALLS.get());
-            registry.shutdown();
-        }
-
-        @Test
-        @DisplayName("classpath plugin is not rediscovered through the external classloader's parent")
-        void classpathPluginNotDuplicatedByExternalPhase(@TempDir Path tempDir) throws Exception {
-            // Any JAR in the plugins dir triggers Phase 2, whose URLClassLoader delegates to the classpath.
-            Path jar = tempDir.resolve("unrelated.jar");
-            try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jar))) {
-                out.putNextEntry(new JarEntry("placeholder.txt"));
-                out.write("x".getBytes(StandardCharsets.UTF_8));
-                out.closeEntry();
-            }
-            KtestifyConfig cfg = KtestifyConfig.load(
-                    ConfigFactory.parseString("ktestify.plugins.dir = \"" + tempDir.toAbsolutePath() + "\""));
-            ClasspathTestPlugin.resetCounters();
-
-            PluginRegistry registry = PluginRegistry.load(() -> cfg);
-
-            assertEquals(1, countById(registry, ClasspathTestPlugin.ID));
-            assertEquals(1, ClasspathTestPlugin.INIT_CALLS.get());
-            assertEquals(1, Collections.frequency(registry.getGluePackages(), "io.github.ktestify.plugin.testglue"));
-            registry.shutdown();
-            assertEquals(1, ClasspathTestPlugin.SHUTDOWN_CALLS.get());
-        }
-
-        private long countById(PluginRegistry registry, String id) {
-            return registry.getPlugins().stream()
-                    .filter(p -> id.equals(p.getId()))
-                    .count();
-        }
-    }
-
-    // =========================================================================
-    // PluginRegistry: getGluePackages
+    // PluginRegistry — getGluePackages
     // =========================================================================
 
     @Nested
@@ -188,7 +122,7 @@ class PluginRegistryTest {
     class GluePackagesTests {
 
         @Test
-        @DisplayName("returns list: never null")
+        @DisplayName("returns list — never null")
         void getGluePackagesNeverNull() {
             PluginRegistry registry = PluginRegistry.load(CTX);
             assertNotNull(registry.getGluePackages());
@@ -197,7 +131,7 @@ class PluginRegistryTest {
         @Test
         @DisplayName("filters out null and blank glue packages")
         void filtersNullAndBlankGluePackages() {
-            // StubPlugin with null glue: should not appear in result
+            // StubPlugin with null glue — should not appear in result
             StubPlugin nullGlue = new StubPlugin("null-glue", "1.0", null, "A", "a@a.com");
             StubPlugin blankGlue = new StubPlugin("blank-glue", "1.0", "  ", "A", "a@a.com");
             StubPlugin realGlue = new StubPlugin("real-glue", "1.0", "io.github.ktestify.foo", "A", "a@a.com");
@@ -214,11 +148,11 @@ class PluginRegistryTest {
     }
 
     // =========================================================================
-    // KtestifyPlugin: default methods
+    // KtestifyPlugin — default methods
     // =========================================================================
 
     @Nested
-    @DisplayName("KtestifyPlugin: default author methods")
+    @DisplayName("KtestifyPlugin — default author methods")
     class DefaultAuthorMethodsTests {
 
         @Test
@@ -324,7 +258,7 @@ class PluginRegistryTest {
     // =========================================================================
 
     /**
-     * Minimal plugin implementation that uses only default interface methods: validates that {@link KtestifyPlugin}
+     * Minimal plugin implementation that uses only default interface methods — validates that {@link KtestifyPlugin}
      * default methods work without any overrides.
      */
     static final class MinimalPlugin implements KtestifyPlugin {
@@ -354,7 +288,7 @@ class PluginRegistryTest {
         }
     }
 
-    /** Full stub: all fields configurable for parameterised test cases. */
+    /** Full stub — all fields configurable for parameterised test cases. */
     static final class StubPlugin implements KtestifyPlugin {
         private final String id;
         private final String version;

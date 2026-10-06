@@ -49,7 +49,7 @@ public class KafkaTestExtension
         implements BeforeAllCallback, AfterAllCallback, ExtensionContext.Store.CloseableResource {
 
     // -----------------------------------------------------------------
-    // Testcontainers image: pin to a specific Confluent Platform version
+    // Testcontainers image – pin to a specific Confluent Platform version
     // so that builds are reproducible. Bump when you need a newer Kafka.
     // -----------------------------------------------------------------
     private static final DockerImageName KAFKA_IMAGE = DockerImageName.parse("apache/kafka:4.2.0");

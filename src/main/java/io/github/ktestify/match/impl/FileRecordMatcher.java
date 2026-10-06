@@ -28,8 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Compares the String value of the first consumed record against the content of an expected file.
  *
- * <p>Requires {@link MatchContext#getMatchFilePath()} to be set. A record with a {@code null} value (tombstone) fails
- * with {@link MatchResult#nullValue(String)}.
+ * <p>Requires {@link MatchContext#getMatchFilePath()} to be set.
  *
  * @since 0.3.0
  */
@@ -38,20 +37,14 @@ public class FileRecordMatcher implements RecordMatcher<String> {
 
     @Override
     public MatchResult match(List<ConsumedRecord<String>> records, MatchContext context) throws ComparisonException {
-        if (records == null || records.isEmpty()) {
-            return MatchResult.noRecords();
-        }
+
         if (context.getMatchFilePath() == null || context.getMatchFilePath().isBlank()) {
             throw new ComparisonException("FileRecordMatcher requires matchFilePath to be set.");
         }
 
         String expected = FileUtils.getFileContent(FileUtils.getFile(context.getMatchFilePath()));
-        String actual = records.getFirst().getValue();
+        String actual = records.get(0).getValue();
 
-        if (actual == null) {
-            log.error("Record value is null (tombstone), expected content of '{}'.", context.getMatchFilePath());
-            return MatchResult.nullValue(expected);
-        }
         if (actual.equals(expected)) {
             log.info("Record value matches expected file '{}'.", context.getMatchFilePath());
             return MatchResult.pass(expected, actual);

@@ -21,6 +21,7 @@ import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
+import io.github.ktestify.utils.serdes.AvroDeserializer;
 import io.github.ktestify.utils.serdes.AvroUtils;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,9 +35,7 @@ import org.apache.avro.generic.GenericRecord;
  *
  * <p>Requires {@link MatchContext#getMatchKey()} to specify the JSON field name to examine. Either
  * {@link MatchContext#getMatchValue()} (inline) or {@link MatchContext#getMatchFilePath()} (file-based) must also be
- * set. Alternatively, {@link MatchContext#getMatchKeyValues()} checks several fields at once.
- *
- * <p>A record with a {@code null} value (tombstone) fails with {@link MatchResult#nullValue(String)}.
+ * set.
  *
  * @since 0.3.0
  */
@@ -46,9 +45,6 @@ public class AvroFieldsRecordMatcher implements RecordMatcher<GenericRecord> {
     @Override
     public MatchResult match(List<ConsumedRecord<GenericRecord>> records, MatchContext context)
             throws ComparisonException {
-        if (records == null || records.isEmpty()) {
-            return MatchResult.noRecords();
-        }
 
         // Multi-field inline matching (keys/values columns)
         if (context.getMatchKeyValues() != null && !context.getMatchKeyValues().isEmpty()) {
@@ -58,41 +54,31 @@ public class AvroFieldsRecordMatcher implements RecordMatcher<GenericRecord> {
         if (context.getMatchKey() == null || context.getMatchKey().isBlank()) {
             throw new ComparisonException("AvroFieldsRecordMatcher requires matchKey (the field name) to be set.");
         }
+
+        GenericRecord value = records.getFirst().getValue();
+        String actualValue = toJson(value);
         String key = context.getMatchKey();
 
-        // Option A: inline expected value
+        // Option A — inline expected value
         if (context.getMatchValue() != null && !context.getMatchValue().isBlank()) {
-            String expected = context.getMatchValue();
-            GenericRecord value = records.getFirst().getValue();
-            if (value == null) {
-                log.error("Avro record value is null (tombstone), expected field '{}' = '{}'.", key, expected);
-                return MatchResult.nullValue(expected);
-            }
-            String actualValue = AvroJson.of(value);
-            log.debug("Avro field match against inline value, key: '{}', expected: '{}'", key, expected);
-            if (AvroUtils.doesAvroValueFromKeyMatchesRecord(expected, key, actualValue)) {
-                return MatchResult.pass(expected, actualValue);
+            log.debug(
+                    "Avro field match against inline value — key: '{}', expected: '{}'", key, context.getMatchValue());
+            boolean result = AvroUtils.doesAvroValueFromKeyMatchesRecord(context.getMatchValue(), key, actualValue);
+            if (result) {
+                return MatchResult.pass(context.getMatchValue(), actualValue);
             }
             return MatchResult.fail(
-                    "Avro field '" + key + "' does not match expected value '" + expected + "'.",
-                    expected,
+                    "Avro field '" + key + "' does not match expected value '" + context.getMatchValue() + "'.",
+                    context.getMatchValue(),
                     actualValue);
         }
 
-        // Option B: field comparison against expected file
+        // Option B — field comparison against expected file
         if (context.getMatchFilePath() != null && !context.getMatchFilePath().isBlank()) {
             String expectedRecord = FileUtils.getFileContent(FileUtils.getFile(context.getMatchFilePath()));
-            GenericRecord value = records.getFirst().getValue();
-            if (value == null) {
-                log.error(
-                        "Avro record value is null (tombstone), expected field '{}' from '{}'.",
-                        key,
-                        context.getMatchFilePath());
-                return MatchResult.nullValue(expectedRecord);
-            }
-            String actualValue = AvroJson.of(value);
-            log.debug("Avro field match against file, key: '{}', file: '{}'", key, context.getMatchFilePath());
-            if (AvroUtils.doesAvroValueFromKeyMatchesRecords(key, expectedRecord, actualValue)) {
+            log.debug("Avro field match against file — key: '{}', file: '{}'", key, context.getMatchFilePath());
+            boolean result = AvroUtils.doesAvroValueFromKeyMatchesRecords(key, expectedRecord, actualValue);
+            if (result) {
                 return MatchResult.pass(expectedRecord, actualValue);
             }
             return MatchResult.fail(
@@ -107,25 +93,21 @@ public class AvroFieldsRecordMatcher implements RecordMatcher<GenericRecord> {
     /**
      * Validates every key/value pair in {@link MatchContext#getMatchKeyValues()} against the actual Avro record.
      *
-     * <p>All pairs must match for the result to pass. Every mismatch is reported in the diff.
+     * <p>All pairs must match for the result to pass. The first mismatch is reported in the diff.
      *
      * @param records the consumed records (only the first is examined)
      * @param context the match context carrying the key/value pairs
      * @return a {@link MatchResult} indicating whether all fields matched
-     * @throws ComparisonException if a field lookup cannot be performed
+     * @throws ComparisonException if the key/value map is empty (should not happen, guarded by the caller)
      * @since 1.1.1
      */
     private MatchResult matchMultipleFields(List<ConsumedRecord<GenericRecord>> records, MatchContext context)
             throws ComparisonException {
-        Map<String, String> keyValues = context.getMatchKeyValues();
         GenericRecord value = records.getFirst().getValue();
-        if (value == null) {
-            log.error("Avro record value is null (tombstone), expected fields {}.", keyValues);
-            return MatchResult.nullValue(keyValues.toString());
-        }
-        String actualValue = AvroJson.of(value);
+        String actualValue = toJson(value);
+        Map<String, String> keyValues = context.getMatchKeyValues();
 
-        log.debug("Avro multi-field match against inline values, pairs: {}", keyValues);
+        log.debug("Avro multi-field match against inline values : pairs: {}", keyValues);
 
         List<String> mismatches = new ArrayList<>();
         for (Map.Entry<String, String> entry : keyValues.entrySet()) {
@@ -140,5 +122,13 @@ public class AvroFieldsRecordMatcher implements RecordMatcher<GenericRecord> {
             return MatchResult.pass(keyValues.toString(), actualValue);
         }
         return MatchResult.fail(String.join(" ", mismatches), keyValues.toString(), actualValue);
+    }
+
+    private String toJson(GenericRecord value) {
+        if (value.getSchema() != null) {
+            return AvroUtils.getPrettyAvroValue(
+                    AvroUtils.convertMapToJsonString(AvroDeserializer.recordDeserializer(value)));
+        }
+        return AvroUtils.getPrettyAvroValue(value.toString());
     }
 }

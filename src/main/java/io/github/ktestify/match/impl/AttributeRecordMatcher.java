@@ -29,8 +29,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>Transport-agnostic by design, this matcher is reused by any transport that populates {@code attributes} (HTTP
  * status code today, gRPC status / MQ reason code / script exit code in the future). It operates on
- * {@code List<ConsumedRecord<V>>} for any {@code V} since it never inspects {@link ConsumedRecord#getValue()}, so a
- * record with a {@code null} value is matched on its attributes like any other.
+ * {@code List<ConsumedRecord<V>>} for any {@code V} since it never inspects {@link ConsumedRecord#getValue()}.
  *
  * <p>Matching rule: every key in {@code expectedAttributes} must be present in the actual record's {@code attributes}
  * with an exactly-equal String value (case-sensitive). Only the first record in the list is used (single-record
@@ -44,17 +43,19 @@ public class AttributeRecordMatcher<V> implements RecordMatcher<V> {
 
     @Override
     public MatchResult match(List<ConsumedRecord<V>> records, MatchContext context) throws ComparisonException {
+
         Map<String, String> expected = context.getExpectedAttributes();
 
         if (expected == null || expected.isEmpty()) {
             log.debug("No expected attributes configured, nothing to assert.");
             return MatchResult.pass();
         }
+
         if (records == null || records.isEmpty()) {
-            return MatchResult.noRecords();
+            throw new ComparisonException("AttributeRecordMatcher requires at least one record to compare.");
         }
 
-        Map<String, String> actual = records.getFirst().getAttributes();
+        Map<String, String> actual = records.get(0).getAttributes();
         Map<String, String> safeActual = actual != null ? actual : Collections.emptyMap();
 
         List<String> diffs = new ArrayList<>();

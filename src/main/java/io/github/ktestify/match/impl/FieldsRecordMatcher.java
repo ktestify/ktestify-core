@@ -31,10 +31,7 @@ import lombok.extern.slf4j.Slf4j;
  * ({@link MatchContext#getMatchFilePath()}).
  *
  * <p>Requires {@link MatchContext#getMatchKey()} to encode the position as {@code "line:from:to"} (e.g.
- * {@code "0:10:20"} means line 0, characters 10 to 20, end exclusive).
- *
- * <p>A record with a {@code null} value (tombstone), or one too short to contain the requested field, fails the match.
- * An expected file that does not contain the field is a configuration error and throws {@link ComparisonException}.
+ * {@code "0:10:20"} means line 0, characters 10–20).
  *
  * @since 0.3.0
  */
@@ -43,58 +40,42 @@ public class FieldsRecordMatcher implements RecordMatcher<String> {
 
     @Override
     public MatchResult match(List<ConsumedRecord<String>> records, MatchContext context) throws ComparisonException {
-        if (records == null || records.isEmpty()) {
-            return MatchResult.noRecords();
-        }
 
         int[] pos = parsePosition(context);
         int line = pos[0];
         int from = pos[1];
         int to = pos[2];
-        String position = "line=" + line + " from=" + from + " to=" + to;
 
-        String expectedField = resolveExpectedField(context, line, from, to, position);
+        String actualValue = records.get(0).getValue();
+        String actualField = FieldMatcherUtils.getFieldsToMatch(actualValue, line, from, to);
 
-        String actualValue = records.getFirst().getValue();
-        if (actualValue == null) {
-            log.error("Record value is null (tombstone), expected field at {} to be '{}'.", position, expectedField);
-            return MatchResult.nullValue(expectedField);
-        }
-
-        String actualField;
-        try {
-            actualField = FieldMatcherUtils.getFieldsToMatch(actualValue, line, from, to);
-        } catch (IllegalArgumentException e) {
-            log.error("Record has no field at {}: {}", position, e.getMessage());
-            return MatchResult.fail(
-                    "Record has no field at " + position + ": " + e.getMessage(), expectedField, actualValue);
-        }
-
-        log.debug("Fields match: expected='{}', actual='{}'", expectedField, actualField);
-        if (expectedField.equals(actualField)) {
-            return MatchResult.pass(expectedField, actualField);
-        }
-        return MatchResult.fail("Field at " + position + " does not match.", expectedField, actualField);
-    }
-
-    /**
-     * Resolves the expected field, either inline from {@link MatchContext#getMatchValue()} or extracted from the same
-     * position in the expected file.
-     */
-    private String resolveExpectedField(MatchContext context, int line, int from, int to, String position)
-            throws ComparisonException {
+        // Option A — compare against an inline expected value
         if (context.getMatchValue() != null && !context.getMatchValue().isBlank()) {
-            return context.getMatchValue();
+            String expectedField = context.getMatchValue();
+            log.debug("Fields match: expected='{}', actual='{}'", expectedField, actualField);
+            if (expectedField.equals(actualField)) {
+                return MatchResult.pass(expectedField, actualField);
+            }
+            return MatchResult.fail(
+                    "Field at line=" + line + " from=" + from + " to=" + to + " does not match.",
+                    expectedField,
+                    actualField);
         }
+
+        // Option B — compare the same field position extracted from an expected file
         if (context.getMatchFilePath() != null && !context.getMatchFilePath().isBlank()) {
             String expectedContent = FileUtils.getFileContent(FileUtils.getFile(context.getMatchFilePath()));
-            try {
-                return FieldMatcherUtils.getFieldsToMatch(expectedContent, line, from, to);
-            } catch (IllegalArgumentException e) {
-                throw new ComparisonException("Expected file '" + context.getMatchFilePath() + "' has no field at "
-                        + position + ": " + e.getMessage());
+            String expectedField = FieldMatcherUtils.getFieldsToMatch(expectedContent, line, from, to);
+            log.debug("Fields match (from file): expected='{}', actual='{}'", expectedField, actualField);
+            if (expectedField.equals(actualField)) {
+                return MatchResult.pass(expectedField, actualField);
             }
+            return MatchResult.fail(
+                    "Field at line=" + line + " from=" + from + " to=" + to + " does not match.",
+                    expectedField,
+                    actualField);
         }
+
         throw new ComparisonException("FieldsRecordMatcher requires either matchValue or matchFilePath to be set.");
     }
 

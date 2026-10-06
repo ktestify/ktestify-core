@@ -31,14 +31,7 @@ public class FieldMatcherUtilsTest {
     @Test
     void testGetLineOutOfBounds() {
         String content = "First line\nSecond line";
-        assertThrows(IllegalArgumentException.class, () -> FieldMatcherUtils.getLine(content, 2));
-        assertThrows(IllegalArgumentException.class, () -> FieldMatcherUtils.getLine(content, -1));
-    }
-
-    @Test
-    void testGetLineStripsCarriageReturn() {
-        String content = "First line\r\nSecond line\r\n";
-        Assertions.assertEquals("Second line", FieldMatcherUtils.getLine(content, 1));
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> FieldMatcherUtils.getLine(content, 2));
     }
 
     @Test

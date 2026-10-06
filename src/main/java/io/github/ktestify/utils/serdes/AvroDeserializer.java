@@ -21,14 +21,25 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.apache.avro.Conversions.DecimalConversion;
 import org.apache.avro.Conversions.UUIDConversion;
 import org.apache.avro.LogicalType;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
-import org.apache.avro.data.TimeConversions.*;
+import org.apache.avro.data.TimeConversions.DateConversion;
+import org.apache.avro.data.TimeConversions.LocalTimestampMicrosConversion;
+import org.apache.avro.data.TimeConversions.LocalTimestampMillisConversion;
+import org.apache.avro.data.TimeConversions.TimeMicrosConversion;
+import org.apache.avro.data.TimeConversions.TimeMillisConversion;
+import org.apache.avro.data.TimeConversions.TimestampMicrosConversion;
+import org.apache.avro.data.TimeConversions.TimestampMillisConversion;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericFixed;
 import org.apache.avro.generic.GenericRecord;
@@ -77,7 +88,7 @@ public final class AvroDeserializer {
     /** Deserializes a {@link GenericRecord} into an ordered {@link Map}, preserving schema field order. */
     public static Map<String, Object> recordDeserializer(GenericRecord record) {
         if (record.getSchema() == null || record.getSchema().getFields() == null) {
-            LOGGER.error("Record schema or fields are null: returning empty map.");
+            LOGGER.error("Record schema or fields are null — returning empty map.");
             return new HashMap<>();
         }
         return record.getSchema().getFields().stream()
@@ -113,7 +124,7 @@ public final class AvroDeserializer {
     }
 
     // =========================================================================
-    // Private: primitive / compound
+    // Private — primitive / compound
     // =========================================================================
 
     @SuppressWarnings("unchecked")
@@ -126,23 +137,10 @@ public final class AvroDeserializer {
             case ARRAY -> arrayDeserializer((Collection<?>) value, schema);
             case FIXED -> ((GenericFixed) value).bytes();
             case STRING -> ((CharSequence) value).toString();
-            case BYTES -> toByteArray((ByteBuffer) value);
+            case BYTES -> ((ByteBuffer) value).array();
             case INT, LONG, FLOAT, DOUBLE, BOOLEAN, NULL -> value;
             default -> throw new IllegalStateException(ERROR_UNEXPECTED_VALUE_TYPE + schema.getType());
         };
-    }
-
-    /**
-     * Copies the readable bytes of {@code buffer} without disturbing its position.
-     *
-     * <p>{@link ByteBuffer#array()} is not used because it ignores the buffer's offset, position and limit, and fails
-     * for direct or read-only buffers.
-     */
-    private static byte[] toByteArray(ByteBuffer buffer) {
-        ByteBuffer view = buffer.duplicate();
-        byte[] bytes = new byte[view.remaining()];
-        view.get(bytes);
-        return bytes;
     }
 
     private static Object unionDeserializer(Object value, Schema schema) {
@@ -174,7 +172,7 @@ public final class AvroDeserializer {
     }
 
     // =========================================================================
-    // Private: logical types
+    // Private — logical types
     // =========================================================================
 
     private static Instant timestampMicrosDeserializer(Object v, Schema s, Type t, LogicalType l) {

@@ -15,7 +15,6 @@
  */
 package io.github.ktestify.io.kafka.impl;
 
-import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.kafka.AbstractKafkaProducer;
 import io.github.ktestify.io.kafka.ProducerContext;
 import io.github.ktestify.models.Topic;
@@ -69,9 +68,9 @@ public class RawKafkaProducer extends AbstractKafkaProducer<String, String> {
                     metadata.timestamp());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new ProducerException("Interrupted while producing raw message", e);
+            throw new RuntimeException("Interrupted while producing raw message", e);
         } catch (ExecutionException e) {
-            throw new ProducerException("Failed to produce raw message", e.getCause());
+            throw new RuntimeException("Failed to produce raw message", e.getCause());
         }
     }
 }

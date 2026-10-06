@@ -28,23 +28,12 @@ public final class FieldMatcherUtils {
     /**
      * Returns the line at the given 0-based index from a multi-line string.
      *
-     * <p>Both {@code \n} and {@code \r\n} line endings are supported; the line terminator is never part of the result.
-     *
      * @param content the full record content
      * @param line 0-based line index
      * @return the content of the requested line
-     * @throws IllegalArgumentException if the content is null or the line index is out of range
      */
     public static String getLine(String content, int line) {
-        if (content == null) {
-            throw new IllegalArgumentException("Content cannot be null.");
-        }
-        String[] lines = content.split("\r?\n", -1);
-        if (line < 0 || line >= lines.length) {
-            throw new IllegalArgumentException(
-                    "Invalid line index " + line + " (content has " + lines.length + " line(s)).");
-        }
-        return lines[line];
+        return content.split("\n")[line];
     }
 
     /**

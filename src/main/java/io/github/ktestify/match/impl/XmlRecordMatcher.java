@@ -37,13 +37,11 @@ import org.xml.sax.helpers.DefaultHandler;
  * {@link MatchContext#getExcludedFields()}.
  *
  * <p>Additionally, any element in the expected template whose text content is exactly {@code EXCLUDED} is automatically
- * added to the exclusion list. This allows a single expected file to serve multiple scenarios: scenarios only need to
- * explicitly list elements they want structurally excluded, and all others marked {@code EXCLUDED} in the file are
+ * added to the exclusion list. This allows a single expected file to serve multiple scenarios — scenarios only need to
+ * explicitly list elements they want structurally excluded; all others marked {@code EXCLUDED} in the file are
  * suppressed as well.
  *
- * <p>Requires {@link MatchContext#getMatchFilePath()} to be set. A record with a {@code null} value (tombstone) fails
- * with {@link MatchResult#nullValue(String)}. The expected template is parsed with
- * {@link XMLUtils#newHardenedSAXParserFactory()} to prevent XXE.
+ * <p>Requires {@link MatchContext#getMatchFilePath()} to be set.
  *
  * @since 0.3.0
  */
@@ -55,20 +53,14 @@ public class XmlRecordMatcher implements RecordMatcher<String> {
 
     @Override
     public MatchResult match(List<ConsumedRecord<String>> records, MatchContext context) throws ComparisonException {
-        if (records == null || records.isEmpty()) {
-            return MatchResult.noRecords();
-        }
+
         if (context.getMatchFilePath() == null || context.getMatchFilePath().isBlank()) {
             throw new ComparisonException("XmlRecordMatcher requires matchFilePath to be set.");
         }
 
         String expected = FileUtils.getFileContent(FileUtils.getFile(context.getMatchFilePath()));
-        String actual = records.getFirst().getValue();
-        if (actual == null) {
-            log.error("Record value is null (tombstone), expected XML from '{}'.", context.getMatchFilePath());
-            return MatchResult.nullValue(expected);
-        }
-        log.debug("XML comparison, actual:\n{}\nExpected:\n{}", actual, expected);
+        String actual = records.get(0).getValue();
+        log.debug("XML comparison — actual:\n{}\nExpected:\n{}", actual, expected);
 
         // Merge explicit exclusions with any elements marked EXCLUDED in the template
         List<String> effectiveExclusions = buildEffectiveExclusions(context.getExcludedFields(), expected);
@@ -95,7 +87,7 @@ public class XmlRecordMatcher implements RecordMatcher<String> {
     private List<String> buildEffectiveExclusions(List<String> explicit, String expectedXml) {
         List<String> result = new ArrayList<>(explicit != null ? explicit : List.of());
         try {
-            SAXParserFactory factory = XMLUtils.newHardenedSAXParserFactory();
+            SAXParserFactory factory = SAXParserFactory.newInstance();
             SAXParser parser = factory.newSAXParser();
             parser.parse(new InputSource(new StringReader(expectedXml)), new DefaultHandler() {
                 private String currentElement;
@@ -116,7 +108,7 @@ public class XmlRecordMatcher implements RecordMatcher<String> {
                 public void endElement(String uri, String localName, String qName) {
                     if (EXCLUDED_SENTINEL.equals(text.toString().trim()) && !result.contains(currentElement)) {
                         log.debug(
-                                "Auto-excluding element '{}': sentinel value '{}' found in template.",
+                                "Auto-excluding element '{}' — sentinel value '{}' found in template.",
                                 currentElement,
                                 EXCLUDED_SENTINEL);
                         result.add(currentElement);

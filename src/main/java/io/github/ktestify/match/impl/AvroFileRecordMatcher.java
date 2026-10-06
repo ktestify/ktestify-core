@@ -21,6 +21,7 @@ import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
+import io.github.ktestify.utils.serdes.AvroDeserializer;
 import io.github.ktestify.utils.serdes.AvroUtils;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -30,8 +31,7 @@ import org.apache.avro.generic.GenericRecord;
  * Compares an Avro record's value against the content of an expected JSON file using smart matching. Supports optional
  * field exclusion via {@link MatchContext#getExcludedFields()}.
  *
- * <p>Requires {@link MatchContext#getMatchFilePath()} to be set. A record with a {@code null} value (tombstone) fails
- * with {@link MatchResult#nullValue(String)}.
+ * <p>Requires {@link MatchContext#getMatchFilePath()} to be set.
  *
  * @since 0.3.0
  */
@@ -41,22 +41,20 @@ public class AvroFileRecordMatcher implements RecordMatcher<GenericRecord> {
     @Override
     public MatchResult match(List<ConsumedRecord<GenericRecord>> records, MatchContext context)
             throws ComparisonException {
-        if (records == null || records.isEmpty()) {
-            return MatchResult.noRecords();
-        }
+
         if (context.getMatchFilePath() == null || context.getMatchFilePath().isBlank()) {
             throw new ComparisonException("AvroFileRecordMatcher requires matchFilePath to be set.");
         }
 
+        GenericRecord value = records.get(0).getValue();
+        String actualValue = toJson(value);
         String expectedValue = FileUtils.getFileContent(FileUtils.getFile(context.getMatchFilePath()));
-        GenericRecord value = records.getFirst().getValue();
-        if (value == null) {
-            log.error("Avro record value is null (tombstone), expected content of '{}'.", context.getMatchFilePath());
-            return MatchResult.nullValue(expectedValue);
-        }
-        String actualValue = AvroJson.of(value);
 
-        log.debug("Avro file match, actual:\n{}\nExpected:\n{}", actualValue, expectedValue);
+        log.debug(
+                "Avro file match — actual:\n{}\nExpected:\n{}",
+                actualValue,
+                AvroUtils.getPrettyAvroValue(AvroUtils.convertMapToJsonString(
+                        AvroUtils.convertDatesToTimestamps(AvroUtils.convertJsonToMap(expectedValue)))));
 
         boolean result;
         if (context.getExcludedFields() != null && !context.getExcludedFields().isEmpty()) {
@@ -78,5 +76,13 @@ public class AvroFileRecordMatcher implements RecordMatcher<GenericRecord> {
                 actualValue);
         return MatchResult.fail(
                 "Avro record does not match file '" + context.getMatchFilePath() + "'.", expectedValue, actualValue);
+    }
+
+    private String toJson(GenericRecord value) {
+        if (value.getSchema() != null) {
+            return AvroUtils.getPrettyAvroValue(
+                    AvroUtils.convertMapToJsonString(AvroDeserializer.recordDeserializer(value)));
+        }
+        return AvroUtils.getPrettyAvroValue(value.toString());
     }
 }

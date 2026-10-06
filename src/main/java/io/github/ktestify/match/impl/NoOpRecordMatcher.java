@@ -27,8 +27,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>Use this when the test only needs to verify that a record was <em>produced</em> to the source (i.e. it exists),
  * without asserting anything about its content. It is also the safe default when no {@code matchMethod} has been
- * configured. Existence is guaranteed by the transport layer, which throws when no record arrives; this matcher never
- * inspects the list, so a tombstone or an empty list both pass.
+ * configured.
  *
  * @param <V> the type of the record value
  * @since 0.3.0
@@ -39,8 +38,7 @@ public class NoOpRecordMatcher<V> implements RecordMatcher<V> {
     @Override
     public MatchResult match(List<ConsumedRecord<V>> records, MatchContext context) {
         log.debug(
-                "NoOpRecordMatcher: skipping assertion on {} record(s), no match method configured.",
-                records == null ? 0 : records.size());
+                "NoOpRecordMatcher: skipping assertion on {} record(s) — no match method configured.", records.size());
         return MatchResult.pass();
     }
 }

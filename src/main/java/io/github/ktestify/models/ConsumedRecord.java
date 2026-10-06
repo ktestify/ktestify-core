@@ -28,7 +28,7 @@ import org.apache.kafka.common.header.Header;
  *
  * <p>This is the <em>common currency</em> that flows between the transport layer ({@code RecordFetcher} and
  * {@code RequestResponseClient}) and the assertion layer ({@code RecordMatcher}). Matchers have zero dependency on
- * Kafka or any other transport: they only know about {@code ConsumedRecord}.
+ * Kafka or any other transport — they only know about {@code ConsumedRecord}.
  *
  * <p>Synchronous transports (see {@code RequestResponseClient}) additionally populate {@link #attributes} with
  * structured transport metadata such as an HTTP status code. Asynchronous transports leave it empty.
@@ -42,10 +42,10 @@ public class ConsumedRecord<V> {
     /** The source topic / queue / channel name. */
     String source;
 
-    /** Partition index: 0 for non-partitioned sources (e.g. IBM MQ). */
+    /** Partition index — 0 for non-partitioned sources (e.g. IBM MQ). */
     int partition;
 
-    /** Offset within the partition: {@code -1} if the source has no offset concept. */
+    /** Offset within the partition — {@code -1} if the source has no offset concept. */
     long offset;
 
     /** Record key as a String. May be {@code null} if the source has no key concept. */

@@ -20,10 +20,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.typesafe.config.ConfigFactory;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ConfigException;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests for {@link Topic#validateTopic(Topic)}: focusing on the namespace auto-injection logic:
+ * Unit tests for {@link Topic#validateTopic(Topic)} — focusing on the namespace auto-injection logic:
  *
  * <pre>
  * if (topic.getTopicNamespace() == null || blank)
@@ -31,7 +35,7 @@ import org.junit.jupiter.api.*;
  * → inject the config namespace
  * </pre>
  */
-@DisplayName("Topic.validateTopic: namespace auto-injection")
+@DisplayName("Topic.validateTopic — namespace auto-injection")
 class TopicTest {
 
     // -----------------------------------------------------------------------
@@ -52,7 +56,7 @@ class TopicTest {
                 .resolve());
     }
 
-    /** Minimal valid INPUT topic: no namespace attached. */
+    /** Minimal valid INPUT topic — no namespace attached. */
     private Topic inputTopicWithoutNamespace(String name) {
         return Topic.builder().topicName(name).topicType(Topic.Type.INPUT).build();
     }
@@ -169,7 +173,7 @@ class TopicTest {
     }
 
     @Nested
-    @DisplayName("validateTopic: general guard-rail assertions")
+    @DisplayName("validateTopic — general guard-rail assertions")
     class GeneralValidation {
 
         @BeforeEach

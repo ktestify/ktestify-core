@@ -17,7 +17,6 @@ package io.github.ktestify.io.kafka;
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
-import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.core.AbstractProducer;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.utils.FileUtils;
@@ -115,7 +114,7 @@ public abstract class AbstractKafkaProducer<K, V> extends AbstractProducer {
         if (payloadFile != null) {
             return FileUtils.getFileContent(payloadFile);
         }
-        throw new ProducerException("No payload content was provided");
+        throw new IllegalStateException("No payload content was provided");
     }
 
     protected String resolveSchema() throws IOException, RestClientException {
