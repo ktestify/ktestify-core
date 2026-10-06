@@ -47,7 +47,7 @@ public interface PluginContext {
      * {@code ktestify.plugins.<id>} subtree. The full config object is provided (rather than a pre-sliced subtree) so
      * plugins can also access shared settings (e.g. {@code ktestify.framework.directories.assets}) when needed.
      *
-     * @return the loaded framework configuration — never {@code null}
+     * @return the loaded framework configuration: never {@code null}
      */
     KtestifyConfig getConfig();
 }

@@ -93,6 +93,6 @@ public class RandomVariable implements DynamicVariable {
     }
 
     private static String generateRandomString(int length) {
-        return RandomStringUtils.randomAlphanumeric(length);
+        return RandomStringUtils.secure().nextAlphanumeric(length);
     }
 }

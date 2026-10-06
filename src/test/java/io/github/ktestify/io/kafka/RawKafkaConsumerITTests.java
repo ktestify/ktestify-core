@@ -48,7 +48,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
  */
 @ExtendWith(KafkaTestExtension.class)
 @DisplayName("RawKafkaConsumer Integration Tests")
-class RawKafkaConsumerTest {
+class RawKafkaConsumerITTests {
 
     private static final String TOPIC_PREFIX = "test-raw-consumer-";
 
@@ -130,7 +130,7 @@ class RawKafkaConsumerTest {
 
     /** Absolute path of a classpath resource under {@code match/}. */
     private static String resourcePath(String filename) {
-        URL url = RawKafkaConsumerTest.class.getClassLoader().getResource("match/" + filename);
+        URL url = RawKafkaConsumerITTests.class.getClassLoader().getResource("match/" + filename);
         assertNotNull(url, "Test resource not found: match/" + filename);
         return url.getPath();
     }
@@ -193,7 +193,7 @@ class RawKafkaConsumerTest {
             // The file content has a trailing newline; trim so the raw value sent
             // over Kafka equals what FileUtils reads from the file.
             String fileContent = new String(
-                    RawKafkaConsumerTest.class
+                    RawKafkaConsumerITTests.class
                             .getClassLoader()
                             .getResourceAsStream("match/expected-order.json")
                             .readAllBytes(),

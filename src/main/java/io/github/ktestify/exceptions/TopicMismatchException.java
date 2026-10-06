@@ -22,7 +22,7 @@ import java.util.Collection;
  * call) resolves more than one distinct topic, where exactly one is required.
  *
  * <p>This is a guard-rail exception: a DataTable listing several instructions is only allowed to target a single topic
- * per call. Mixing topics in one DataTable is almost always an authoring mistake — split it into separate step
+ * per call. Mixing topics in one DataTable is almost always an authoring mistake: split it into separate step
  * invocations instead.
  *
  * @since 0.4.0

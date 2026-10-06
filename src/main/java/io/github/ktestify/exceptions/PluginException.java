@@ -19,7 +19,7 @@ package io.github.ktestify.exceptions;
  * Thrown when a {@link io.github.ktestify.plugin.KtestifyPlugin} fails to load or initialize.
  *
  * <p>A {@code PluginException} during
- * {@link io.github.ktestify.plugin.PluginRegistry#load(io.github.ktestify.plugin.PluginContext)} is fatal — the run is
+ * {@link io.github.ktestify.plugin.PluginRegistry#load(io.github.ktestify.plugin.PluginContext)} is fatal: the run is
  * aborted immediately. This prevents silent partial initialization where some plugins are active and others are not.
  *
  * @since 1.1.0

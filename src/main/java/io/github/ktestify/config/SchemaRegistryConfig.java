@@ -74,7 +74,7 @@ public final class SchemaRegistryConfig {
         this.sslKeystorePassword = getOptionalString(sslConfig, "keystore-password");
 
         LOG.debug(
-                "SchemaRegistryConfig loaded — url={}, autoRegister={}, auth.credentialsSource={}, auth.userInfo={}",
+                "SchemaRegistryConfig loaded: url={}, autoRegister={}, auth.credentialsSource={}, auth.userInfo={}",
                 this.url,
                 this.autoRegisterSchemas,
                 this.basicAuthCredentialsSource.orElse("<not set>"),

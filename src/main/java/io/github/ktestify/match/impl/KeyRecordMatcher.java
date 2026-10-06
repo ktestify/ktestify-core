@@ -26,6 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Asserts that the record key equals the expected key defined in {@link MatchContext#getMatchKey()}.
  *
+ * <p>The record value is never inspected, so a tombstone ({@code null} value) with the expected key passes. A
+ * {@code null} key never matches.
+ *
  * @since 0.3.0
  */
 @Slf4j
@@ -33,7 +36,9 @@ public class KeyRecordMatcher implements RecordMatcher<String> {
 
     @Override
     public MatchResult match(List<ConsumedRecord<String>> records, MatchContext context) throws ComparisonException {
-
+        if (records == null || records.isEmpty()) {
+            return MatchResult.noRecords();
+        }
         if (context.getMatchKey() == null || context.getMatchKey().isBlank()) {
             throw new ComparisonException("KeyRecordMatcher requires matchKey to be set.");
         }
