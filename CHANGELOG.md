@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 - Improve error handling in consumer validation by throwing AssertionError on failure — [@nil-malh](https://github.com/nil-malh)
 
 
+### 🧪 Tests
+
+- Update assertions in Avro and Raw Kafka consumer tests to throw AssertionError on mismatch — [@nil-malh](https://github.com/nil-malh)
+
+
 ## [1.2.1] — 2026-10-06
 
 ### ♻️ Refactoring
