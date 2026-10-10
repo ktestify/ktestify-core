@@ -15,27 +15,28 @@
  */
 package io.github.ktestify.io.kafka;
 
-import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_FILE;
-import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_XML;
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.github.ktestify.config.ConfigBuilder;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.io.kafka.impl.RawKafkaConsumer;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.tests.extentions.KafkaTestExtension;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
+
+import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_FILE;
+import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_XML;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests for {@link RawKafkaConsumer}.
@@ -215,22 +216,23 @@ class RawKafkaConsumerITTests {
         }
 
         @Test
-        @DisplayName("returns false when record value differs from expected file")
+        @DisplayName("throws AssertionError when record value differs from expected file")
         void doesNotMatchFile() throws Exception {
             seedRecord(null, "{\"orderId\":\"WRONG\"}");
 
-            boolean result = new RawKafkaConsumer(ConsumerContext.<String, String>builder()
-                            .topic(outputTopic())
-                            .consumer(KafkaClientFactory.createRawConsumer(
-                                    KtestifyConfig.getOrLoad(), "raw-file-no-match-" + UUID.randomUUID()))
-                            .readTimeout(10_000L)
-                            .consumerDeltaTime(60_000L)
-                            .matchMethod(METHOD_MATCH_FILE)
-                            .matchFilePath(resourcePath("expected-order.json"))
-                            .build())
-                    .call();
-
-            assertFalse(result);
+            assertThrows(
+                    AssertionError.class,
+                    () -> new RawKafkaConsumer(ConsumerContext.<String, String>builder()
+                                    .topic(outputTopic())
+                                    .consumer(KafkaClientFactory.createRawConsumer(
+                                            KtestifyConfig.getOrLoad(),
+                                            "raw-file-no-match-" + UUID.randomUUID()))
+                                    .readTimeout(10_000L)
+                                    .consumerDeltaTime(60_000L)
+                                    .matchMethod(METHOD_MATCH_FILE)
+                                    .matchFilePath(resourcePath("expected-order.json"))
+                                    .build())
+                            .call());
         }
     }
 

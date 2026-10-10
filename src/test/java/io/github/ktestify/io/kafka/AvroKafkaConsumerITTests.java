@@ -15,9 +15,6 @@
  */
 package io.github.ktestify.io.kafka;
 
-import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_FILE;
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.confluent.kafka.serializers.KafkaAvroDeserializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
@@ -28,10 +25,6 @@ import io.github.ktestify.io.kafka.impl.AvroKafkaConsumer;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.tests.extentions.KafkaTestExtension;
 import io.github.ktestify.tests.extentions.SchemaRegistryTestExtension;
-import java.net.URL;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
@@ -45,6 +38,14 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.net.URL;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
+
+import static io.github.ktestify.match.RecordMatcherFactory.METHOD_MATCH_FILE;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests for {@link AvroKafkaConsumer}.
@@ -251,21 +252,21 @@ class AvroKafkaConsumerITTests {
         }
 
         @Test
-        @DisplayName("returns false when Avro record differs from expected JSON file")
+        @DisplayName("throws AssertionError when Avro record differs from expected JSON file")
         void doesNotMatchFile() throws Exception {
             seedRecord(null, differentOrder("ORD-999", "FAILED"));
 
-            boolean result = new AvroKafkaConsumer(ConsumerContext.<String, GenericRecord>builder()
-                            .topic(outputTopic())
-                            .consumer(createAvroKafkaConsumer())
-                            .readTimeout(10_000L)
-                            .consumerDeltaTime(60_000L)
-                            .matchMethod(METHOD_MATCH_FILE)
-                            .matchFilePath(resourcePath("expected-order.json"))
-                            .build())
-                    .call();
-
-            assertFalse(result);
+            assertThrows(
+                    AssertionError.class,
+                    () -> new AvroKafkaConsumer(ConsumerContext.<String, GenericRecord>builder()
+                                    .topic(outputTopic())
+                                    .consumer(createAvroKafkaConsumer())
+                                    .readTimeout(10_000L)
+                                    .consumerDeltaTime(60_000L)
+                                    .matchMethod(METHOD_MATCH_FILE)
+                                    .matchFilePath(resourcePath("expected-order.json"))
+                                    .build())
+                            .call());
         }
     }
 
