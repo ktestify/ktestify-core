@@ -21,9 +21,10 @@ import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Thin coordinator that wires a {@link RequestResponseClient} (transport) with a {@link RecordMatcher} (assertion) for
@@ -113,7 +114,19 @@ public abstract class AbstractSynchronousConsumer<Req, V> extends AbstractConsum
             return result.isPassed();
 
         } catch (FetchException e) {
+            AssertionError assertion = findCause(e, AssertionError.class);
+            if (assertion != null) throw assertion;
             throw new ConsumerException(e.getMessage(), e);
         }
     }
+
+    private static <T extends Throwable> T findCause(Throwable throwable, Class<T> type) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (type.isInstance(current)) return type.cast(current);
+            current = current.getCause();
+        }
+        return null;
+    }
 }
+
