@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### 🐛 Bug Fixes
+
+- Improve error handling in consumer validation by throwing AssertionError on failure — [@nil-malh](https://github.com/nil-malh)
+
+
 ## [1.2.1] — 2026-10-06
 
 ### ♻️ Refactoring
