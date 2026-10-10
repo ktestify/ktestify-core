@@ -21,10 +21,9 @@ import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Thin coordinator that wires a {@link RequestResponseClient} (transport) with a {@link RecordMatcher} (assertion) for
@@ -129,4 +128,3 @@ public abstract class AbstractSynchronousConsumer<Req, V> extends AbstractConsum
         return null;
     }
 }
-
