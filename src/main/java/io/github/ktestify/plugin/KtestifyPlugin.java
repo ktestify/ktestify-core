@@ -47,7 +47,7 @@ package io.github.ktestify.plugin;
  * <ol>
  *   <li>{@link #initialize(PluginContext)}: called once at JVM startup, before any Cucumber scenario runs.
  *   <li>Plugin steps execute normally during scenario runs.
- *   <li>{@link #shutdown()}: called once on JVM shutdown.
+ *   <li>{@link #shutdown()}: called once when the CLI run ends, or initialization is rolled back after failure.
  * </ol>
  *
  * @since 1.1.0
@@ -121,10 +121,11 @@ public interface KtestifyPlugin {
     void initialize(PluginContext context);
 
     /**
-     * Shuts down the plugin. Called once on JVM shutdown, after all Cucumber scenarios have finished.
+     * Shuts down the plugin after the CLI run, or when plugin loading fails after initialization was attempted.
      *
      * <p>Implementations should release all resources (connections, thread pools, etc.) and must not throw exceptions:
-     * log and swallow instead.
+     * log and swallow instead. This method must safely handle partially initialized state because
+     * {@link #initialize(PluginContext)} may have failed.
      */
     void shutdown();
 }

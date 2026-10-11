@@ -16,14 +16,15 @@
 package io.github.ktestify.plugin;
 
 import io.github.ktestify.exceptions.PluginException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Discovers, loads, initializes, and holds all active {@link KtestifyPlugin} instances for the current JVM run.
@@ -48,8 +49,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Two plugins declaring the same {@link KtestifyPlugin#getId() id} abort the run with a {@link PluginException}. A
  * plugin whose {@link KtestifyPlugin#initialize(PluginContext)} throws, or a broken {@code META-INF/services} entry,
- * also aborts the run. In every failure case, plugins that were already initialized are shut down in reverse order and
- * the external classloader is closed before the exception propagates.
+ * also aborts the run. In every failure case, plugins whose initialization was attempted are shut down in reverse order,
+ * including the failing plugin, and the external classloader is closed before the exception propagates.
  *
  * <h2>Usage</h2>
  *
@@ -57,11 +58,12 @@ import org.slf4j.LoggerFactory;
  * PluginContext ctx = () -> KtestifyConfig.getOrLoad();
  * PluginRegistry registry = PluginRegistry.load(ctx);
  *
- * // Inject plugin glue packages into Cucumber CLI
- * registry.getGluePackages().forEach(pkg -> { args.add("--glue"); args.add(pkg); });
- *
- * // On JVM shutdown
- * registry.shutdown();
+ * try {
+ *     // Inject plugin glue packages into Cucumber CLI and run scenarios
+ *     registry.getGluePackages().forEach(pkg -> { args.add("--glue"); args.add(pkg); });
+ * } finally {
+ *     registry.shutdown();
+ * }
  * </pre>
  *
  * @since 1.1.0
@@ -109,6 +111,7 @@ public final class PluginRegistry {
         List<KtestifyPlugin> all = new ArrayList<>();
         Map<String, KtestifyPlugin> byId = new HashMap<>();
         URLClassLoader externalCL = null;
+        boolean loaded = false;
 
         LOG.info("Loading plugins...");
 
@@ -122,28 +125,36 @@ public final class PluginRegistry {
             if (externalCL != null) {
                 discover("external", ServiceLoader.load(KtestifyPlugin.class, externalCL), externalCL, ctx, all, byId);
             }
-        } catch (RuntimeException | ServiceConfigurationError e) {
-            LOG.error("Plugin loading failed, rolling back {} initialized plugin(s).", all.size());
-            shutdownAll(all);
-            if (externalCL != null) {
-                closeClassLoaderQuietly(externalCL);
+
+            if (all.isEmpty()) {
+                LOG.info("No plugins loaded.");
+            } else {
+                LOG.info(
+                        "Plugin system ready: {} plugin(s) active [{}]",
+                        all.size(),
+                        all.stream().map(p -> p.getId() + "@" + p.getVersion()).collect(Collectors.joining(", ")));
             }
+
+            PluginRegistry registry = new PluginRegistry(all, externalCL);
+            loaded = true;
+            return registry;
+        } catch (RuntimeException | ServiceConfigurationError e) {
             if (e instanceof PluginException pe) {
                 throw pe;
             }
             throw new PluginException("Plugin discovery failed: " + e.getMessage(), e);
+        } finally {
+            if (!loaded) {
+                LOG.error("Plugin loading failed, rolling back {} plugin(s).", all.size());
+                try {
+                    shutdownAll(all);
+                } finally {
+                    if (externalCL != null) {
+                        closeClassLoaderQuietly(externalCL);
+                    }
+                }
+            }
         }
-
-        if (all.isEmpty()) {
-            LOG.info("No plugins loaded.");
-        } else {
-            LOG.info(
-                    "Plugin system ready: {} plugin(s) active [{}]",
-                    all.size(),
-                    all.stream().map(p -> p.getId() + "@" + p.getVersion()).collect(Collectors.joining(", ")));
-        }
-
-        return new PluginRegistry(all, externalCL);
     }
 
     // -------------------------------------------------------------------------
@@ -187,11 +198,13 @@ public final class PluginRegistry {
             LOG.debug("Plugin registry already shut down, ignoring repeated call.");
             return;
         }
-        shutdownAll(plugins);
-
-        // Close the external URLClassLoader to release file handles on plugin JARs.
-        if (externalClassLoader != null) {
-            closeClassLoaderQuietly(externalClassLoader);
+        try {
+            shutdownAll(plugins);
+        } finally {
+            // Close the external URLClassLoader to release file handles on plugin JARs.
+            if (externalClassLoader != null) {
+                closeClassLoaderQuietly(externalClassLoader);
+            }
         }
     }
 
@@ -200,15 +213,15 @@ public final class PluginRegistry {
     // -------------------------------------------------------------------------
 
     /**
-     * Iterates over the providers of {@code loader}, instantiates and initializes each one, and appends it to
-     * {@code target}.
+     * Iterates over the providers of {@code loader}, instantiates each one, and tracks it before initialization so
+     * partial state can be cleaned up on failure.
      *
      * @param phase a short label used in log messages
      * @param loader the service loader to iterate
      * @param requiredDefiningLoader when non-null, providers whose class is not defined by this classloader are skipped
      *     (they were already discovered through the parent classloader in Phase 1)
      * @param ctx the plugin context
-     * @param target the list receiving initialized plugins
+     * @param target the list receiving plugins whose initialization is attempted
      * @param byId index used to detect duplicate plugin ids
      */
     private static void discover(
@@ -240,8 +253,8 @@ public final class PluginRegistry {
                     plugin.getVersion(),
                     plugin.getAuthorName(),
                     plugin.getAuthorEmail());
-            initPlugin(plugin, ctx);
             target.add(plugin);
+            initPlugin(plugin, ctx);
         }
         LOG.debug("Phase '{}': {} plugin(s) loaded.", phase, target.size() - before);
     }

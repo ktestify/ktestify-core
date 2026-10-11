@@ -393,6 +393,12 @@ public class MyPlugin implements KtestifyPlugin {
 
 Declare in `META-INF/services/io.github.ktestify.plugin.KtestifyPlugin`. Plugins are discovered via `ServiceLoader` before any scenario runs. External `.jar` plugins can be dropped into `ktestify.plugins.dir` and are loaded via a dedicated `URLClassLoader`.
 
+The CLI shuts plugins down in reverse initialization order in a `finally` block.
+If loading fails, the registry rolls back all plugins whose initialization was
+attempted, including the failing plugin. Implement `shutdown()` so it safely
+releases partially initialized resources. Shutdown exceptions are logged and do
+not prevent the remaining plugins from shutting down.
+
 ---
 
 ## Related
