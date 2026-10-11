@@ -15,14 +15,11 @@
  */
 package io.github.ktestify.plugin;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.typesafe.config.ConfigFactory;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.PluginException;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -31,8 +28,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class PluginLifecycleTest {
     private static final String SERVICE = "META-INF/services/" + KtestifyPlugin.class.getName();
@@ -88,25 +87,33 @@ public class PluginLifecycleTest {
         assertDoesNotThrow(registry::shutdown);
 
         assertEquals(
-                List.of("started:init", "failing:init", "untouched:init",
-                        "untouched:shutdown", "failing:shutdown", "started:shutdown"),
+                List.of(
+                        "started:init",
+                        "failing:init",
+                        "untouched:init",
+                        "untouched:shutdown",
+                        "failing:shutdown",
+                        "started:shutdown"),
                 EVENTS);
     }
 
     private PluginRegistry loadPlugins() throws IOException {
         Path descriptor = tempDir.resolve(SERVICE);
         Files.createDirectories(descriptor.getParent());
-        Files.writeString(descriptor, StartedPlugin.class.getName() + "\n"
-                + FailingPlugin.class.getName() + "\n" + UntouchedPlugin.class.getName() + "\n");
+        Files.writeString(
+                descriptor,
+                StartedPlugin.class.getName() + "\n" + FailingPlugin.class.getName() + "\n"
+                        + UntouchedPlugin.class.getName() + "\n");
         KtestifyConfig config = KtestifyConfig.load(ConfigFactory.parseString("ktestify.plugins.dir = \"\""));
         Thread thread = Thread.currentThread();
         ClassLoader original = thread.getContextClassLoader();
-        try (URLClassLoader loader = new URLClassLoader(new URL[]{tempDir.toUri().toURL()}, original) {
-            @Override
-            public Enumeration<URL> getResources(String name) throws IOException {
-                return SERVICE.equals(name) ? findResources(name) : super.getResources(name);
-            }
-        }) {
+        try (URLClassLoader loader =
+                new URLClassLoader(new URL[] {tempDir.toUri().toURL()}, original) {
+                    @Override
+                    public Enumeration<URL> getResources(String name) throws IOException {
+                        return SERVICE.equals(name) ? findResources(name) : super.getResources(name);
+                    }
+                }) {
             thread.setContextClassLoader(loader);
             try {
                 return PluginRegistry.load(() -> config);

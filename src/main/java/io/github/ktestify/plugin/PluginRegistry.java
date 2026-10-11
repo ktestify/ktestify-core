@@ -16,15 +16,14 @@
 package io.github.ktestify.plugin;
 
 import io.github.ktestify.exceptions.PluginException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Discovers, loads, initializes, and holds all active {@link KtestifyPlugin} instances for the current JVM run.
@@ -49,8 +48,8 @@ import java.util.stream.Collectors;
  *
  * <p>Two plugins declaring the same {@link KtestifyPlugin#getId() id} abort the run with a {@link PluginException}. A
  * plugin whose {@link KtestifyPlugin#initialize(PluginContext)} throws, or a broken {@code META-INF/services} entry,
- * also aborts the run. In every failure case, plugins whose initialization was attempted are shut down in reverse order,
- * including the failing plugin, and the external classloader is closed before the exception propagates.
+ * also aborts the run. In every failure case, plugins whose initialization was attempted are shut down in reverse
+ * order, including the failing plugin, and the external classloader is closed before the exception propagates.
  *
  * <h2>Usage</h2>
  *
