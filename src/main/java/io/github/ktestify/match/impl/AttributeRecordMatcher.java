@@ -20,17 +20,18 @@ import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
-import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.*;
+
 /**
- * Generic matcher that asserts one or more {@link ConsumedRecord#getAttributes()} entries against the expected values
- * supplied via {@link MatchContext#getExpectedAttributes()}.
+ * Generic matcher that asserts one or more {@link ConsumedRecord#attributes} entries against the expected values
+ * supplied via {@link MatchContext#expectedAttributes}.
  *
  * <p>Transport-agnostic by design, this matcher is reused by any transport that populates {@code attributes} (HTTP
  * status code today, gRPC status / MQ reason code / script exit code in the future). It operates on
- * {@code List<ConsumedRecord<V>>} for any {@code V} since it never inspects {@link ConsumedRecord#getValue()}, so a
- * record with a {@code null} value is matched on its attributes like any other.
+ * {@code List<ConsumedRecord<V>>} for any {@code V} since it never inspects {@link ConsumedRecord#value}, so a record
+ * with a {@code null} value is matched on its attributes like any other.
  *
  * <p>Matching rule: every key in {@code expectedAttributes} must be present in the actual record's {@code attributes}
  * with an exactly-equal String value (case-sensitive). Only the first record in the list is used (single-record

@@ -22,16 +22,17 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FieldMatcherUtils;
 import io.github.ktestify.utils.FileUtils;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 /**
  * Matches a fixed-position field extracted from a positional record against either an inline expected value
- * ({@link MatchContext#getMatchValue()}) or the same field position in an expected file
+ * ({@link MatchContext#matchValue}) or the same field position in an expected file
  * ({@link MatchContext#getMatchFilePath()}).
  *
- * <p>Requires {@link MatchContext#getMatchKey()} to encode the position as {@code "line:from:to"} (e.g.
- * {@code "0:10:20"} means line 0, characters 10 to 20, end exclusive).
+ * <p>Requires {@link MatchContext#matchKey} to encode the position as {@code "line:from:to"} (e.g. {@code "0:10:20"}
+ * means line 0, characters 10 to 20, end exclusive).
  *
  * <p>A record with a {@code null} value (tombstone), or one too short to contain the requested field, fails the match.
  * An expected file that does not contain the field is a configuration error and throws {@link ComparisonException}.
@@ -78,7 +79,7 @@ public class FieldsRecordMatcher implements RecordMatcher<String> {
     }
 
     /**
-     * Resolves the expected field, either inline from {@link MatchContext#getMatchValue()} or extracted from the same
+     * Resolves the expected field, either inline from {@link MatchContext#matchValue} or extracted from the same
      * position in the expected file.
      */
     private String resolveExpectedField(MatchContext context, int line, int from, int to, String position)
@@ -98,7 +99,7 @@ public class FieldsRecordMatcher implements RecordMatcher<String> {
         throw new ComparisonException("FieldsRecordMatcher requires either matchValue or matchFilePath to be set.");
     }
 
-    /** Parses the position descriptor from {@link MatchContext#getMatchKey()} in the form "line:from:to". */
+    /** Parses the position descriptor from {@link MatchContext#matchKey} in the form "line:from:to". */
     private int[] parsePosition(MatchContext context) throws ComparisonException {
         String descriptor = context.getMatchKey();
         if (descriptor == null || descriptor.isBlank()) {

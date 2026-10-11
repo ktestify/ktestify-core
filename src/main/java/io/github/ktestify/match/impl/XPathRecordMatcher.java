@@ -22,8 +22,9 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.XMLUtils;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 /**
  * Compares the record value as XML against an expected file using a set of XPath expressions. All XPath comparisons
@@ -33,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <ul>
  *   <li>{@link MatchContext#getMatchFilePath()}: the path to the expected XML file
- *   <li>{@link MatchContext#getExcludedFields()}: repurposed here as the list of XPath expressions to evaluate
+ *   <li>{@link MatchContext#excludedFields}: repurposed here as the list of XPath expressions to evaluate
  * </ul>
  *
  * <p>A record with a {@code null} value (tombstone) fails with {@link MatchResult#nullValue(String)}.

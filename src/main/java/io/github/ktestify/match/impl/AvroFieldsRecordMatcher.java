@@ -22,19 +22,20 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.serdes.AvroUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.avro.generic.GenericRecord;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.avro.generic.GenericRecord;
 
 /**
  * Matches a specific field (or set of fields) within an Avro record, using either an inline expected value or an
  * expected file.
  *
- * <p>Requires {@link MatchContext#getMatchKey()} to specify the JSON field name to examine. Either
- * {@link MatchContext#getMatchValue()} (inline) or {@link MatchContext#getMatchFilePath()} (file-based) must also be
- * set. Alternatively, {@link MatchContext#getMatchKeyValues()} checks several fields at once.
+ * <p>Requires {@link MatchContext#matchKey} to specify the JSON field name to examine. Either
+ * {@link MatchContext#matchValue} (inline) or {@link MatchContext#getMatchFilePath()} (file-based) must also be set.
+ * Alternatively, {@link MatchContext#matchKeyValues} checks several fields at once.
  *
  * <p>A record with a {@code null} value (tombstone) fails with {@link MatchResult#nullValue(String)}.
  *
@@ -105,7 +106,7 @@ public class AvroFieldsRecordMatcher implements RecordMatcher<GenericRecord> {
     }
 
     /**
-     * Validates every key/value pair in {@link MatchContext#getMatchKeyValues()} against the actual Avro record.
+     * Validates every key/value pair in {@link MatchContext#matchKeyValues} against the actual Avro record.
      *
      * <p>All pairs must match for the result to pass. Every mismatch is reported in the diff.
      *

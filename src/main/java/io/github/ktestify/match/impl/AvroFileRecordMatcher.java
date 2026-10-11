@@ -22,13 +22,14 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.serdes.AvroUtils;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
 
+import java.util.List;
+
 /**
  * Compares an Avro record's value against the content of an expected JSON file using smart matching. Supports optional
- * field exclusion via {@link MatchContext#getExcludedFields()}.
+ * field exclusion via {@link MatchContext#excludedFields}.
  *
  * <p>Requires {@link MatchContext#getMatchFilePath()} to be set. A record with a {@code null} value (tombstone) fails
  * with {@link MatchResult#nullValue(String)}.

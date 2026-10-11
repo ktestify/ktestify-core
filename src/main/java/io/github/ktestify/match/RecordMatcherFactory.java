@@ -47,8 +47,8 @@ public final class RecordMatcherFactory {
     public static final String METHOD_RECORD_KEY_MATCH = "methodRecordKeyMatch";
 
     /**
-     * Asserts transport attributes (see {@link io.github.ktestify.models.ConsumedRecord#getAttributes()}). Only
-     * available for raw transports, since attributes are populated by synchronous request/response clients.
+     * Asserts transport attributes (see {@link io.github.ktestify.models.ConsumedRecord#attributes}). Only available
+     * for raw transports, since attributes are populated by synchronous request/response clients.
      *
      * @since 1.1.1
      */

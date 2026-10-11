@@ -22,19 +22,20 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.XMLUtils;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.helpers.DefaultHandler;
 
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Compares the record value as XML against an expected XML file. Supports optional element exclusion via
- * {@link MatchContext#getExcludedFields()}.
+ * {@link MatchContext#excludedFields}.
  *
  * <p>Additionally, any element in the expected template whose text content is exactly {@code EXCLUDED} is automatically
  * added to the exclusion list. This allows a single expected file to serve multiple scenarios: scenarios only need to

@@ -57,8 +57,8 @@ public class RawKafkaConsumer extends AbstractKafkaConsumer<String, String> {
     /**
      * Creates a consumer whose matcher is resolved from the {@link ConsumerContext}.
      *
-     * <p>If no {@code matchMethod} is set in the context, a {@link NoOpRecordMatcher} is used and the consumer simply
-     * verifies that a record exists.
+     * <p>If no {@code matchMethod} is set in the context, a {@link io.github.ktestify.match.impl.NoOpRecordMatcher} is
+     * used and the consumer simply verifies that a record exists.
      *
      * @param context the consumer context
      */
@@ -86,8 +86,8 @@ public class RawKafkaConsumer extends AbstractKafkaConsumer<String, String> {
     // =========================================================================
 
     /**
-     * Resolves the appropriate {@link RecordMatcher} from the context. Falls back to {@link NoOpRecordMatcher} when no
-     * match method is configured.
+     * Resolves the appropriate {@link RecordMatcher} from the context. Falls back to
+     * {@link io.github.ktestify.match.impl.NoOpRecordMatcher} when no match method is configured.
      */
     private static RecordMatcher<String> resolveDefaultMatcher(ConsumerContext<String, String> context) {
         RecordMatcher<String> matcher = RecordMatcherFactory.forRaw(context.getMatchMethod());

@@ -22,19 +22,19 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.serdes.AvroUtils;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
 
+import java.util.List;
+
 /**
  * Asserts both the record <em>key</em> and Avro <em>value</em> against a configured expected key and expected JSON
- * file. Supports optional field exclusion via {@link MatchContext#getExcludedFields()}, like
- * {@link AvroFileRecordMatcher}.
+ * file. Supports optional field exclusion via {@link MatchContext#excludedFields}, like {@link AvroFileRecordMatcher}.
  *
  * <p>Requires:
  *
  * <ul>
- *   <li>{@link MatchContext#getMatchKey()}: the expected record key
+ *   <li>{@link MatchContext#matchKey}: the expected record key
  *   <li>{@link MatchContext#getMatchFilePath()}: the path to the expected value JSON file
  * </ul>
  *
