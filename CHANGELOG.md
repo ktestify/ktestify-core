@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### ✨ Features
+
+- Added support for multiple report formats (#67) — [@nil-malh](https://github.com/nil-malh) ([#67](https://github.com/ktestify/ktestify-core/pull/67))
+
+
 ## [1.2.2] — 2026-10-10
 
 ### 🐛 Bug Fixes
