@@ -16,11 +16,9 @@
 package io.github.ktestify.config;
 
 import com.typesafe.config.Config;
-import com.typesafe.config.ConfigValueType;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
 
@@ -55,7 +53,7 @@ public final class FrameworkConfig {
 
     // Reporting
     private final boolean enableReporting;
-    private final List<String> reportFormats;
+    private final String reportFormat;
     private final String reportOutputDirectory;
 
     FrameworkConfig(Config config) {
@@ -83,25 +81,8 @@ public final class FrameworkConfig {
         // Reporting
         Config reportConfig = config.getConfig("reporting");
         this.enableReporting = reportConfig.getBoolean("enabled");
-        this.reportFormats = readReportFormats(reportConfig);
+        this.reportFormat = reportConfig.getString("format");
         this.reportOutputDirectory = reportConfig.getString("output");
-    }
-
-    /**
-     * Reads the configured report formats.
-     *
-     * <p>{@code ktestify.framework.reporting.format} accepts either a single string ({@code format = "html"}) or an
-     * array of strings ({@code format = ["html", "json"]}). A single string is wrapped into a one-element list so
-     * existing configurations keep working.
-     *
-     * @param reportConfig the reporting config section
-     * @return the configured report formats, never null
-     */
-    private static List<String> readReportFormats(Config reportConfig) {
-        if (reportConfig.getValue("format").valueType() == ConfigValueType.STRING) {
-            return List.of(reportConfig.getString("format"));
-        }
-        return List.copyOf(reportConfig.getStringList("format"));
     }
 
     private Optional<String> getOptionalString(Config config, String path) {

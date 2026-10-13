@@ -89,8 +89,7 @@ ktestify {
     # Reporting settings
     reporting {
       enabled = true
-      # One or more report formats: html, json, pretty
-      format = ["html"]
+      format = "html"
       output = "target/test-output"
     }
   }
