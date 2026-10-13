@@ -20,11 +20,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import java.util.List;
+import org.junit.jupiter.api.*;
 
 /**
  * Comprehensive unit tests for FrameworkConfig. Tests all getters, timeout conversions, path resolution, and edge
@@ -342,9 +339,9 @@ class FrameworkConfigTest {
         }
 
         @Test
-        @DisplayName("Should get report format")
-        void shouldGetReportFormat() {
-            assertEquals("html", frameworkConfig.getReportFormat());
+        @DisplayName("Should get default report formats")
+        void shouldGetDefaultReportFormats() {
+            assertEquals(List.of("html"), frameworkConfig.getReportFormats());
         }
 
         @Test
@@ -360,15 +357,35 @@ class FrameworkConfigTest {
         @Test
         @DisplayName("Should handle different report formats")
         void shouldHandleDifferentReportFormats() {
-            String[] formats = {"html", "json", "cucumber"};
+            String[] formats = {"html", "json", "pretty"};
 
             for (String format : formats) {
                 KtestifyConfig config = ConfigBuilder.create()
                         .set("ktestify.framework.reporting.format", format)
                         .build();
 
-                assertEquals(format, config.getFramework().getReportFormat());
+                assertEquals(List.of(format), config.getFramework().getReportFormats());
             }
+        }
+
+        @Test
+        @DisplayName("Should accept an array of report formats")
+        void shouldAcceptArrayOfReportFormats() {
+            KtestifyConfig config = ConfigBuilder.create()
+                    .set("ktestify.framework.reporting.format", List.of("html", "json"))
+                    .build();
+
+            assertEquals(List.of("html", "json"), config.getFramework().getReportFormats());
+        }
+
+        @Test
+        @DisplayName("Should handle an empty array of report formats")
+        void shouldHandleEmptyArrayOfReportFormats() {
+            KtestifyConfig config = ConfigBuilder.create()
+                    .set("ktestify.framework.reporting.format", List.of())
+                    .build();
+
+            assertTrue(config.getFramework().getReportFormats().isEmpty());
         }
     }
 
