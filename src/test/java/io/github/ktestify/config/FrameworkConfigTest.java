@@ -15,14 +15,13 @@
  */
 package io.github.ktestify.config;
 
-import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 /**
  * Comprehensive unit tests for FrameworkConfig. Tests all getters, timeout conversions, path resolution, and edge

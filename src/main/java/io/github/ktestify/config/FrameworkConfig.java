@@ -17,13 +17,12 @@ package io.github.ktestify.config;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValueType;
-import lombok.Getter;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import lombok.Getter;
 
 /**
  * Framework-specific configuration.
