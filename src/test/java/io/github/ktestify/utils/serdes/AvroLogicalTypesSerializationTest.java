@@ -38,6 +38,7 @@ class AvroLogicalTypesSerializationTest {
                     {
                       "type": "record", "name": "Logical", "fields": [
                         {"name": "day", "type": {"type": "int", "logicalType": "date"}},
+                        {"name": "atMillis", "type": {"type": "long", "logicalType": "timestamp-millis"}},
                         {"name": "at", "type": {"type": "long", "logicalType": "timestamp-micros"}},
                         {"name": "local", "type": {"type": "long", "logicalType": "local-timestamp-millis"}},
                         {"name": "time", "type": {"type": "int", "logicalType": "time-millis"}},
@@ -69,6 +70,7 @@ class AvroLogicalTypesSerializationTest {
     void genericRecordWithLogicalTypesConverts() {
         GenericRecord record = new GenericData.Record(SCHEMA);
         record.put("day", 20_000);
+        record.put("atMillis", Instant.parse("2026-10-02T10:15:30Z").toEpochMilli());
         record.put("at", 1_000_000L);
         record.put("local", 1_000L);
         record.put("time", 1_000);
@@ -78,6 +80,26 @@ class AvroLogicalTypesSerializationTest {
                 assertDoesNotThrow(() -> AvroUtils.convertMapToJsonString(AvroDeserializer.recordDeserializer(record)));
 
         assertTrue(json.contains("\"day\": \"2024-10-04\""), json);
+        assertTrue(json.contains("\"atMillis\": \"2026-10-02T10:15:30Z\""), json);
+    }
+
+    @Test
+    @DisplayName("timestamp-millis records match ISO-8601 expected values")
+    void timestampMillisMatchesIso8601ExpectedValue() {
+        Schema timestampSchema = new Schema.Parser().parse("""
+                {"type":"record","name":"Timestamp","fields":[
+                  {"name":"atMillis","type":{"type":"long","logicalType":"timestamp-millis"}}
+                ]}
+                """);
+        GenericRecord record = new GenericData.Record(timestampSchema);
+        record.put("atMillis", Instant.parse("2026-10-02T10:15:30Z").toEpochMilli());
+
+        String actual = AvroUtils.convertMapToJsonString(AvroDeserializer.recordDeserializer(record));
+        String expected = """
+                {"atMillis":"2026-10-02T10:15:30Z"}
+                """;
+
+        assertTrue(AvroUtils.doesAvroRecordsSmartMatches(expected, actual));
     }
 
     @Test

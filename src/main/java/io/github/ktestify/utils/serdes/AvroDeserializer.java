@@ -98,9 +98,7 @@ public final class AvroDeserializer {
                 case TIME_MICROS -> timeMicrosDeserializer(value, schema, primitiveType, logicalType);
                 case TIME_MILLIS -> timeMillisDeserializer(value, schema, primitiveType, logicalType);
                 case TIMESTAMP_MICROS -> timestampMicrosDeserializer(value, schema, primitiveType, logicalType);
-                case TIMESTAMP_MILLIS ->
-                    timestampMillisDeserializer(value, schema, primitiveType, logicalType)
-                            .toEpochMilli();
+                case TIMESTAMP_MILLIS -> timestampMillisDeserializer(value, schema, primitiveType, logicalType);
                 case LOCAL_TIMESTAMP_MICROS ->
                     localTimestampMicrosDeserializer(value, schema, primitiveType, logicalType);
                 case LOCAL_TIMESTAMP_MILLIS ->
