@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### 🐛 Bug Fixes
+
+- Serdes on timestamp-millis — [@nil-malh](https://github.com/nil-malh)
+
+
 ## [1.2.3] — 2026-10-13
 
 ### ✨ Features
