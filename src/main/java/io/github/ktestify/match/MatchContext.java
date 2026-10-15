@@ -15,11 +15,12 @@
  */
 package io.github.ktestify.match;
 
+import lombok.Builder;
+import lombok.Value;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import lombok.Builder;
-import lombok.Value;
 
 /**
  * Immutable value object that carries all configuration needed by a {@code RecordMatcher}.
@@ -84,6 +85,16 @@ public class MatchContext {
      */
     @Builder.Default
     KeyMatchStrategy keyMatchStrategy = KeyMatchStrategy.EXACT;
+
+    /**
+     * Strategy used to compare a batch of consumed records against {@link #matchFilePaths}.
+     *
+     * <p>Defaults to {@link BatchMatchStrategy#POSITIONAL}, preserving positional index-by-index matching.
+     *
+     * @since 1.2.5
+     */
+    @Builder.Default
+    BatchMatchStrategy batchMatchStrategy = BatchMatchStrategy.POSITIONAL;
 
     /**
      * Multiple key/value pairs for multi-field inline matching.

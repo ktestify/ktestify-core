@@ -148,6 +148,7 @@ ConsumerContext.<String, String>builder()
 | `matchFilePaths` | `List<String>` | Expected file(s) — single or one-per-batch-record |
 | `excludedFields` | `List<String>` | Fields to skip during comparison |
 | `expectedRecordKey` | `String` | Optional key filter |
+| `batchMatchStrategy` | `BatchMatchStrategy` | Batch matching strategy: `POSITIONAL` (default) or `LAZY` (unordered 1-to-1) |
 | `readTimeout` | `Long` | Timeout in **milliseconds** |
 | `consumerDeltaTime` | `Long` | How far back to seek, in **milliseconds** |
 | `isBatchConsumer` | `boolean` | Enable batch mode |
