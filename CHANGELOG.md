@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### ✨ Features
+
+- Add positional and lazy batch record matching strategies (#68) — [@nil-malh](https://github.com/nil-malh) ([#68](https://github.com/ktestify/ktestify-core/pull/68))
+
+
+### 🔧 Miscellaneous
+
+- Remove outdated issue and feature request templates they are now org-managed — [@nil-malh](https://github.com/nil-malh) ([#68](https://github.com/ktestify/ktestify-core/pull/68))
+
+
 ## [1.2.4] — 2026-10-14
 
 ### 🐛 Bug Fixes
