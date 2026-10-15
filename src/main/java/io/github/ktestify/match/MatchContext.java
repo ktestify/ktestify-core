@@ -86,6 +86,16 @@ public class MatchContext {
     KeyMatchStrategy keyMatchStrategy = KeyMatchStrategy.EXACT;
 
     /**
+     * Strategy used to compare a batch of consumed records against {@link #matchFilePaths}.
+     *
+     * <p>Defaults to {@link BatchMatchStrategy#POSITIONAL}, preserving positional index-by-index matching.
+     *
+     * @since 1.2.5
+     */
+    @Builder.Default
+    BatchMatchStrategy batchMatchStrategy = BatchMatchStrategy.POSITIONAL;
+
+    /**
      * Multiple key/value pairs for multi-field inline matching.
      *
      * <p>When non-empty, the matcher validates that <em>every</em> key in the map has the corresponding expected value

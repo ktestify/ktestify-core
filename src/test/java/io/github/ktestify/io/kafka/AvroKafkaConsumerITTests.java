@@ -25,6 +25,7 @@ import io.github.ktestify.config.ConfigBuilder;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.io.kafka.impl.AvroKafkaConsumer;
+import io.github.ktestify.match.BatchMatchStrategy;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.tests.extentions.KafkaTestExtension;
 import io.github.ktestify.tests.extentions.SchemaRegistryTestExtension;
@@ -397,6 +398,87 @@ class AvroKafkaConsumerITTests {
                                     .batchSize(4)
                                     .build())
                             .call());
+        }
+
+        @Test
+        @DisplayName("matches 3 Avro records in POSITIONAL order against 3 expected files")
+        void batchPositionalFileMatchPasses() throws Exception {
+            List<GenericRecord> batch = buildBatch();
+            seedRecord("KEY-1", batch.get(0));
+            seedRecord("KEY-2", batch.get(1));
+            seedRecord("KEY-3", batch.get(2));
+
+            boolean result = new AvroKafkaConsumer(ConsumerContext.<String, GenericRecord>builder()
+                            .topic(outputTopic())
+                            .consumer(createAvroKafkaConsumer())
+                            .readTimeout(15_000L)
+                            .consumerDeltaTime(60_000L)
+                            .isBatchConsumer(true)
+                            .batchSize(3)
+                            .matchMethod(METHOD_MATCH_FILE)
+                            .matchFilePaths(List.of(
+                                    resourcePath("batch-order-1.json"),
+                                    resourcePath("batch-order-2.json"),
+                                    resourcePath("batch-order-3.json")))
+                            .batchMatchStrategy(BatchMatchStrategy.POSITIONAL)
+                            .build())
+                    .call();
+
+            assertTrue(result);
+        }
+
+        @Test
+        @DisplayName("throws AssertionError in POSITIONAL mode when Avro records arrive out of order")
+        void batchPositionalFileMatchFailsWhenOutOfOrder() throws Exception {
+            List<GenericRecord> batch = buildBatch();
+            seedRecord("KEY-3", batch.get(2));
+            seedRecord("KEY-1", batch.get(0));
+            seedRecord("KEY-2", batch.get(1));
+
+            assertThrows(
+                    AssertionError.class,
+                    () -> new AvroKafkaConsumer(ConsumerContext.<String, GenericRecord>builder()
+                                    .topic(outputTopic())
+                                    .consumer(createAvroKafkaConsumer())
+                                    .readTimeout(15_000L)
+                                    .consumerDeltaTime(60_000L)
+                                    .isBatchConsumer(true)
+                                    .batchSize(3)
+                                    .matchMethod(METHOD_MATCH_FILE)
+                                    .matchFilePaths(List.of(
+                                            resourcePath("batch-order-1.json"),
+                                            resourcePath("batch-order-2.json"),
+                                            resourcePath("batch-order-3.json")))
+                                    .batchMatchStrategy(BatchMatchStrategy.POSITIONAL)
+                                    .build())
+                            .call());
+        }
+
+        @Test
+        @DisplayName("matches 3 out-of-order Avro records in LAZY mode against 3 expected files")
+        void batchLazyFileMatchPassesWhenOutOfOrder() throws Exception {
+            List<GenericRecord> batch = buildBatch();
+            seedRecord("KEY-3", batch.get(2));
+            seedRecord("KEY-1", batch.get(0));
+            seedRecord("KEY-2", batch.get(1));
+
+            boolean result = new AvroKafkaConsumer(ConsumerContext.<String, GenericRecord>builder()
+                            .topic(outputTopic())
+                            .consumer(createAvroKafkaConsumer())
+                            .readTimeout(15_000L)
+                            .consumerDeltaTime(60_000L)
+                            .isBatchConsumer(true)
+                            .batchSize(3)
+                            .matchMethod(METHOD_MATCH_FILE)
+                            .matchFilePaths(List.of(
+                                    resourcePath("batch-order-1.json"),
+                                    resourcePath("batch-order-2.json"),
+                                    resourcePath("batch-order-3.json")))
+                            .batchMatchStrategy(BatchMatchStrategy.LAZY)
+                            .build())
+                    .call();
+
+            assertTrue(result);
         }
     }
 }

@@ -23,6 +23,7 @@ import io.github.ktestify.config.ConfigBuilder;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.io.kafka.impl.RawKafkaConsumer;
+import io.github.ktestify.match.BatchMatchStrategy;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.tests.extentions.KafkaTestExtension;
 import java.net.URL;
@@ -133,6 +134,14 @@ class RawKafkaConsumerITTests {
         URL url = RawKafkaConsumerITTests.class.getClassLoader().getResource("match/" + filename);
         assertNotNull(url, "Test resource not found: match/" + filename);
         return url.getPath();
+    }
+
+    /** Raw UTF-8 content of a classpath resource under {@code match/}. */
+    private static String resourceContent(String filename) throws Exception {
+        try (var in = RawKafkaConsumerITTests.class.getClassLoader().getResourceAsStream("match/" + filename)) {
+            assertNotNull(in, "Test resource not found: match/" + filename);
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
 
     /** Builds a {@link ConsumerContext} with a fresh consumer pointing at {@code topicName}. */
@@ -382,6 +391,87 @@ class RawKafkaConsumerITTests {
                                     .batchSize(4)
                                     .build())
                             .call());
+        }
+
+        @Test
+        @DisplayName("matches 3 records in POSITIONAL order against 3 expected files")
+        void batchPositionalFileMatchPasses() throws Exception {
+            seedRecord("KEY-1", resourceContent("batch-order-1.json"));
+            seedRecord("KEY-2", resourceContent("batch-order-2.json"));
+            seedRecord("KEY-3", resourceContent("batch-order-3.json"));
+
+            boolean result = new RawKafkaConsumer(ConsumerContext.<String, String>builder()
+                            .topic(outputTopic())
+                            .consumer(KafkaClientFactory.createRawConsumer(
+                                    KtestifyConfig.getOrLoad(), "raw-batch-pos-pass-" + UUID.randomUUID()))
+                            .readTimeout(15_000L)
+                            .consumerDeltaTime(60_000L)
+                            .isBatchConsumer(true)
+                            .batchSize(3)
+                            .matchMethod(METHOD_MATCH_FILE)
+                            .matchFilePaths(List.of(
+                                    resourcePath("batch-order-1.json"),
+                                    resourcePath("batch-order-2.json"),
+                                    resourcePath("batch-order-3.json")))
+                            .batchMatchStrategy(BatchMatchStrategy.POSITIONAL)
+                            .build())
+                    .call();
+
+            assertTrue(result);
+        }
+
+        @Test
+        @DisplayName("throws AssertionError in POSITIONAL mode when records arrive out of order")
+        void batchPositionalFileMatchFailsWhenOutOfOrder() throws Exception {
+            seedRecord("KEY-3", resourceContent("batch-order-3.json"));
+            seedRecord("KEY-1", resourceContent("batch-order-1.json"));
+            seedRecord("KEY-2", resourceContent("batch-order-2.json"));
+
+            assertThrows(
+                    AssertionError.class,
+                    () -> new RawKafkaConsumer(ConsumerContext.<String, String>builder()
+                                    .topic(outputTopic())
+                                    .consumer(KafkaClientFactory.createRawConsumer(
+                                            KtestifyConfig.getOrLoad(), "raw-batch-pos-fail-" + UUID.randomUUID()))
+                                    .readTimeout(15_000L)
+                                    .consumerDeltaTime(60_000L)
+                                    .isBatchConsumer(true)
+                                    .batchSize(3)
+                                    .matchMethod(METHOD_MATCH_FILE)
+                                    .matchFilePaths(List.of(
+                                            resourcePath("batch-order-1.json"),
+                                            resourcePath("batch-order-2.json"),
+                                            resourcePath("batch-order-3.json")))
+                                    .batchMatchStrategy(BatchMatchStrategy.POSITIONAL)
+                                    .build())
+                            .call());
+        }
+
+        @Test
+        @DisplayName("matches 3 out-of-order records in LAZY mode against 3 expected files")
+        void batchLazyFileMatchPassesWhenOutOfOrder() throws Exception {
+            seedRecord("KEY-3", resourceContent("batch-order-3.json"));
+            seedRecord("KEY-1", resourceContent("batch-order-1.json"));
+            seedRecord("KEY-2", resourceContent("batch-order-2.json"));
+
+            boolean result = new RawKafkaConsumer(ConsumerContext.<String, String>builder()
+                            .topic(outputTopic())
+                            .consumer(KafkaClientFactory.createRawConsumer(
+                                    KtestifyConfig.getOrLoad(), "raw-batch-lazy-pass-" + UUID.randomUUID()))
+                            .readTimeout(15_000L)
+                            .consumerDeltaTime(60_000L)
+                            .isBatchConsumer(true)
+                            .batchSize(3)
+                            .matchMethod(METHOD_MATCH_FILE)
+                            .matchFilePaths(List.of(
+                                    resourcePath("batch-order-1.json"),
+                                    resourcePath("batch-order-2.json"),
+                                    resourcePath("batch-order-3.json")))
+                            .batchMatchStrategy(BatchMatchStrategy.LAZY)
+                            .build())
+                    .call();
+
+            assertTrue(result);
         }
     }
 

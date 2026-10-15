@@ -17,6 +17,7 @@ package io.github.ktestify.io.kafka;
 
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ConsumerException;
+import io.github.ktestify.match.BatchMatchStrategy;
 import io.github.ktestify.match.KeyMatchStrategy;
 import io.github.ktestify.models.Topic;
 import java.util.Collections;
@@ -33,6 +34,7 @@ public final class ConsumerContext<K, V> {
     private final Consumer<K, V> consumer;
     private final String expectedRecordKey;
     private final KeyMatchStrategy keyMatchStrategy;
+    private final BatchMatchStrategy batchMatchStrategy;
     private final String matchMethod;
     private final List<String> matchFilePaths;
     private final List<String> excludedFields;
@@ -48,6 +50,7 @@ public final class ConsumerContext<K, V> {
             Consumer<K, V> consumer,
             String expectedRecordKey,
             KeyMatchStrategy keyMatchStrategy,
+            BatchMatchStrategy batchMatchStrategy,
             String matchMethod,
             List<String> matchFilePaths,
             List<String> excludedFields,
@@ -61,6 +64,7 @@ public final class ConsumerContext<K, V> {
         this.consumer = consumer;
         this.expectedRecordKey = expectedRecordKey;
         this.keyMatchStrategy = keyMatchStrategy != null ? keyMatchStrategy : KeyMatchStrategy.EXACT;
+        this.batchMatchStrategy = batchMatchStrategy != null ? batchMatchStrategy : BatchMatchStrategy.POSITIONAL;
         this.matchMethod = matchMethod;
         this.matchFilePaths = matchFilePaths != null ? matchFilePaths : Collections.emptyList();
         this.excludedFields = excludedFields != null ? excludedFields : Collections.emptyList();
@@ -90,6 +94,7 @@ public final class ConsumerContext<K, V> {
         private Consumer<K, V> consumer;
         private String expectedRecordKey;
         private KeyMatchStrategy keyMatchStrategy;
+        private BatchMatchStrategy batchMatchStrategy;
         private String matchMethod;
         private List<String> matchFilePaths;
         private List<String> excludedFields;
@@ -131,6 +136,20 @@ public final class ConsumerContext<K, V> {
          */
         public Builder<K, V> keyMatchStrategy(KeyMatchStrategy keyMatchStrategy) {
             this.keyMatchStrategy = keyMatchStrategy;
+            return this;
+        }
+
+        /**
+         * Sets the strategy used to match consumed records against expected files in batch mode.
+         *
+         * <p>Defaults to {@link BatchMatchStrategy#POSITIONAL} when not set.
+         *
+         * @param batchMatchStrategy the batch match strategy, or {@code null} to use the default
+         * @return this builder
+         * @since 1.2.5
+         */
+        public Builder<K, V> batchMatchStrategy(BatchMatchStrategy batchMatchStrategy) {
+            this.batchMatchStrategy = batchMatchStrategy;
             return this;
         }
 
@@ -217,6 +236,7 @@ public final class ConsumerContext<K, V> {
                     validatedConsumer,
                     expectedRecordKey,
                     keyMatchStrategy,
+                    batchMatchStrategy,
                     matchMethod,
                     matchFilePaths,
                     excludedFields,

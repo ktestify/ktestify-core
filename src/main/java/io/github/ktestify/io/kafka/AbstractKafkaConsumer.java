@@ -114,9 +114,12 @@ public abstract class AbstractKafkaConsumer<K, V> extends AbstractConsumer {
         return MatchContext.builder()
                 .matchMethod(context.getMatchMethod())
                 .matchFilePaths(context.getMatchFilePaths())
+                .matchKey(context.getExpectedRecordKey())
+                .keyMatchStrategy(context.getKeyMatchStrategy())
                 .excludedFields(context.getExcludedFields())
                 .strictMatching(false)
                 .keyMatchStrategy(context.getKeyMatchStrategy())
+                .batchMatchStrategy(context.getBatchMatchStrategy())
                 .build();
     }
 }
