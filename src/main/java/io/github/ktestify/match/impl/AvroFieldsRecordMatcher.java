@@ -71,8 +71,14 @@ public class AvroFieldsRecordMatcher implements RecordMatcher<GenericRecord> {
             String actualValue = AvroJson.of(value);
             log.debug("Avro field match against inline value, key: '{}', expected: '{}'", key, expected);
             if (AvroUtils.doesAvroValueFromKeyMatchesRecord(expected, key, actualValue)) {
+                log.info("Avro field '{}' matches expected value '{}'.", key, expected);
                 return MatchResult.pass(expected, actualValue);
             }
+            log.error(
+                    "Avro field '{}' does not match expected value '{}'.\nActual record:\n{}",
+                    key,
+                    expected,
+                    actualValue);
             return MatchResult.fail(
                     "Avro field '" + key + "' does not match expected value '" + expected + "'.",
                     expected,
@@ -93,8 +99,15 @@ public class AvroFieldsRecordMatcher implements RecordMatcher<GenericRecord> {
             String actualValue = AvroJson.of(value);
             log.debug("Avro field match against file, key: '{}', file: '{}'", key, context.getMatchFilePath());
             if (AvroUtils.doesAvroValueFromKeyMatchesRecords(key, expectedRecord, actualValue)) {
+                log.info("Avro field '{}' matches expected file '{}'.", key, context.getMatchFilePath());
                 return MatchResult.pass(expectedRecord, actualValue);
             }
+            log.error(
+                    "Avro field '{}' does not match expected file '{}'.\nExpected record:\n{}\nActual record:\n{}",
+                    key,
+                    context.getMatchFilePath(),
+                    expectedRecord,
+                    actualValue);
             return MatchResult.fail(
                     "Avro field '" + key + "' does not match fields in file '" + context.getMatchFilePath() + "'.",
                     expectedRecord,
@@ -137,8 +150,14 @@ public class AvroFieldsRecordMatcher implements RecordMatcher<GenericRecord> {
         }
 
         if (mismatches.isEmpty()) {
+            log.info("All {} Avro field(s) matched expected values: {}.", keyValues.size(), keyValues);
             return MatchResult.pass(keyValues.toString(), actualValue);
         }
+        log.error(
+                "Avro multi-field match failed ({} mismatch(es)): {}\nActual record:\n{}",
+                mismatches.size(),
+                String.join(" ", mismatches),
+                actualValue);
         return MatchResult.fail(String.join(" ", mismatches), keyValues.toString(), actualValue);
     }
 }

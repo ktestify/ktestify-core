@@ -25,6 +25,7 @@ import io.github.ktestify.io.core.RecordFetcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.models.MatchedRecord;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -158,8 +159,9 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
      * an explicit reset, for example from the {@code clear known messages} step.
      */
     public static void clearMatchedRecords() {
+        int count = MATCHED_RECORDS.size();
         MATCHED_RECORDS.clear();
-        log.debug("KafkaRecordFetcher: matched-records registry cleared.");
+        log.info("KafkaRecordFetcher: cleared {} record(s) from the matched-records deduplication registry.", count);
     }
 
     // =========================================================================
@@ -180,13 +182,17 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         long pollIntervalMs = frameworkConfig.getPollIntervalMillis();
         while (kafkaConsumer.assignment().isEmpty()) {
             if (System.nanoTime() >= deadlineNanos) {
+                log.error(
+                        "Timed out after {}ms waiting for partition assignment on topic '{}'.",
+                        readTimeoutMs,
+                        namespacedTopic);
                 throw new FetchTimeoutException("Timed out after " + readTimeoutMs
                         + "ms waiting for partition assignment on topic '" + namespacedTopic
                         + "'. Check that the broker is reachable and the topic exists.");
             }
             kafkaConsumer.poll(Duration.ofMillis(pollIntervalMs));
         }
-        log.debug("Partition assignment received for topic '{}'.", namespacedTopic);
+        log.info("Assigned partition(s) {} for topic '{}'.", kafkaConsumer.assignment(), namespacedTopic);
     }
 
     /**
@@ -244,7 +250,11 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
      */
     private void seekToOffset(long deltaTimestamp, long deadlineNanos) {
         Set<TopicPartition> assignments = kafkaConsumer.assignment();
-        log.debug(MESSAGE_CONSUMER_SEEKING_TO_OFFSET, deltaTimestamp);
+        log.info(
+                "Seeking partitions {} to timestamp {} ({})",
+                assignments,
+                deltaTimestamp,
+                Instant.ofEpochMilli(deltaTimestamp));
 
         Map<TopicPartition, Long> timestampMap =
                 assignments.stream().collect(Collectors.toMap(tp -> tp, tp -> deltaTimestamp));
@@ -257,9 +267,14 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
             log.trace(MESSAGE_CONSUMER_OFFSET_FOR_TIMESTAMP, offsetAndTimestamp);
             if (offsetAndTimestamp != null) {
                 kafkaConsumer.seek(topicPartition, offsetAndTimestamp.offset());
+                log.info(
+                        "Partition {} seeked to offset {} (timestamp={}).",
+                        topicPartition,
+                        offsetAndTimestamp.offset(),
+                        Instant.ofEpochMilli(offsetAndTimestamp.timestamp()));
             } else {
                 kafkaConsumer.seekToEnd(Collections.singletonList(topicPartition));
-                log.debug(MESSAGE_CONSUMER_OFFSETS_NULL_SEEK_TO_LATEST, topicPartition.partition());
+                log.info(MESSAGE_CONSUMER_OFFSETS_NULL_SEEK_TO_LATEST, topicPartition.partition());
             }
         });
     }
@@ -292,11 +307,15 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         }
         List<ConsumedRecord<V>> accumulated = new ArrayList<>();
 
-        log.debug(
-                "Polling topic '{}' in {} mode, target={} record(s).",
+        log.info(
+                "Polling topic '{}' in {} mode (target={} record(s), timeout={}ms, expectedKey={}).",
                 namespacedTopic,
                 batchMode ? "BATCH" : "SINGLE",
-                targetSize);
+                targetSize,
+                readTimeoutMs,
+                context.getExpectedRecordKey() != null
+                        ? "'" + context.getExpectedRecordKey() + "' (" + context.getKeyMatchStrategy() + ")"
+                        : "<any>");
 
         while (System.nanoTime() < deadlineNanos) {
             ConsumerRecords<K, V> batch = kafkaConsumer.poll(Duration.ofMillis(pollIntervalMs));
@@ -310,11 +329,18 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
                     }
                     ConsumedRecord<V> consumed = ConsumedRecord.fromKafkaRecord(record);
                     if (!tryClaim(consumed)) {
-                        log.debug(MESSAGE_CONSUMER_RECORD_ALREADY_MATCHED, consumed.toMatchedRecord());
+                        log.info(MESSAGE_CONSUMER_RECORD_ALREADY_MATCHED, consumed.toMatchedRecord());
                         continue;
                     }
 
-                    log.info(MESSAGE_CONSUMER_GOT_RECORD_WITH_KEY_AND_VALUE, record.key(), record.value());
+                    log.info(
+                            "Claimed record from topic '{}' [partition={}, offset={}, key={}, timestamp={}].",
+                            namespacedTopic,
+                            record.partition(),
+                            record.offset(),
+                            record.key(),
+                            Instant.ofEpochMilli(record.timestamp()));
+                    log.debug(MESSAGE_CONSUMER_GOT_RECORD_WITH_KEY_AND_VALUE, record.key(), record.value());
                     accumulated.add(consumed);
 
                     // In SINGLE mode return immediately on the first passing record.
@@ -338,11 +364,18 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         if (!accumulated.isEmpty()) {
             // Partial batch: give the claimed records back before reporting the timeout.
             accumulated.forEach(this::release);
+            log.warn(
+                    "Timed out after {}ms waiting for {} record(s) on topic '{}': only {} collected (released back to registry).",
+                    readTimeoutMs,
+                    targetSize,
+                    namespacedTopic,
+                    accumulated.size());
             throw new FetchTimeoutException("Timed out after " + readTimeoutMs + "ms waiting for " + targetSize
                     + " record(s) on topic '" + namespacedTopic
                     + "': only " + accumulated.size() + " collected.");
         }
 
+        log.debug("Timed out after {}ms waiting for a record on topic '{}'.", readTimeoutMs, namespacedTopic);
         throw new FetchTimeoutException(
                 "Timed out after " + readTimeoutMs + "ms waiting for a record on topic '" + namespacedTopic + "'.");
     }

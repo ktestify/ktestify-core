@@ -72,8 +72,10 @@ public class FieldsRecordMatcher implements RecordMatcher<String> {
 
         log.debug("Fields match: expected='{}', actual='{}'", expectedField, actualField);
         if (expectedField.equals(actualField)) {
+            log.info("Field at {} matches expected value '{}'.", position, expectedField);
             return MatchResult.pass(expectedField, actualField);
         }
+        log.error("Field at {} does not match: expected '{}', actual '{}'.", position, expectedField, actualField);
         return MatchResult.fail("Field at " + position + " does not match.", expectedField, actualField);
     }
 

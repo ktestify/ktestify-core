@@ -83,18 +83,26 @@ public abstract class AbstractKafkaConsumer<K, V> extends AbstractConsumer {
         try (KafkaRecordFetcher<K, V> fetcher = new KafkaRecordFetcher<>(context)) {
             List<ConsumedRecord<V>> records = fetcher.fetch();
             MatchContext matchContext = buildMatchContext();
+            log.info(
+                    "Running matcher '{}' on {} fetched record(s) from topic '{}'.",
+                    matcher.getClass().getSimpleName(),
+                    records.size(),
+                    context.getTopic().getNamespacedTopic());
             MatchResult result = matcher.match(records, matchContext);
 
-            log.debug(
-                    "Match result for topic '{}': passed={}, diff={}",
-                    context.getTopic().getNamespacedTopic(),
-                    result.isPassed(),
-                    result.getDiff());
-
             if (!result.isPassed()) {
+                log.error(
+                        "Validation FAILED on topic '{}' with matcher '{}': {}",
+                        context.getTopic().getNamespacedTopic(),
+                        matcher.getClass().getSimpleName(),
+                        result.getDiff());
                 throw new AssertionError("Consumer validation failed for topic '"
                         + context.getTopic().getNamespacedTopic() + "': " + result.getDiff());
             }
+            log.info(
+                    "Validation PASSED on topic '{}' with matcher '{}'.",
+                    context.getTopic().getNamespacedTopic(),
+                    matcher.getClass().getSimpleName());
             return true;
 
         } catch (FetchException e) {

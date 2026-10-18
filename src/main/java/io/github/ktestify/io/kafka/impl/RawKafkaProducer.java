@@ -58,6 +58,11 @@ public class RawKafkaProducer extends AbstractKafkaProducer<String, String> {
         try {
             String payload = resolvePayload();
             String key = context.getRecordKey();
+            logger.debug(
+                    "Producing raw record to topic '{}' with key '{}':\n{}",
+                    getTopic().getNamespacedTopic(),
+                    key,
+                    payload);
             ProducerRecord<String, String> record = buildRecord(key, payload);
             RecordMetadata metadata = producer.send(record).get();
             logger.info(
@@ -69,8 +74,16 @@ public class RawKafkaProducer extends AbstractKafkaProducer<String, String> {
                     metadata.timestamp());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            logger.error(
+                    "Interrupted while producing raw message to topic '{}'",
+                    getTopic().getNamespacedTopic(),
+                    e);
             throw new ProducerException("Interrupted while producing raw message", e);
         } catch (ExecutionException e) {
+            logger.error(
+                    "Failed to produce raw message to topic '{}': {}",
+                    getTopic().getNamespacedTopic(),
+                    e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
             throw new ProducerException("Failed to produce raw message", e.getCause());
         }
     }

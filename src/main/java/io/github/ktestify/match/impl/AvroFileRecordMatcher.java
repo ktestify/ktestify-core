@@ -145,7 +145,7 @@ public class AvroFileRecordMatcher implements RecordMatcher<GenericRecord> {
 
             int matchedIndex = -1;
             for (int j = 0; j < filePaths.size(); j++) {
-                if (!matchedFiles[j] && matchesExpectedContent(expectedContents.get(j), actualValue, context)) {
+                if (!matchedFiles[j] && matchesExpectedContentQuietly(expectedContents.get(j), actualValue, context)) {
                     matchedIndex = j;
                     break;
                 }
@@ -168,9 +168,10 @@ public class AvroFileRecordMatcher implements RecordMatcher<GenericRecord> {
                     }
                 }
                 log.error(
-                        "Avro record at index {} did not match any remaining expected file. Unmatched files: {}",
+                        "Avro record at index {} did not match any remaining expected file. Unmatched files: {}\nActual record:\n{}",
                         i,
-                        unmatchedFiles);
+                        unmatchedFiles,
+                        actualValue);
                 return MatchResult.fail(
                         "Record at index " + i + " did not match any remaining expected file. Unmatched files: "
                                 + unmatchedFiles,
@@ -188,5 +189,13 @@ public class AvroFileRecordMatcher implements RecordMatcher<GenericRecord> {
                     expectedValue, actualValue, context.getExcludedFields());
         }
         return AvroUtils.doesAvroRecordsSmartMatches(expectedValue, actualValue);
+    }
+
+    private boolean matchesExpectedContentQuietly(String expectedValue, String actualValue, MatchContext context) {
+        if (context.getExcludedFields() != null && !context.getExcludedFields().isEmpty()) {
+            return AvroUtils.doesAvroRecordsSmartMatchesWithExclusionsQuietly(
+                    expectedValue, actualValue, context.getExcludedFields());
+        }
+        return AvroUtils.doesAvroRecordsSmartMatchesQuietly(expectedValue, actualValue);
     }
 }

@@ -165,6 +165,18 @@ class AvroFileRecordMatcherTest {
         }
 
         @Test
+        @DisplayName("passes in LAZY mode with excluded fields when Avro records are out of order")
+        void batchLazyPassWithExcludedFields() throws ComparisonException {
+            MatchContext ctx = MatchContext.builder()
+                    .matchFilePaths(BATCH_FILES)
+                    .batchMatchStrategy(BatchMatchStrategy.LAZY)
+                    .excludedFields(List.of("status"))
+                    .build();
+            MatchResult result = matcher.match(avroRecords(r3, r1, r2), ctx);
+            assertTrue(result.isPassed());
+        }
+
+        @Test
         @DisplayName("fails in LAZY mode when duplicate Avro record cannot match remaining files")
         void batchLazyFailOnDuplicateRecord() throws ComparisonException {
             MatchContext ctx = MatchContext.builder()

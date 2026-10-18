@@ -70,8 +70,16 @@ public class XPathRecordMatcher implements RecordMatcher<String> {
 
         boolean result = XMLUtils.compareXMLByXPaths(actual, expected, context.getExcludedFields());
         if (result) {
+            log.info(
+                    "XML XPath comparison passed against '{}' for XPath(s): {}.",
+                    context.getMatchFilePath(),
+                    context.getExcludedFields());
             return MatchResult.pass(expected, actual);
         }
+        log.error(
+                "XML XPath comparison failed against '{}' for XPath(s): {}.",
+                context.getMatchFilePath(),
+                context.getExcludedFields());
         return MatchResult.fail(
                 "XML XPath comparison failed (XPaths: " + context.getExcludedFields() + ").", expected, actual);
     }

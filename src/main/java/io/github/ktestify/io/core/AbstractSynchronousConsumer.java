@@ -104,15 +104,31 @@ public abstract class AbstractSynchronousConsumer<Req, V> extends AbstractConsum
     public Boolean call() throws ConsumerException {
         try {
             Req request = buildRequest();
+            log.info(
+                    "Executing synchronous request via '{}'.", client.getClass().getSimpleName());
             List<ConsumedRecord<V>> records = client.execute(request);
             MatchContext matchContext = buildMatchContext();
+            log.info(
+                    "Running matcher '{}' on {} response record(s).",
+                    matcher.getClass().getSimpleName(),
+                    records.size());
             MatchResult result = matcher.match(records, matchContext);
 
-            log.debug("Match result: passed={}, diff={}", result.isPassed(), result.getDiff());
+            if (result.isPassed()) {
+                log.info(
+                        "Synchronous validation PASSED with matcher '{}'.",
+                        matcher.getClass().getSimpleName());
+            } else {
+                log.error(
+                        "Synchronous validation FAILED with matcher '{}': {}",
+                        matcher.getClass().getSimpleName(),
+                        result.getDiff());
+            }
 
             return result.isPassed();
 
         } catch (FetchException e) {
+            log.error("Synchronous request execution failed: {}", e.getMessage());
             throw new ConsumerException(e.getMessage(), e);
         }
     }

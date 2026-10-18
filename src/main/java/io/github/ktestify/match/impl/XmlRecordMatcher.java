@@ -75,15 +75,20 @@ public class XmlRecordMatcher implements RecordMatcher<String> {
 
         boolean result;
         if (!effectiveExclusions.isEmpty()) {
-            log.debug("Excluding XML elements: {}", effectiveExclusions);
+            log.info("Excluding XML elements from comparison: {}", effectiveExclusions);
             result = XMLUtils.compareXML(actual, expected, effectiveExclusions);
         } else {
             result = XMLUtils.compareXML(actual, expected);
         }
 
         if (result) {
+            log.info("XML record matches expected file '{}'.", context.getMatchFilePath());
             return MatchResult.pass(expected, actual);
         }
+        log.error(
+                "XML record does not match expected file '{}' (excluded: {}).",
+                context.getMatchFilePath(),
+                effectiveExclusions);
         return MatchResult.fail(
                 "XML documents do not match (excluded: " + effectiveExclusions + ").", expected, actual);
     }

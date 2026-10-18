@@ -73,6 +73,12 @@ public class AvroKafkaProducer extends AbstractKafkaProducer<String, GenericReco
             JsonObject payload =
                     AvroUtils.getJsonElementFromFile(resolvePayload()).getAsJsonObject();
             GenericRecord recordValue = (GenericRecord) AvroUtils.convertJsonToAvro(payload, schema);
+            logger.debug(
+                    "Producing Avro record to topic '{}' with key '{}' and schema '{}':\n{}",
+                    getTopic().getNamespacedTopic(),
+                    context.getRecordKey(),
+                    schema.getFullName(),
+                    recordValue);
             ProducerRecord<String, GenericRecord> record = buildRecord(context.getRecordKey(), recordValue);
             RecordMetadata metadata = producer.send(record).get();
             logger.info(
@@ -84,11 +90,23 @@ public class AvroKafkaProducer extends AbstractKafkaProducer<String, GenericReco
                     metadata.timestamp());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            logger.error(
+                    "Interrupted while producing Avro message to topic '{}'",
+                    getTopic().getNamespacedTopic(),
+                    e);
             throw new ProducerException("Interrupted while producing Avro message", e);
 
         } catch (ExecutionException e) {
+            logger.error(
+                    "Failed to produce Avro message to topic '{}': {}",
+                    getTopic().getNamespacedTopic(),
+                    e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
             throw new ProducerException("Failed to produce Avro message", e.getCause());
         } catch (IOException | RestClientException e) {
+            logger.error(
+                    "Failed to read schema or payload for Avro message on topic '{}': {}",
+                    getTopic().getNamespacedTopic(),
+                    e.getMessage());
             throw new ProducerException("Failed to read schema or payload for Avro message", e);
         }
     }

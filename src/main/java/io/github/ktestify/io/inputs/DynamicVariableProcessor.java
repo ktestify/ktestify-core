@@ -51,9 +51,13 @@ public class DynamicVariableProcessor {
             String format = matcher.group(GROUP_FORMAT) != null ? matcher.group(GROUP_FORMAT) : "";
 
             if (DynamicVariableFactory.isRegistered(variableName)) {
-                LOGGER.info("Processing dynamic variable: {} with format: {}", variableName, format);
                 DynamicVariable variable = DynamicVariableFactory.getVariable(variableName);
                 String replacement = variable.process(format);
+                LOGGER.info(
+                        "Resolved dynamic variable '{{{}{}}}': '{}'",
+                        variableName,
+                        format.isEmpty() ? "" : ":" + format,
+                        replacement);
                 matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
             } else {
                 LOGGER.warn("Dynamic variable {} is not registered, keeping it unchanged.", variableName);

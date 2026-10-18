@@ -271,7 +271,7 @@ public final class XMLUtils {
     private static void logDiff(Diff diff) {
         for (Difference difference : diff.getDifferences()) {
             Comparison c = difference.getComparison();
-            LOGGER.debug(
+            LOGGER.error(
                     """
                     Difference found:
                     -----------------------------------

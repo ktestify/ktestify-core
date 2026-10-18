@@ -75,18 +75,23 @@ public class PollingRequestResponseClient<Req, V> implements RequestResponseClie
         long deadlineMs = System.currentTimeMillis() + timeoutMs;
         List<ConsumedRecord<V>> lastResult = null;
         FetchException lastFailure = null;
+        int attempt = 0;
+
+        log.info("Starting polling request (timeout={}ms, pollInterval={}ms).", timeoutMs, pollIntervalMs);
 
         do {
+            attempt++;
             try {
                 List<ConsumedRecord<V>> result = delegate.execute(request);
                 lastResult = result;
                 lastFailure = null;
                 if (untilPredicate.test(result)) {
-                    log.debug("Polling predicate satisfied.");
+                    log.info("Polling predicate satisfied on attempt #{}.", attempt);
                     return result;
                 }
+                log.debug("Polling attempt #{} did not satisfy predicate; retrying...", attempt);
             } catch (FetchException e) {
-                log.debug("Polling attempt failed: {}", e.getMessage());
+                log.debug("Polling attempt #{} failed: {}", attempt, e.getMessage());
                 lastFailure = e;
             }
 
@@ -97,12 +102,19 @@ public class PollingRequestResponseClient<Req, V> implements RequestResponseClie
         } while (true);
 
         if (lastResult == null) {
+            log.error(
+                    "Polling failed after {} attempt(s) within {}ms without obtaining any response.",
+                    attempt,
+                    timeoutMs);
             throw lastFailure != null
                     ? lastFailure
                     : new FetchException("Polling produced no result within " + timeoutMs + "ms.");
         }
 
-        log.warn("Polling predicate never satisfied within {}ms, returning the last result obtained.", timeoutMs);
+        log.warn(
+                "Polling predicate never satisfied after {} attempt(s) within {}ms, returning the last result obtained.",
+                attempt,
+                timeoutMs);
         return lastResult;
     }
 
