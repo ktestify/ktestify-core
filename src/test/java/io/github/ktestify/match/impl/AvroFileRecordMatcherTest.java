@@ -67,6 +67,15 @@ class AvroFileRecordMatcherTest {
                 .toList();
     }
 
+    private static ConsumedRecord<GenericRecord> keyedAvroRecord(String key, GenericRecord record) {
+        return new ConsumedRecord<>("test-topic", 0, 0L, key, record, Instant.now(), Collections.emptyMap());
+    }
+
+    @SafeVarargs
+    private static List<ConsumedRecord<GenericRecord>> keyedAvroRecords(ConsumedRecord<GenericRecord>... records) {
+        return List.of(records);
+    }
+
     /** Builds a GenericRecord that matches expected-order.json */
     private GenericRecord matchingRecord() {
         return buildOrder("ORD-001", "CUST-42", 99.99, "CREATED");
@@ -194,6 +203,75 @@ class AvroFileRecordMatcherTest {
             MatchContext ctx =
                     MatchContext.builder().matchFilePaths(BATCH_FILES).build();
             assertThrows(ComparisonException.class, () -> matcher.match(avroRecords(r1, r2), ctx));
+        }
+
+        @Test
+        @DisplayName("passes in POSITIONAL mode when expectedRecordKeys (matchKeys) and files match in order")
+        void batchPositionalWithExpectedRecordKeysPass() throws ComparisonException {
+            MatchContext ctx = MatchContext.builder()
+                    .matchFilePaths(BATCH_FILES)
+                    .matchKeys(List.of("k1", "k2", "k3"))
+                    .batchMatchStrategy(BatchMatchStrategy.POSITIONAL)
+                    .build();
+            MatchResult result = matcher.match(
+                    keyedAvroRecords(keyedAvroRecord("k1", r1), keyedAvroRecord("k2", r2), keyedAvroRecord("k3", r3)),
+                    ctx);
+            assertTrue(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("fails in POSITIONAL mode when expectedRecordKeys (matchKeys) do not match at index")
+        void batchPositionalWithExpectedRecordKeysFailOnKeyMismatch() throws ComparisonException {
+            MatchContext ctx = MatchContext.builder()
+                    .matchFilePaths(BATCH_FILES)
+                    .matchKeys(List.of("k1", "k2", "k3"))
+                    .batchMatchStrategy(BatchMatchStrategy.POSITIONAL)
+                    .build();
+            MatchResult result = matcher.match(
+                    keyedAvroRecords(
+                            keyedAvroRecord("k1", r1), keyedAvroRecord("wrong", r2), keyedAvroRecord("k3", r3)),
+                    ctx);
+            assertFalse(result.isPassed());
+            assertTrue(result.getDiff().contains("Avro record at index 1 key does not match"));
+        }
+
+        @Test
+        @DisplayName("passes in LAZY mode when expectedRecordKeys and Avro files arrive out of order")
+        void batchLazyWithExpectedRecordKeysPassOutOfOrder() throws ComparisonException {
+            MatchContext ctx = MatchContext.builder()
+                    .matchFilePaths(BATCH_FILES)
+                    .matchKeys(List.of("k1", "k2", "k3"))
+                    .batchMatchStrategy(BatchMatchStrategy.LAZY)
+                    .build();
+            MatchResult result = matcher.match(
+                    keyedAvroRecords(keyedAvroRecord("k3", r3), keyedAvroRecord("k1", r1), keyedAvroRecord("k2", r2)),
+                    ctx);
+            assertTrue(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("fails in LAZY mode when Avro value matches file j but key does not match key j")
+        void batchLazyWithExpectedRecordKeysFailWhenKeyAndFilePairedWrong() throws ComparisonException {
+            MatchContext ctx = MatchContext.builder()
+                    .matchFilePaths(BATCH_FILES)
+                    .matchKeys(List.of("k1", "k2", "k3"))
+                    .batchMatchStrategy(BatchMatchStrategy.LAZY)
+                    .build();
+            MatchResult result = matcher.match(
+                    keyedAvroRecords(keyedAvroRecord("k2", r1), keyedAvroRecord("k1", r2), keyedAvroRecord("k3", r3)),
+                    ctx);
+            assertFalse(result.isPassed());
+            assertTrue(result.getDiff().contains("k1 ->"));
+        }
+
+        @Test
+        @DisplayName("throws ComparisonException when matchKeys count does not equal matchFilePaths count")
+        void throwsWhenMatchKeysCountMismatchesFileCount() {
+            MatchContext ctx = MatchContext.builder()
+                    .matchFilePaths(BATCH_FILES)
+                    .matchKeys(List.of("k1", "k2"))
+                    .build();
+            assertThrows(ComparisonException.class, () -> matcher.match(avroRecords(r1, r2, r3), ctx));
         }
     }
 }

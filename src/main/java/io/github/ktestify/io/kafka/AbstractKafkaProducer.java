@@ -145,11 +145,13 @@ public abstract class AbstractKafkaProducer<K, V> extends AbstractProducer {
         } else {
             try {
                 int version = Integer.parseInt(context.getSchemaVersion());
-                logger.info("Resolving Avro schema for subject '{}' (version {}) from Schema Registry.", subject, version);
+                logger.info(
+                        "Resolving Avro schema for subject '{}' (version {}) from Schema Registry.", subject, version);
                 return client.getSchemaMetadata(subject, version).getSchema();
             } catch (NumberFormatException e) {
                 throw new ProducerException(
-                        "Invalid schema version '" + context.getSchemaVersion() + "' for subject '" + subject + "'. Expected an integer.",
+                        "Invalid schema version '" + context.getSchemaVersion() + "' for subject '" + subject
+                                + "'. Expected an integer.",
                         e);
             }
         }

@@ -307,15 +307,20 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         }
         List<ConsumedRecord<V>> accumulated = new ArrayList<>();
 
+        String keyFilterDesc = "<any>";
+        if (context.getExpectedRecordKeys() != null
+                && !context.getExpectedRecordKeys().isEmpty()) {
+            keyFilterDesc = context.getExpectedRecordKeys() + " (" + context.getKeyMatchStrategy() + ")";
+        } else if (context.getExpectedRecordKey() != null) {
+            keyFilterDesc = "'" + context.getExpectedRecordKey() + "' (" + context.getKeyMatchStrategy() + ")";
+        }
         log.info(
                 "Polling topic '{}' in {} mode (target={} record(s), timeout={}ms, expectedKey={}).",
                 namespacedTopic,
                 batchMode ? "BATCH" : "SINGLE",
                 targetSize,
                 readTimeoutMs,
-                context.getExpectedRecordKey() != null
-                        ? "'" + context.getExpectedRecordKey() + "' (" + context.getKeyMatchStrategy() + ")"
-                        : "<any>");
+                keyFilterDesc);
 
         while (System.nanoTime() < deadlineNanos) {
             ConsumerRecords<K, V> batch = kafkaConsumer.poll(Duration.ofMillis(pollIntervalMs));
@@ -412,7 +417,22 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
      * context / properties using the configured {@link io.github.ktestify.match.KeyMatchStrategy}.
      */
     private boolean passesKeyFilter(ConsumerRecord<K, V> record) {
-        // Context takes priority over properties map
+        String recordKey = record.key() != null ? record.key().toString() : null;
+
+        // 1. Batch expectedRecordKeys list (if non-empty)
+        List<String> expectedKeys = context.getExpectedRecordKeys();
+        if (expectedKeys != null && !expectedKeys.isEmpty()) {
+            for (String expectedKey : expectedKeys) {
+                if (context.getKeyMatchStrategy().matches(expectedKey, recordKey)) {
+                    log.info(MESSAGE_CONSUMER_RECORD_MATCHES_EXPECTED_KEY, expectedKey);
+                    return true;
+                }
+            }
+            log.debug(MESSAGE_CONSUMER_RECORD_DO_NOT_MATCHES_EXPECTED_KEY, recordKey, expectedKeys);
+            return false;
+        }
+
+        // 2. Single expectedRecordKey (context takes priority over properties map)
         String expectedKey = context.getExpectedRecordKey();
         if (expectedKey == null || expectedKey.isEmpty()) {
             expectedKey = properties.get("expectedRecordKey");
@@ -422,7 +442,6 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
             return true; // No filter configured: accept any key
         }
 
-        String recordKey = record.key() != null ? record.key().toString() : null;
         if (context.getKeyMatchStrategy().matches(expectedKey, recordKey)) {
             log.info(MESSAGE_CONSUMER_RECORD_MATCHES_EXPECTED_KEY, expectedKey);
             return true;

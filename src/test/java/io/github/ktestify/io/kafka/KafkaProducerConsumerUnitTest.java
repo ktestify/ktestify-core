@@ -154,6 +154,60 @@ class KafkaProducerConsumerUnitTest {
     }
 
     @Test
+    @DisplayName("RawKafkaConsumer fetches and matches batch records with expectedRecordKeys via MockConsumer")
+    void rawKafkaConsumerFetchesAndMatchesBatchWithExpectedRecordKeys() throws Exception {
+        KafkaRecordFetcher.clearMatchedRecords();
+        TopicPartition tp = new TopicPartition("batch-out", 0);
+        MockConsumer<String, String> mockConsumer = new MockConsumer<>(AutoOffsetResetStrategy.EARLIEST.name()) {
+            @Override
+            public Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes(
+                    Map<TopicPartition, Long> timestampsToSearch, Duration timeout) {
+                return Map.of(tp, new OffsetAndTimestamp(0L, System.currentTimeMillis()));
+            }
+        };
+
+        File expectedFile1 = tempDir.resolve("expected1.json").toFile();
+        File expectedFile2 = tempDir.resolve("expected2.json").toFile();
+        Files.writeString(expectedFile1.toPath(), "{\"orderId\":\"ORD-1\"}", StandardCharsets.UTF_8);
+        Files.writeString(expectedFile2.toPath(), "{\"orderId\":\"ORD-2\"}", StandardCharsets.UTF_8);
+
+        mockConsumer.schedulePollTask(() -> {
+            mockConsumer.rebalance(List.of(tp));
+            mockConsumer.updateBeginningOffsets(Map.of(tp, 0L));
+            mockConsumer.updateEndOffsets(Map.of(tp, 3L));
+        });
+        mockConsumer.schedulePollTask(() -> {
+            mockConsumer.addRecord(
+                    new ConsumerRecord<>("batch-out", 0, 0L, "unrelated-key", "{\"orderId\":\"OTHER\"}"));
+            mockConsumer.addRecord(new ConsumerRecord<>("batch-out", 0, 1L, "key-2", "{\"orderId\":\"ORD-2\"}"));
+            mockConsumer.addRecord(new ConsumerRecord<>("batch-out", 0, 2L, "key-1", "{\"orderId\":\"ORD-1\"}"));
+        });
+
+        Topic topic = Topic.builder()
+                .topicName("batch-out")
+                .topicType(Topic.Type.OUTPUT)
+                .build();
+
+        ConsumerContext<String, String> ctx = ConsumerContext.<String, String>builder()
+                .topic(topic)
+                .consumer(mockConsumer)
+                .matchMethod(RecordMatcherFactory.METHOD_MATCH_FILE)
+                .matchFilePaths(List.of(expectedFile1.getAbsolutePath(), expectedFile2.getAbsolutePath()))
+                .expectedRecordKeys(List.of("key-1", "key-2"))
+                .keyMatchStrategy(KeyMatchStrategy.EXACT)
+                .batchMatchStrategy(BatchMatchStrategy.LAZY)
+                .isBatchConsumer(true)
+                .batchSize(2)
+                .readTimeout(2000L)
+                .consumerDeltaTime(10000L)
+                .referenceTimestamp(System.currentTimeMillis())
+                .build();
+
+        RawKafkaConsumer consumer = new RawKafkaConsumer(ctx);
+        assertTrue(consumer.call());
+    }
+
+    @Test
     @DisplayName("AvroKafkaConsumer resolves default matcher and rejects INPUT topic")
     void avroKafkaConsumerContextValidation() {
         MockConsumer<String, GenericRecord> mockConsumer = new MockConsumer<>(AutoOffsetResetStrategy.EARLIEST.name());

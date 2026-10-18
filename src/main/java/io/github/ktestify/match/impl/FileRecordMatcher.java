@@ -16,10 +16,7 @@
 package io.github.ktestify.match.impl;
 
 import io.github.ktestify.exceptions.ComparisonException;
-import io.github.ktestify.match.BatchMatchStrategy;
-import io.github.ktestify.match.MatchContext;
-import io.github.ktestify.match.MatchResult;
-import io.github.ktestify.match.RecordMatcher;
+import io.github.ktestify.match.*;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.StringDiffUtils;
@@ -48,8 +45,13 @@ public class FileRecordMatcher implements RecordMatcher<String> {
         if (filePaths == null || filePaths.isEmpty() || filePaths.stream().anyMatch(p -> p == null || p.isBlank())) {
             throw new ComparisonException("FileRecordMatcher requires matchFilePath(s) to be set.");
         }
+        List<String> expectedKeys = context.getMatchKeys() != null ? context.getMatchKeys() : List.of();
+        if (!expectedKeys.isEmpty() && expectedKeys.size() != filePaths.size()) {
+            throw new ComparisonException("Expected record keys count (" + expectedKeys.size()
+                    + ") does not match expected file count (" + filePaths.size() + ").");
+        }
 
-        if (records.size() == 1 && filePaths.size() == 1) {
+        if (records.size() == 1 && filePaths.size() == 1 && expectedKeys.isEmpty()) {
             return matchSingle(records.getFirst(), filePaths.getFirst());
         }
 
@@ -63,9 +65,9 @@ public class FileRecordMatcher implements RecordMatcher<String> {
                 : BatchMatchStrategy.POSITIONAL;
 
         if (strategy == BatchMatchStrategy.LAZY) {
-            return matchBatchLazy(records, filePaths);
+            return matchBatchLazy(records, filePaths, expectedKeys, context);
         }
-        return matchBatchPositional(records, filePaths);
+        return matchBatchPositional(records, filePaths, expectedKeys, context);
     }
 
     private MatchResult matchSingle(ConsumedRecord<String> record, String filePath) {
@@ -90,13 +92,37 @@ public class FileRecordMatcher implements RecordMatcher<String> {
         return MatchResult.fail("Record value does not match file '" + filePath + "'.", expected, actual);
     }
 
-    private MatchResult matchBatchPositional(List<ConsumedRecord<String>> records, List<String> filePaths) {
+    private MatchResult matchBatchPositional(
+            List<ConsumedRecord<String>> records,
+            List<String> filePaths,
+            List<String> expectedKeys,
+            MatchContext context) {
+        KeyMatchStrategy keyStrategy =
+                context.getKeyMatchStrategy() != null ? context.getKeyMatchStrategy() : KeyMatchStrategy.EXACT;
         String lastExpected = "";
         String lastActual = "";
         for (int i = 0; i < records.size(); i++) {
             String filePath = filePaths.get(i);
             String expected = FileUtils.getFileContent(FileUtils.getFile(filePath));
             String actual = records.get(i).getValue();
+            String actualKey = records.get(i).getKey();
+
+            if (!expectedKeys.isEmpty()) {
+                String expectedKey = expectedKeys.get(i);
+                if (!keyStrategy.matches(expectedKey, actualKey)) {
+                    log.error(
+                            "Record at index {} key mismatch: expected '{}' ({}), actual '{}'.",
+                            i,
+                            expectedKey,
+                            keyStrategy,
+                            actualKey);
+                    return MatchResult.fail(
+                            "Record at index " + i + " key does not match, expected: '" + expectedKey + "', actual: '"
+                                    + actualKey + "', strategy: " + keyStrategy + ".",
+                            expectedKey,
+                            actualKey != null ? actualKey : "<null>");
+                }
+            }
 
             if (actual == null) {
                 log.error("Record at index {} has null value (tombstone), expected content of '{}'.", i, filePath);
@@ -112,14 +138,28 @@ public class FileRecordMatcher implements RecordMatcher<String> {
                 return MatchResult.fail(
                         "Record at index " + i + " does not match file '" + filePath + "'.", expected, actual);
             }
-            log.info("Record at index {} matches expected file '{}'.", i, filePath);
+            if (!expectedKeys.isEmpty()) {
+                log.info(
+                        "Record at index {} matches expected key '{}' and file '{}'.",
+                        i,
+                        expectedKeys.get(i),
+                        filePath);
+            } else {
+                log.info("Record at index {} matches expected file '{}'.", i, filePath);
+            }
             lastExpected = expected;
             lastActual = actual;
         }
         return MatchResult.pass(lastExpected, lastActual);
     }
 
-    private MatchResult matchBatchLazy(List<ConsumedRecord<String>> records, List<String> filePaths) {
+    private MatchResult matchBatchLazy(
+            List<ConsumedRecord<String>> records,
+            List<String> filePaths,
+            List<String> expectedKeys,
+            MatchContext context) {
+        KeyMatchStrategy keyStrategy =
+                context.getKeyMatchStrategy() != null ? context.getKeyMatchStrategy() : KeyMatchStrategy.EXACT;
         List<String> expectedContents = filePaths.stream()
                 .map(path -> FileUtils.getFileContent(FileUtils.getFile(path)))
                 .toList();
@@ -129,6 +169,7 @@ public class FileRecordMatcher implements RecordMatcher<String> {
 
         for (int i = 0; i < records.size(); i++) {
             String actual = records.get(i).getValue();
+            String actualKey = records.get(i).getKey();
             if (actual == null) {
                 log.error("Record at index {} has null value (tombstone).", i);
                 return MatchResult.nullValue(expectedContents.getFirst());
@@ -136,7 +177,9 @@ public class FileRecordMatcher implements RecordMatcher<String> {
 
             int matchedIndex = -1;
             for (int j = 0; j < filePaths.size(); j++) {
-                if (!matchedFiles[j] && actual.equals(expectedContents.get(j))) {
+                if (!matchedFiles[j]
+                        && (expectedKeys.isEmpty() || keyStrategy.matches(expectedKeys.get(j), actualKey))
+                        && actual.equals(expectedContents.get(j))) {
                     matchedIndex = j;
                     break;
                 }
@@ -144,7 +187,15 @@ public class FileRecordMatcher implements RecordMatcher<String> {
 
             if (matchedIndex >= 0) {
                 matchedFiles[matchedIndex] = true;
-                log.info("Record at index {} matched expected file '{}'.", i, filePaths.get(matchedIndex));
+                if (!expectedKeys.isEmpty()) {
+                    log.info(
+                            "Record at index {} matched expected key '{}' and file '{}'.",
+                            i,
+                            expectedKeys.get(matchedIndex),
+                            filePaths.get(matchedIndex));
+                } else {
+                    log.info("Record at index {} matched expected file '{}'.", i, filePaths.get(matchedIndex));
+                }
                 lastExpected = expectedContents.get(matchedIndex);
                 lastActual = actual;
             } else {
@@ -152,15 +203,19 @@ public class FileRecordMatcher implements RecordMatcher<String> {
                 String firstUnmatchedExpected = "";
                 for (int j = 0; j < filePaths.size(); j++) {
                     if (!matchedFiles[j]) {
-                        unmatchedFiles.add(filePaths.get(j));
+                        unmatchedFiles.add(
+                                !expectedKeys.isEmpty()
+                                        ? expectedKeys.get(j) + " -> " + filePaths.get(j)
+                                        : filePaths.get(j));
                         if (firstUnmatchedExpected.isEmpty()) {
                             firstUnmatchedExpected = expectedContents.get(j);
                         }
                     }
                 }
                 log.error(
-                        "Record at index {} did not match any remaining expected file. Unmatched files: {}",
+                        "Record at index {} (key='{}') did not match any remaining expected file. Unmatched files: {}",
                         i,
+                        actualKey,
                         unmatchedFiles);
                 return MatchResult.fail(
                         "Record at index " + i + " did not match any remaining expected file. Unmatched files: "
