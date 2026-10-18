@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 - Improve runtime log visibility across transports and matchers (#69) — [@nil-malh](https://github.com/nil-malh) ([#69](https://github.com/ktestify/ktestify-core/pull/69))
 
 
+### ✨ Features
+
+- Enhance batch matching with expected record keys (#70) — [@nil-malh](https://github.com/nil-malh) ([#70](https://github.com/ktestify/ktestify-core/pull/70))
+
+
 ## [1.2.5] — 2026-10-15
 
 ### ✨ Features
