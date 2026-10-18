@@ -236,6 +236,23 @@ class FileRecordMatcherTest {
         }
 
         @Test
+        @DisplayName("passes in LAZY mode when a single expectedRecordKeys entry is shared across all 3 records")
+        void batchLazyWithSingleSharedExpectedRecordKeyPass() throws ComparisonException {
+            MatchContext ctx = MatchContext.builder()
+                    .matchFilePaths(BATCH_FILES)
+                    .matchKeys(List.of("shared-key"))
+                    .batchMatchStrategy(BatchMatchStrategy.LAZY)
+                    .build();
+            MatchResult result = matcher.match(
+                    keyedRawRecords(
+                            keyedRawRecord("shared-key", BATCH_CONTENT_3),
+                            keyedRawRecord("shared-key", BATCH_CONTENT_1),
+                            keyedRawRecord("shared-key", BATCH_CONTENT_2)),
+                    ctx);
+            assertTrue(result.isPassed());
+        }
+
+        @Test
         @DisplayName("fails in LAZY mode when value matches file j but key does not match key j")
         void batchLazyWithExpectedRecordKeysFailWhenKeyAndFilePairedWrong() throws ComparisonException {
             MatchContext ctx = MatchContext.builder()

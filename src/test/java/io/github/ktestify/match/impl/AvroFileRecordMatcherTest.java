@@ -250,6 +250,23 @@ class AvroFileRecordMatcherTest {
         }
 
         @Test
+        @DisplayName("passes in LAZY mode when a single expectedRecordKeys entry is shared across all 3 Avro records")
+        void batchLazyWithSingleSharedExpectedRecordKeyPass() throws ComparisonException {
+            MatchContext ctx = MatchContext.builder()
+                    .matchFilePaths(BATCH_FILES)
+                    .matchKeys(List.of("shared-key"))
+                    .batchMatchStrategy(BatchMatchStrategy.LAZY)
+                    .build();
+            MatchResult result = matcher.match(
+                    keyedAvroRecords(
+                            keyedAvroRecord("shared-key", r3),
+                            keyedAvroRecord("shared-key", r1),
+                            keyedAvroRecord("shared-key", r2)),
+                    ctx);
+            assertTrue(result.isPassed());
+        }
+
+        @Test
         @DisplayName("fails in LAZY mode when Avro value matches file j but key does not match key j")
         void batchLazyWithExpectedRecordKeysFailWhenKeyAndFilePairedWrong() throws ComparisonException {
             MatchContext ctx = MatchContext.builder()

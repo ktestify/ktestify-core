@@ -73,10 +73,11 @@ public class MatchContext {
     /**
      * Expected record keys for batch matching.
      *
-     * <p>When non-empty in batch matchers ({@code FileRecordMatcher}, {@code AvroFileRecordMatcher}), must have the
-     * same size as {@link #matchFilePaths}. In {@link BatchMatchStrategy#POSITIONAL} mode, record {@code i} must match
-     * both {@code matchKeys.get(i)} and {@code matchFilePaths.get(i)}; in {@link BatchMatchStrategy#LAZY} mode, each
-     * record claims the first unmatched {@code (key, file)} pair where both key and value match.
+     * <p>When non-empty in batch matchers ({@code FileRecordMatcher}, {@code AvroFileRecordMatcher}), must have either
+     * a single element (broadcast to all expected files) or the same size as {@link #matchFilePaths}. In
+     * {@link BatchMatchStrategy#POSITIONAL} mode, record {@code i} must match both {@code expectedKey[i]} and
+     * {@code matchFilePaths.get(i)}; in {@link BatchMatchStrategy#LAZY} mode, each record claims the first unmatched
+     * {@code (key, file)} pair where both key and value match.
      *
      * @since 1.2.6
      */

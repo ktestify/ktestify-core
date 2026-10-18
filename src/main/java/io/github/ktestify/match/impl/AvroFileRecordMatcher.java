@@ -21,6 +21,7 @@ import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.serdes.AvroUtils;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
@@ -48,11 +49,7 @@ public class AvroFileRecordMatcher implements RecordMatcher<GenericRecord> {
         if (filePaths == null || filePaths.isEmpty() || filePaths.stream().anyMatch(p -> p == null || p.isBlank())) {
             throw new ComparisonException("AvroFileRecordMatcher requires matchFilePath(s) to be set.");
         }
-        List<String> expectedKeys = context.getMatchKeys() != null ? context.getMatchKeys() : List.of();
-        if (!expectedKeys.isEmpty() && expectedKeys.size() != filePaths.size()) {
-            throw new ComparisonException("Expected record keys count (" + expectedKeys.size()
-                    + ") does not match expected file count (" + filePaths.size() + ").");
-        }
+        List<String> expectedKeys = resolveExpectedKeys(context.getMatchKeys(), filePaths.size());
 
         if (records.size() == 1 && filePaths.size() == 1 && expectedKeys.isEmpty()) {
             return matchSingle(records.getFirst(), filePaths.getFirst(), context);
@@ -71,6 +68,20 @@ public class AvroFileRecordMatcher implements RecordMatcher<GenericRecord> {
             return matchBatchLazy(records, filePaths, expectedKeys, context);
         }
         return matchBatchPositional(records, filePaths, expectedKeys, context);
+    }
+
+    private static List<String> resolveExpectedKeys(List<String> rawKeys, int fileCount) throws ComparisonException {
+        if (rawKeys == null || rawKeys.isEmpty()) {
+            return List.of();
+        }
+        if (rawKeys.size() == 1 && fileCount > 1) {
+            return Collections.nCopies(fileCount, rawKeys.getFirst());
+        }
+        if (rawKeys.size() != fileCount) {
+            throw new ComparisonException("Expected record keys count (" + rawKeys.size()
+                    + ") does not match expected file count (" + fileCount + ").");
+        }
+        return rawKeys;
     }
 
     private MatchResult matchSingle(ConsumedRecord<GenericRecord> record, String filePath, MatchContext context) {
