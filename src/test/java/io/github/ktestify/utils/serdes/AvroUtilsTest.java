@@ -15,8 +15,19 @@
  */
 package io.github.ktestify.utils.serdes;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.google.gson.*;
 import io.github.ktestify.exceptions.ComparisonException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.ByteBuffer;
+import java.text.ParseException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
@@ -27,18 +38,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.ByteBuffer;
-import java.text.ParseException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 class AvroUtilsTest {

@@ -15,6 +15,8 @@
  */
 package io.github.ktestify.io.kafka;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.kafka.impl.AvroKafkaConsumer;
@@ -24,6 +26,13 @@ import io.github.ktestify.match.BatchMatchStrategy;
 import io.github.ktestify.match.KeyMatchStrategy;
 import io.github.ktestify.match.RecordMatcherFactory;
 import io.github.ktestify.models.Topic;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.MockConsumer;
@@ -35,16 +44,6 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
-import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Kafka Producer and Consumer Unit Tests")
 class KafkaProducerConsumerUnitTest {
