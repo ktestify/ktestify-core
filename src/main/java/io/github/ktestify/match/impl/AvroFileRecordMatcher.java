@@ -23,10 +23,11 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.serdes.AvroUtils;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.generic.GenericRecord;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Compares Avro record value(s) against the content of expected JSON file(s) using smart matching. Supports optional
@@ -145,7 +146,7 @@ public class AvroFileRecordMatcher implements RecordMatcher<GenericRecord> {
 
             int matchedIndex = -1;
             for (int j = 0; j < filePaths.size(); j++) {
-                if (!matchedFiles[j] && matchesExpectedContent(expectedContents.get(j), actualValue, context)) {
+                if (!matchedFiles[j] && matchesExpectedContentQuietly(expectedContents.get(j), actualValue, context)) {
                     matchedIndex = j;
                     break;
                 }
@@ -168,9 +169,10 @@ public class AvroFileRecordMatcher implements RecordMatcher<GenericRecord> {
                     }
                 }
                 log.error(
-                        "Avro record at index {} did not match any remaining expected file. Unmatched files: {}",
+                        "Avro record at index {} did not match any remaining expected file. Unmatched files: {}\nActual record:\n{}",
                         i,
-                        unmatchedFiles);
+                        unmatchedFiles,
+                        actualValue);
                 return MatchResult.fail(
                         "Record at index " + i + " did not match any remaining expected file. Unmatched files: "
                                 + unmatchedFiles,
@@ -188,5 +190,13 @@ public class AvroFileRecordMatcher implements RecordMatcher<GenericRecord> {
                     expectedValue, actualValue, context.getExcludedFields());
         }
         return AvroUtils.doesAvroRecordsSmartMatches(expectedValue, actualValue);
+    }
+
+    private boolean matchesExpectedContentQuietly(String expectedValue, String actualValue, MatchContext context) {
+        if (context.getExcludedFields() != null && !context.getExcludedFields().isEmpty()) {
+            return AvroUtils.doesAvroRecordsSmartMatchesWithExclusionsQuietly(
+                    expectedValue, actualValue, context.getExcludedFields());
+        }
+        return AvroUtils.doesAvroRecordsSmartMatchesQuietly(expectedValue, actualValue);
     }
 }

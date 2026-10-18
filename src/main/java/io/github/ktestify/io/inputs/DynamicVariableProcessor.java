@@ -15,10 +15,11 @@
  */
 package io.github.ktestify.io.inputs;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DynamicVariableProcessor {
     private static final Logger LOGGER = LoggerFactory.getLogger(DynamicVariableProcessor.class);
@@ -51,9 +52,13 @@ public class DynamicVariableProcessor {
             String format = matcher.group(GROUP_FORMAT) != null ? matcher.group(GROUP_FORMAT) : "";
 
             if (DynamicVariableFactory.isRegistered(variableName)) {
-                LOGGER.info("Processing dynamic variable: {} with format: {}", variableName, format);
                 DynamicVariable variable = DynamicVariableFactory.getVariable(variableName);
                 String replacement = variable.process(format);
+                LOGGER.info(
+                        "Resolved dynamic variable '{{{}{}}}': '{}'",
+                        variableName,
+                        format.isEmpty() ? "" : ":" + format,
+                        replacement);
                 matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
             } else {
                 LOGGER.warn("Dynamic variable {} is not registered, keeping it unchanged.", variableName);

@@ -22,8 +22,9 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FileUtils;
 import io.github.ktestify.utils.XMLUtils;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 /**
  * Compares the record value as XML against an expected file using a set of XPath expressions. All XPath comparisons
@@ -70,8 +71,16 @@ public class XPathRecordMatcher implements RecordMatcher<String> {
 
         boolean result = XMLUtils.compareXMLByXPaths(actual, expected, context.getExcludedFields());
         if (result) {
+            log.info(
+                    "XML XPath comparison passed against '{}' for XPath(s): {}.",
+                    context.getMatchFilePath(),
+                    context.getExcludedFields());
             return MatchResult.pass(expected, actual);
         }
+        log.error(
+                "XML XPath comparison failed against '{}' for XPath(s): {}.",
+                context.getMatchFilePath(),
+                context.getExcludedFields());
         return MatchResult.fail(
                 "XML XPath comparison failed (XPaths: " + context.getExcludedFields() + ").", expected, actual);
     }

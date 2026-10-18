@@ -15,17 +15,11 @@
  */
 package io.github.ktestify.match.impl;
 
-import static io.github.ktestify.match.impl.MatcherTestSupport.*;
-import static org.junit.jupiter.api.Assertions.*;
-
 import io.github.ktestify.exceptions.ComparisonException;
 import io.github.ktestify.match.BatchMatchStrategy;
 import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.models.ConsumedRecord;
-import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaBuilder;
 import org.apache.avro.generic.GenericData;
@@ -33,6 +27,13 @@ import org.apache.avro.generic.GenericRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+
+import static io.github.ktestify.match.impl.MatcherTestSupport.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("AvroFileRecordMatcher")
 class AvroFileRecordMatcherTest {
@@ -159,6 +160,18 @@ class AvroFileRecordMatcherTest {
             MatchContext ctx = MatchContext.builder()
                     .matchFilePaths(BATCH_FILES)
                     .batchMatchStrategy(BatchMatchStrategy.LAZY)
+                    .build();
+            MatchResult result = matcher.match(avroRecords(r3, r1, r2), ctx);
+            assertTrue(result.isPassed());
+        }
+
+        @Test
+        @DisplayName("passes in LAZY mode with excluded fields when Avro records are out of order")
+        void batchLazyPassWithExcludedFields() throws ComparisonException {
+            MatchContext ctx = MatchContext.builder()
+                    .matchFilePaths(BATCH_FILES)
+                    .batchMatchStrategy(BatchMatchStrategy.LAZY)
+                    .excludedFields(List.of("status"))
                     .build();
             MatchResult result = matcher.match(avroRecords(r3, r1, r2), ctx);
             assertTrue(result.isPassed());

@@ -19,12 +19,13 @@ import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.kafka.AbstractKafkaProducer;
 import io.github.ktestify.io.kafka.ProducerContext;
 import io.github.ktestify.models.Topic;
-import java.io.File;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+
+import java.io.File;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class RawKafkaProducer extends AbstractKafkaProducer<String, String> {
 
@@ -58,6 +59,11 @@ public class RawKafkaProducer extends AbstractKafkaProducer<String, String> {
         try {
             String payload = resolvePayload();
             String key = context.getRecordKey();
+            logger.debug(
+                    "Producing raw record to topic '{}' with key '{}':\n{}",
+                    getTopic().getNamespacedTopic(),
+                    key,
+                    payload);
             ProducerRecord<String, String> record = buildRecord(key, payload);
             RecordMetadata metadata = producer.send(record).get();
             logger.info(
@@ -69,8 +75,16 @@ public class RawKafkaProducer extends AbstractKafkaProducer<String, String> {
                     metadata.timestamp());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            logger.error(
+                    "Interrupted while producing raw message to topic '{}'",
+                    getTopic().getNamespacedTopic(),
+                    e);
             throw new ProducerException("Interrupted while producing raw message", e);
         } catch (ExecutionException e) {
+            logger.error(
+                    "Failed to produce raw message to topic '{}': {}",
+                    getTopic().getNamespacedTopic(),
+                    e.getCause() != null ? e.getCause().getMessage() : e.getMessage());
             throw new ProducerException("Failed to produce raw message", e.getCause());
         }
     }

@@ -15,19 +15,8 @@
  */
 package io.github.ktestify.utils.serdes;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import com.google.gson.*;
 import io.github.ktestify.exceptions.ComparisonException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.ByteBuffer;
-import java.text.ParseException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
@@ -38,6 +27,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.ByteBuffer;
+import java.text.ParseException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
 class AvroUtilsTest {
@@ -2889,6 +2890,46 @@ class AvroUtilsTest {
             actual.put("otherField", "same");
 
             assertTrue(AvroUtils.deepEquals(expected, actual, List.of("RootField.NestedField2")));
+        }
+
+        @Test
+        @DisplayName("deepEquals - unordered object list matching should not emit ERROR logs when candidates match")
+        void shouldNotEmitErrorLogsWhenUnorderedListMatches() {
+            String expectedJson = "{\"items\": [{\"id\": 1, \"name\": \"first\"}, {\"id\": 2, \"name\": \"second\"}]}";
+            String actualJson = "{\"items\": [{\"id\": 2, \"name\": \"second\"}, {\"id\": 1, \"name\": \"first\"}]}";
+
+            var ctx =
+                    (org.apache.logging.log4j.core.LoggerContext) org.apache.logging.log4j.LogManager.getContext(false);
+            var loggerConfig = ctx.getConfiguration().getLoggerConfig(AvroUtils.class.getName());
+            List<org.apache.logging.log4j.core.LogEvent> errorEvents = new ArrayList<>();
+            var appender =
+                    new org.apache.logging.log4j.core.appender.AbstractAppender(
+                            "avro-test-appender", null, null, true, null) {
+                        @Override
+                        public void append(org.apache.logging.log4j.core.LogEvent event) {
+                            if (event.getLevel() == org.apache.logging.log4j.Level.ERROR) {
+                                errorEvents.add(event.toImmutable());
+                            }
+                        }
+                    };
+            appender.start();
+            loggerConfig.addAppender(appender, org.apache.logging.log4j.Level.ALL, null);
+            ctx.updateLoggers();
+            try {
+                assertTrue(AvroUtils.doesAvroRecordsSmartMatches(expectedJson, actualJson));
+                assertTrue(
+                        errorEvents.isEmpty(),
+                        "Expected no ERROR logs during successful unordered list comparison, got: " + errorEvents);
+
+                assertFalse(AvroUtils.doesAvroRecordsSmartMatchesQuietly(
+                        "{\"items\": [{\"id\": 1}]}", "{\"items\": [{\"id\": 99}]}"));
+                assertTrue(
+                        errorEvents.isEmpty(), "Expected no ERROR logs during quiet comparison, got: " + errorEvents);
+            } finally {
+                loggerConfig.removeAppender("avro-test-appender");
+                appender.stop();
+                ctx.updateLoggers();
+            }
         }
     }
 }

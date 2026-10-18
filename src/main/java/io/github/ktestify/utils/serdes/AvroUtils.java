@@ -15,12 +15,18 @@
  */
 package io.github.ktestify.utils.serdes;
 
-import static io.github.ktestify.constants.LogMessagesConstants.*;
-
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import io.github.ktestify.exceptions.ComparisonException;
 import io.github.ktestify.exceptions.ProducerException;
+import lombok.NonNull;
+import org.apache.avro.LogicalTypes;
+import org.apache.avro.Schema;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -34,13 +40,8 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
-import lombok.NonNull;
-import org.apache.avro.LogicalTypes;
-import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.generic.GenericRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static io.github.ktestify.constants.LogMessagesConstants.*;
 
 /**
  * Utility class for Apache Avro operations, providing comprehensive functionality for:
@@ -259,6 +260,41 @@ public final class AvroUtils {
     }
 
     /**
+     * Quiet variant of {@link #doesAvroRecordsSmartMatches(String, String)} used when probing multiple candidate files
+     * or array elements so that non-matching candidates log at DEBUG instead of ERROR.
+     *
+     * @param expectedRecord the expected Avro record in JSON format
+     * @param actualRecord the actual Avro record in JSON format
+     * @return true if the records match semantically, false otherwise
+     * @since 1.2.6
+     */
+    public static boolean doesAvroRecordsSmartMatchesQuietly(
+            @NonNull String expectedRecord, @NonNull String actualRecord) {
+        return doesAvroRecordsSmartMatchesWithExclusionsQuietly(expectedRecord, actualRecord, Collections.emptyList());
+    }
+
+    /**
+     * Quiet variant of {@link #doesAvroRecordsSmartMatchesWithExclusions(String, String, List)} used when probing
+     * multiple candidate files or array elements so that non-matching candidates log at DEBUG instead of ERROR.
+     *
+     * @param expectedRecord the expected Avro record in JSON format
+     * @param actualRecord the actual Avro record in JSON format
+     * @param excludedKeys list of keys to exclude from comparison
+     * @return true if the records match (excluding specified keys), false otherwise
+     * @since 1.2.6
+     */
+    public static boolean doesAvroRecordsSmartMatchesWithExclusionsQuietly(
+            @NonNull String expectedRecord, @NonNull String actualRecord, @NonNull List<String> excludedKeys) {
+        Objects.requireNonNull(expectedRecord, AVRO_UTILS_EXPECTED_RECORD_NULL);
+        Objects.requireNonNull(actualRecord, AVRO_UTILS_ACTUAL_RECORD_NULL);
+        Objects.requireNonNull(excludedKeys, "Excluded keys list cannot be null");
+
+        var expectedConverted = convertDatesToTimestamps(new HashMap<>(convertJsonToMap(expectedRecord)));
+        var actualConverted = convertDatesToTimestamps(new HashMap<>(convertJsonToMap(actualRecord)));
+        return performDeepEqualsComparison(expectedConverted, actualConverted, excludedKeys, "", false);
+    }
+
+    /**
      * Performs deep equality comparison between two maps representing Avro records.
      *
      * <p>This method handles nested structures, collections, and automatically converts date strings to timestamps for
@@ -279,7 +315,7 @@ public final class AvroUtils {
         var expectedConverted = convertDatesToTimestamps(new HashMap<>(expectedValueMap));
         var actualConverted = convertDatesToTimestamps(new HashMap<>(actualValueMap));
 
-        return performDeepEqualsComparison(expectedConverted, actualConverted, Collections.emptyList(), "");
+        return performDeepEqualsComparison(expectedConverted, actualConverted, Collections.emptyList(), "", true);
     }
 
     /**
@@ -320,7 +356,7 @@ public final class AvroUtils {
         var expectedConverted = convertDatesToTimestamps(new HashMap<>(expectedValueMap));
         var actualConverted = convertDatesToTimestamps(new HashMap<>(actualValueMap));
 
-        return performDeepEqualsComparison(expectedConverted, actualConverted, excludedKeys, "");
+        return performDeepEqualsComparison(expectedConverted, actualConverted, excludedKeys, "", true);
     }
 
     // ===========================================
@@ -551,7 +587,8 @@ public final class AvroUtils {
             Map<String, Object> expectedValueMap,
             Map<String, Object> actualValueMap,
             List<String> excludedKeys,
-            String parentPath) {
+            String parentPath,
+            boolean logErrors) {
 
         long expectedExcludedCount = expectedValueMap.keySet().stream()
                 .filter(k -> isKeyExcluded(k, buildQualifiedKey(parentPath, k), excludedKeys))
@@ -564,7 +601,7 @@ public final class AvroUtils {
         long effectiveActualSize = actualValueMap.size() - actualExcludedCount;
 
         if (effectiveExpectedSize != effectiveActualSize) {
-            LOGGER.error(AVRO_UTILS_RECORD_MISMATCH);
+            logMismatch(logErrors, AVRO_UTILS_RECORD_MISMATCH);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(
                         AVRO_UTILS_RECORD_MISMATCH_DETAILS,
@@ -578,7 +615,7 @@ public final class AvroUtils {
         }
 
         if (expectedValueMap.equals(actualValueMap)) {
-            LOGGER.info(AVRO_UTILS_VALUES_STRICTLY_MATCH);
+            LOGGER.debug(AVRO_UTILS_VALUES_STRICTLY_MATCH);
             return true;
         }
 
@@ -591,14 +628,14 @@ public final class AvroUtils {
             }
 
             if (!actualValueMap.containsKey(key)) {
-                LOGGER.error("Missing key {} in actual value", key);
+                logMismatch(logErrors, "Missing key '{}' in actual value (path: '{}')", key, qualifiedKey);
                 return false;
             }
 
             var expectedValue = entry.getValue();
             var actualValue = actualValueMap.get(key);
 
-            if (!compareValues(expectedValue, actualValue, excludedKeys, key, qualifiedKey)) {
+            if (!compareValues(expectedValue, actualValue, excludedKeys, key, qualifiedKey, logErrors)) {
                 return false;
             }
         }
@@ -654,7 +691,12 @@ public final class AvroUtils {
      * @return true if values are equal, false otherwise
      */
     private static boolean compareValues(
-            Object expectedValue, Object actualValue, List<String> excludedKeys, String key, String qualifiedKey) {
+            Object expectedValue,
+            Object actualValue,
+            List<String> excludedKeys,
+            String key,
+            String qualifiedKey,
+            boolean logErrors) {
         if (expectedValue instanceof Map && actualValue instanceof Map) {
             LOGGER.debug(
                     AVRO_UTILS_NESTED_OBJECT_FOUND, expectedValue.getClass().getSimpleName());
@@ -662,7 +704,8 @@ public final class AvroUtils {
                     (Map<String, Object>) expectedValue,
                     (Map<String, Object>) actualValue,
                     excludedKeys,
-                    qualifiedKey)) {
+                    qualifiedKey,
+                    logErrors)) {
                 LOGGER.debug(AVRO_UTILS_NESTED_OBJECT_NOT_MATCH);
                 return false;
             }
@@ -671,16 +714,18 @@ public final class AvroUtils {
                     AVRO_UTILS_NESTED_OBJECT_FOUND + " key : {}",
                     expectedValue.getClass().getSimpleName(),
                     key);
-            if (!deepEqualsList((List<Object>) expectedValue, (List<Object>) actualValue, excludedKeys, qualifiedKey)) {
-                LOGGER.error("Value mismatch for key {} values does not match for a list", key);
+            if (!deepEqualsList(
+                    (List<Object>) expectedValue, (List<Object>) actualValue, excludedKeys, qualifiedKey, logErrors)) {
+                logMismatch(logErrors, "Value mismatch for key {}: list values do not match", qualifiedKey);
                 return false;
             }
         } else if (actualValue instanceof Instant actualInstant && expectedValue instanceof String expectedString) {
             var parsedExpected = parseExpectedInstant(expectedString);
             if (parsedExpected == null || !parsedExpected.equals(actualInstant)) {
-                LOGGER.error(
+                logMismatch(
+                        logErrors,
                         AVRO_UTILS_VALUES_MISMATCH_WITH_CLASS_NAMES,
-                        key,
+                        qualifiedKey,
                         expectedValue,
                         expectedValue.getClass().getSimpleName(),
                         actualValue,
@@ -691,9 +736,10 @@ public final class AvroUtils {
                 && expectedValue instanceof String expectedString) {
             var parsedExpected = parseExpectedLocalDateTime(expectedString);
             if (parsedExpected == null || !parsedExpected.equals(actualLocalDateTime)) {
-                LOGGER.error(
+                logMismatch(
+                        logErrors,
                         AVRO_UTILS_VALUES_MISMATCH_WITH_CLASS_NAMES,
-                        key,
+                        qualifiedKey,
                         expectedValue,
                         expectedValue.getClass().getSimpleName(),
                         actualValue,
@@ -703,9 +749,10 @@ public final class AvroUtils {
         } else if (actualValue instanceof LocalDate actualLocalDate && expectedValue instanceof String expectedString) {
             var parsedExpected = parseExpectedLocalDate(expectedString);
             if (parsedExpected == null || !parsedExpected.equals(actualLocalDate)) {
-                LOGGER.error(
+                logMismatch(
+                        logErrors,
                         AVRO_UTILS_VALUES_MISMATCH_WITH_CLASS_NAMES,
-                        key,
+                        qualifiedKey,
                         expectedValue,
                         expectedValue.getClass().getSimpleName(),
                         actualValue,
@@ -714,13 +761,14 @@ public final class AvroUtils {
             }
         } else if (expectedValue == null) {
             if (actualValue != null) {
-                LOGGER.error(AVRO_UTILS_VALUES_MISMATCH_SHOULD_BE_NULL, key, actualValue);
+                logMismatch(logErrors, AVRO_UTILS_VALUES_MISMATCH_SHOULD_BE_NULL, qualifiedKey, actualValue);
                 return false;
             }
         } else if (!expectedValue.equals(actualValue)) {
-            LOGGER.error(
+            logMismatch(
+                    logErrors,
                     AVRO_UTILS_VALUES_MISMATCH_WITH_CLASS_NAMES,
-                    key,
+                    qualifiedKey,
                     expectedValue,
                     expectedValue.getClass().getSimpleName(),
                     actualValue,
@@ -729,6 +777,14 @@ public final class AvroUtils {
         }
 
         return true;
+    }
+
+    private static void logMismatch(boolean logErrors, String format, Object... args) {
+        if (logErrors) {
+            LOGGER.error(format, args);
+        } else {
+            LOGGER.debug(format, args);
+        }
     }
 
     /**
@@ -818,20 +874,25 @@ public final class AvroUtils {
      * @return true if lists are equal, false otherwise
      */
     private static boolean deepEqualsList(
-            List<Object> expectedList, List<Object> actualList, List<String> excludedKeys, String parentPath) {
+            List<Object> expectedList,
+            List<Object> actualList,
+            List<String> excludedKeys,
+            String parentPath,
+            boolean logErrors) {
         if (expectedList.size() != actualList.size()) {
-            LOGGER.error("List size mismatch. Expected: {}, Actual: {}", expectedList.size(), actualList.size());
+            logMismatch(
+                    logErrors, "List size mismatch. Expected: {}, Actual: {}", expectedList.size(), actualList.size());
             return false;
         }
 
         // For primitive arrays or mixed types, fall back to ordered comparison
         if (expectedList.isEmpty() || !isObjectArray(expectedList)) {
 
-            return deepEqualsListOrdered(expectedList, actualList, excludedKeys, parentPath);
+            return deepEqualsListOrdered(expectedList, actualList, excludedKeys, parentPath, logErrors);
         }
 
         // Smart matching for object arrays - match regardless of order
-        return deepEqualsListUnordered(expectedList, actualList, excludedKeys, parentPath);
+        return deepEqualsListUnordered(expectedList, actualList, excludedKeys, parentPath, logErrors);
     }
 
     /**
@@ -854,7 +915,11 @@ public final class AvroUtils {
      * @return true if lists are equal in order, false otherwise
      */
     private static boolean deepEqualsListOrdered(
-            List<Object> expectedList, List<Object> actualList, List<String> excludedKeys, String parentPath) {
+            List<Object> expectedList,
+            List<Object> actualList,
+            List<String> excludedKeys,
+            String parentPath,
+            boolean logErrors) {
         LOGGER.debug("Performing ordered array comparison for {} expected objects", expectedList.size());
         for (int i = 0; i < expectedList.size(); i++) {
             var expected = expectedList.get(i);
@@ -862,11 +927,16 @@ public final class AvroUtils {
 
             if (expected instanceof Map && actual instanceof Map) {
                 if (!performDeepEqualsComparison(
-                        (Map<String, Object>) expected, (Map<String, Object>) actual, excludedKeys, parentPath)) {
+                        (Map<String, Object>) expected,
+                        (Map<String, Object>) actual,
+                        excludedKeys,
+                        parentPath,
+                        logErrors)) {
                     return false;
                 }
             } else if (!Objects.equals(expected, actual)) {
-                LOGGER.error("List element mismatch at index {}. Expected: {}, Actual: {}", i, expected, actual);
+                logMismatch(
+                        logErrors, "List element mismatch at index {}. Expected: {}, Actual: {}", i, expected, actual);
                 return false;
             }
         }
@@ -885,7 +955,11 @@ public final class AvroUtils {
      * @return true if all expected objects find matches in actual list, false otherwise
      */
     private static boolean deepEqualsListUnordered(
-            List<Object> expectedList, List<Object> actualList, List<String> excludedKeys, String parentPath) {
+            List<Object> expectedList,
+            List<Object> actualList,
+            List<String> excludedKeys,
+            String parentPath,
+            boolean logErrors) {
         LOGGER.debug("Performing smart unordered array comparison for {} expected objects", expectedList.size());
 
         // Keep track of which actual objects have been matched
@@ -904,7 +978,7 @@ public final class AvroUtils {
 
                 var actualObject = (Map<String, Object>) actualList.get(actualIndex);
 
-                if (performDeepEqualsComparison(expectedObject, actualObject, excludedKeys, parentPath)) {
+                if (performDeepEqualsComparison(expectedObject, actualObject, excludedKeys, parentPath, false)) {
                     LOGGER.debug(
                             "Found match for expected object at index {} with actual object at index {}",
                             expectedIndex,
@@ -916,7 +990,8 @@ public final class AvroUtils {
             }
 
             if (!foundMatch) {
-                LOGGER.error(
+                logMismatch(
+                        logErrors,
                         "No matching object found in actual list for expected object at index {}: \n {}",
                         expectedIndex,
                         expectedObject);
@@ -986,8 +1061,19 @@ public final class AvroUtils {
             return matchNestedValue(expectedValue, nestedKey, actualValueMap);
         } else {
             LOGGER.debug(AVRO_UTILS_EXPECTED_KEY_CONTAINED_IN_MAIN_OBJECT, nestedKey);
-            return actualValueMap.containsKey(nestedKey)
-                    && expectedValue.equals(String.valueOf(actualValueMap.get(nestedKey)));
+            if (!actualValueMap.containsKey(nestedKey)) {
+                LOGGER.error("Avro field '{}' is missing in actual record.", nestedKey);
+                return false;
+            }
+            Object actualVal = actualValueMap.get(nestedKey);
+            boolean matches = expectedValue.equals(String.valueOf(actualVal));
+            if (!matches) {
+                LOGGER.error(
+                        "Avro field '{}' mismatch: expected '{}', actual '{}'", nestedKey, expectedValue, actualVal);
+            } else {
+                LOGGER.debug("Avro field '{}' matched value '{}'.", nestedKey, expectedValue);
+            }
+            return matches;
         }
     }
 
@@ -1060,7 +1146,17 @@ public final class AvroUtils {
                 actual = ((Map<String, Object>) actual).get(key);
             }
 
-            return actual != null && expectedValue.equals(String.valueOf(actual));
+            boolean matches = actual != null && expectedValue.equals(String.valueOf(actual));
+            if (!matches) {
+                LOGGER.error(
+                        "Nested Avro field '{}' mismatch: expected '{}', actual '{}'",
+                        nestedKey,
+                        expectedValue,
+                        actual);
+            } else {
+                LOGGER.debug("Nested Avro field '{}' matched value '{}'.", nestedKey, expectedValue);
+            }
+            return matches;
         } catch (ClassCastException e) {
             LOGGER.error("Error traversing nested objects", e);
             return false;
@@ -1080,7 +1176,19 @@ public final class AvroUtils {
      */
     private static boolean matchValue(
             String key, Map<String, Object> expectedValueMap, Map<String, Object> actualValueMap) {
-        return expectedValueMap.containsKey(key) && Objects.equals(expectedValueMap.get(key), actualValueMap.get(key));
+        if (!expectedValueMap.containsKey(key)) {
+            LOGGER.error("Key '{}' is not present in expected Avro record.", key);
+            return false;
+        }
+        Object expectedVal = expectedValueMap.get(key);
+        Object actualVal = actualValueMap.get(key);
+        boolean matches = Objects.equals(expectedVal, actualVal);
+        if (!matches) {
+            LOGGER.error("Avro field '{}' mismatch: expected '{}', actual '{}'", key, expectedVal, actualVal);
+        } else {
+            LOGGER.debug("Avro field '{}' matched value '{}'.", key, expectedVal);
+        }
+        return matches;
     }
 
     // ===========================================

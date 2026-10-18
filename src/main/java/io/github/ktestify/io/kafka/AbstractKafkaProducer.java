@@ -21,10 +21,6 @@ import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.core.AbstractProducer;
 import io.github.ktestify.models.Topic;
 import io.github.ktestify.utils.FileUtils;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -32,6 +28,11 @@ import org.apache.kafka.common.header.Header;
 import org.apache.kafka.common.header.internals.RecordHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 public abstract class AbstractKafkaProducer<K, V> extends AbstractProducer {
 
@@ -99,6 +100,11 @@ public abstract class AbstractKafkaProducer<K, V> extends AbstractProducer {
     protected ProducerRecord<K, V> buildRecord(K key, V value) {
         var record = new ProducerRecord<>(getTopic().getNamespacedTopic(), key, value);
         if (!headers.isEmpty()) {
+            logger.debug(
+                    "Attaching {} header(s) to record for topic '{}': {}",
+                    headers.size(),
+                    getTopic().getNamespacedTopic(),
+                    headers.keySet());
             for (Header header : headers.entrySet().stream()
                     .map(e -> (Header) new RecordHeader(e.getKey(), e.getValue().getBytes(StandardCharsets.UTF_8)))
                     .toList()) {
@@ -110,9 +116,17 @@ public abstract class AbstractKafkaProducer<K, V> extends AbstractProducer {
 
     protected String resolvePayload() {
         if (inlinePayload != null && !inlinePayload.isEmpty()) {
+            logger.debug(
+                    "Resolved inline payload ({} chars) for topic '{}'.",
+                    inlinePayload.length(),
+                    getTopic().getNamespacedTopic());
             return inlinePayload;
         }
         if (payloadFile != null) {
+            logger.debug(
+                    "Reading payload from file '{}' for topic '{}'.",
+                    payloadFile.getPath(),
+                    getTopic().getNamespacedTopic());
             return FileUtils.getFileContent(payloadFile);
         }
         throw new ProducerException("No payload content was provided");
@@ -121,15 +135,18 @@ public abstract class AbstractKafkaProducer<K, V> extends AbstractProducer {
     protected String resolveSchema() throws IOException, RestClientException {
         SchemaRegistryClient client = SchemaRegistryClientFactory.createClient();
         if (!StringUtils.isBlank(context.getSchemaName())) {
-            return client.getLatestSchemaMetadata(context.getSchemaName() + "-value")
-                    .getSchema();
+            String subject = context.getSchemaName() + "-value";
+            logger.info("Resolving latest Avro schema for subject '{}' from Schema Registry.", subject);
+            return client.getLatestSchemaMetadata(subject).getSchema();
         }
         String subject = context.getTopic().getNamespacedTopic() + "-value";
         if (context.getSchemaVersion() == null || context.getSchemaVersion().isEmpty()) {
+            logger.info("Resolving latest Avro schema for subject '{}' from Schema Registry.", subject);
             return client.getLatestSchemaMetadata(subject).getSchema();
         } else {
-            return client.getSchemaMetadata(subject, Integer.parseInt(context.getSchemaVersion()))
-                    .getSchema();
+            int version = Integer.parseInt(context.getSchemaVersion());
+            logger.info("Resolving Avro schema for subject '{}' (version {}) from Schema Registry.", subject, version);
+            return client.getSchemaMetadata(subject, version).getSchema();
         }
     }
 }

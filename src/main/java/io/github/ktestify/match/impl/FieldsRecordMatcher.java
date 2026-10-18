@@ -22,8 +22,9 @@ import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
 import io.github.ktestify.utils.FieldMatcherUtils;
 import io.github.ktestify.utils.FileUtils;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 /**
  * Matches a fixed-position field extracted from a positional record against either an inline expected value
@@ -72,8 +73,10 @@ public class FieldsRecordMatcher implements RecordMatcher<String> {
 
         log.debug("Fields match: expected='{}', actual='{}'", expectedField, actualField);
         if (expectedField.equals(actualField)) {
+            log.info("Field at {} matches expected value '{}'.", position, expectedField);
             return MatchResult.pass(expectedField, actualField);
         }
+        log.error("Field at {} does not match: expected '{}', actual '{}'.", position, expectedField, actualField);
         return MatchResult.fail("Field at " + position + " does not match.", expectedField, actualField);
     }
 
