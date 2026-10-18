@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### 🐛 Bug Fixes
+
+- Enhance batch matching with shared expected record keys — [@nil-malh](https://github.com/nil-malh)
+
+
 ## [1.2.6] — 2026-10-18
 
 ### ♻️ Refactoring
