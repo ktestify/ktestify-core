@@ -20,11 +20,12 @@ import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.match.BatchMatchStrategy;
 import io.github.ktestify.match.KeyMatchStrategy;
 import io.github.ktestify.models.Topic;
+import lombok.Getter;
+import org.apache.kafka.clients.consumer.Consumer;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import lombok.Getter;
-import org.apache.kafka.clients.consumer.Consumer;
 
 @Getter
 public final class ConsumerContext<K, V> {
@@ -33,6 +34,7 @@ public final class ConsumerContext<K, V> {
     private final Map<String, String> properties;
     private final Consumer<K, V> consumer;
     private final String expectedRecordKey;
+    private final List<String> expectedRecordKeys;
     private final KeyMatchStrategy keyMatchStrategy;
     private final BatchMatchStrategy batchMatchStrategy;
     private final String matchMethod;
@@ -49,6 +51,7 @@ public final class ConsumerContext<K, V> {
             Map<String, String> properties,
             Consumer<K, V> consumer,
             String expectedRecordKey,
+            List<String> expectedRecordKeys,
             KeyMatchStrategy keyMatchStrategy,
             BatchMatchStrategy batchMatchStrategy,
             String matchMethod,
@@ -63,6 +66,7 @@ public final class ConsumerContext<K, V> {
         this.properties = properties;
         this.consumer = consumer;
         this.expectedRecordKey = expectedRecordKey;
+        this.expectedRecordKeys = expectedRecordKeys != null ? expectedRecordKeys : Collections.emptyList();
         this.keyMatchStrategy = keyMatchStrategy != null ? keyMatchStrategy : KeyMatchStrategy.EXACT;
         this.batchMatchStrategy = batchMatchStrategy != null ? batchMatchStrategy : BatchMatchStrategy.POSITIONAL;
         this.matchMethod = matchMethod;
@@ -93,6 +97,7 @@ public final class ConsumerContext<K, V> {
         private Map<String, String> properties;
         private Consumer<K, V> consumer;
         private String expectedRecordKey;
+        private List<String> expectedRecordKeys;
         private KeyMatchStrategy keyMatchStrategy;
         private BatchMatchStrategy batchMatchStrategy;
         private String matchMethod;
@@ -121,6 +126,21 @@ public final class ConsumerContext<K, V> {
 
         public Builder<K, V> expectedRecordKey(String expectedRecordKey) {
             this.expectedRecordKey = expectedRecordKey;
+            return this;
+        }
+
+        /**
+         * Sets the expected record keys for batch consumers.
+         *
+         * <p>When non-empty, {@code KafkaRecordFetcher} pre-filters records against this list of expected keys, and
+         * batch matchers assert each record's key alongside its value according to {@link #batchMatchStrategy}.
+         *
+         * @param expectedRecordKeys the expected record keys, or {@code null} for an empty list
+         * @return this builder
+         * @since 1.2.6
+         */
+        public Builder<K, V> expectedRecordKeys(List<String> expectedRecordKeys) {
+            this.expectedRecordKeys = expectedRecordKeys;
             return this;
         }
 
@@ -235,6 +255,7 @@ public final class ConsumerContext<K, V> {
                     validatedProps,
                     validatedConsumer,
                     expectedRecordKey,
+                    expectedRecordKeys,
                     keyMatchStrategy,
                     batchMatchStrategy,
                     matchMethod,

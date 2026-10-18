@@ -22,8 +22,9 @@ import io.github.ktestify.match.MatchContext;
 import io.github.ktestify.match.MatchResult;
 import io.github.ktestify.match.RecordMatcher;
 import io.github.ktestify.models.ConsumedRecord;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 /**
  * Thin coordinator that wires a {@link KafkaRecordFetcher} (transport) with a {@link RecordMatcher} (assertion) and
@@ -123,10 +124,10 @@ public abstract class AbstractKafkaConsumer<K, V> extends AbstractConsumer {
                 .matchMethod(context.getMatchMethod())
                 .matchFilePaths(context.getMatchFilePaths())
                 .matchKey(context.getExpectedRecordKey())
+                .matchKeys(context.getExpectedRecordKeys())
                 .keyMatchStrategy(context.getKeyMatchStrategy())
                 .excludedFields(context.getExcludedFields())
                 .strictMatching(false)
-                .keyMatchStrategy(context.getKeyMatchStrategy())
                 .batchMatchStrategy(context.getBatchMatchStrategy())
                 .build();
     }

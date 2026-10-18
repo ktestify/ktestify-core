@@ -15,11 +15,12 @@
  */
 package io.github.ktestify.match;
 
+import lombok.Builder;
+import lombok.Value;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import lombok.Builder;
-import lombok.Value;
 
 /**
  * Immutable value object that carries all configuration needed by a {@code RecordMatcher}.
@@ -69,6 +70,19 @@ public class MatchContext {
 
     /** Optional key whose value must match a specific value (key-value matching mode). */
     String matchKey;
+
+    /**
+     * Expected record keys for batch matching.
+     *
+     * <p>When non-empty in batch matchers ({@code FileRecordMatcher}, {@code AvroFileRecordMatcher}), must have the
+     * same size as {@link #matchFilePaths}. In {@link BatchMatchStrategy#POSITIONAL} mode, record {@code i} must match
+     * both {@code matchKeys.get(i)} and {@code matchFilePaths.get(i)}; in {@link BatchMatchStrategy#LAZY} mode, each
+     * record claims the first unmatched {@code (key, file)} pair where both key and value match.
+     *
+     * @since 1.2.6
+     */
+    @Builder.Default
+    List<String> matchKeys = Collections.emptyList();
 
     /** Expected value for {@link #matchKey}. */
     String matchValue;
