@@ -160,7 +160,7 @@ public final class KafkaConfig {
         saslOauthbearerScope.ifPresent(v -> props.put(SaslConfigs.SASL_OAUTHBEARER_SCOPE, v));
         saslOauthbearerTokenEndpointUrl.ifPresent(v -> props.put(SaslConfigs.SASL_OAUTHBEARER_TOKEN_ENDPOINT_URL, v));
         saslOauthbearerJwtValidatorClass.ifPresent(v -> props.put(SaslConfigs.SASL_OAUTHBEARER_JWT_VALIDATOR_CLASS, v));
-        props.put(SaslConfigs.SASL_LOGIN_CONNECT_TIMEOUT_MS, saslLoginConnectTimeoutMs);
+        props.put(SaslConfigs.SASL_LOGIN_CONNECT_TIMEOUT_MS, (int) saslLoginConnectTimeoutMs.toMillis());
         sslTruststoreLocation.ifPresent(v -> props.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, v));
         sslTruststorePassword.ifPresent(v -> props.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, v));
         sslKeystoreLocation.ifPresent(v -> props.put(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, v));

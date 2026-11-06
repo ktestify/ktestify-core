@@ -508,7 +508,7 @@ class KafkaConfigTest {
             assertEquals("client-secret", props.get(SaslConfigs.SASL_OAUTHBEARER_CLIENT_CREDENTIALS_CLIENT_SECRET));
             assertEquals("profile", props.get(SaslConfigs.SASL_OAUTHBEARER_SCOPE));
             assertEquals("jwt.Validator", props.get(SaslConfigs.SASL_OAUTHBEARER_JWT_VALIDATOR_CLASS));
-            assertEquals(Duration.ofMillis(12000), props.get(SaslConfigs.SASL_LOGIN_CONNECT_TIMEOUT_MS));
+            assertEquals(12000, props.get(SaslConfigs.SASL_LOGIN_CONNECT_TIMEOUT_MS));
         }
     }
 
