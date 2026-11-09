@@ -2,7 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [1.2.9] — 2026-11-09
+
 ### ✨ Features
 
 - Add OAUTH2 authentification properties (#72) — [@sebastienviale](https://github.com/sebastienviale) ([#72](https://github.com/ktestify/ktestify-core/pull/72))
