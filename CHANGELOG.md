@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 - Add OAUTH2 authentification properties (#72) — [@sebastienviale](https://github.com/sebastienviale) ([#72](https://github.com/ktestify/ktestify-core/pull/72))
 
 
+### ⬆️ Dependency Updates
+
+- Update ktestify-parent version to 1.0.7 (#73) — [@nil-malh](https://github.com/nil-malh) ([#73](https://github.com/ktestify/ktestify-core/pull/73))
+
+
 ### 🎉 New Contributors
 
 - @sebastienviale made their first contribution in [#72](https://github.com/ktestify/ktestify-core/pull/72)
