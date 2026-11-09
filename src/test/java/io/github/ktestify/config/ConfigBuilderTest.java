@@ -177,6 +177,37 @@ class ConfigBuilderTest {
             assertEquals(
                     "test-jaas-config", config.getKafka().getSaslJaasConfig().get());
         }
+
+        @Test
+        @DisplayName("Should set OAuth bearer settings")
+        void shouldSetOAuthBearerSettings() {
+            KtestifyConfig config = ConfigBuilder.create()
+                    .saslLoginCallbackHandlerClass("callback.Handler")
+                    .saslOauthbearerClientCredentials("client-id", "client-secret")
+                    .saslOauthbearerScope("profile")
+                    .saslOauthbearerTokenEndpointUrl("https://oauth.example/token")
+                    .saslOauthbearerJwtValidatorClass("jwt.Validator")
+                    .saslLoginConnectTimeoutMs(Duration.ofMillis(12000))
+                    .build();
+
+            assertEquals(
+                    "callback.Handler",
+                    config.getKafka().getSaslLoginCallbackHandlerClass().get());
+            assertEquals(
+                    "client-id",
+                    config.getKafka().getSaslOauthbearerClientCredentialsClientId().get());
+            assertEquals(
+                    "client-secret",
+                    config.getKafka().getSaslOauthbearerClientCredentialsClientSecret().get());
+            assertEquals("profile", config.getKafka().getSaslOauthbearerScope().get());
+            assertEquals(
+                    "https://oauth.example/token",
+                    config.getKafka().getSaslOauthbearerTokenEndpointUrl().get());
+            assertEquals(
+                    "jwt.Validator",
+                    config.getKafka().getSaslOauthbearerJwtValidatorClass().get());
+            assertEquals(Duration.ofMillis(12000), config.getKafka().getSaslLoginConnectTimeoutMs());
+        }
     }
 
     // ==========================================

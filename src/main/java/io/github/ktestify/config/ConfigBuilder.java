@@ -108,6 +108,74 @@ public final class ConfigBuilder {
     }
 
     /**
+     * Sets the SASL login callback handler class.
+     *
+     * @param handlerClass callback handler class name
+     * @return this builder
+     */
+    public ConfigBuilder saslLoginCallbackHandlerClass(String handlerClass) {
+        overrides.put("ktestify.kafka.security.sasl-login-callback-handler-class", handlerClass);
+        return this;
+    }
+
+    /**
+     * Sets the OAuth bearer client ID and secret.
+     *
+     * @param clientId OAuth client ID
+     * @param clientSecret OAuth client secret
+     * @return this builder
+     */
+    public ConfigBuilder saslOauthbearerClientCredentials(String clientId, String clientSecret) {
+        overrides.put("ktestify.kafka.security.sasl-oauthbearer-client-credentials-client-id", clientId);
+        overrides.put("ktestify.kafka.security.sasl-oauthbearer-client-credentials-client-secret", clientSecret);
+        return this;
+    }
+
+    /**
+     * Sets the OAuth bearer scope.
+     *
+     * @param scope OAuth scope
+     * @return this builder
+     */
+    public ConfigBuilder saslOauthbearerScope(String scope) {
+        overrides.put("ktestify.kafka.security.sasl-oauthbearer-scope", scope);
+        return this;
+    }
+
+    /**
+     * Sets the OAuth bearer token endpoint URL.
+     *
+     * @param url token endpoint URL
+     * @return this builder
+     */
+    public ConfigBuilder saslOauthbearerTokenEndpointUrl(String url) {
+        overrides.put("ktestify.kafka.security.sasl-oauthbearer-token-endpoint-url", url);
+        return this;
+    }
+
+    /**
+     * Sets the OAuth bearer JWT validator class.
+     *
+     * @param validatorClass validator class name
+     * @return this builder
+     */
+    public ConfigBuilder saslOauthbearerJwtValidatorClass(String validatorClass) {
+        overrides.put("ktestify.kafka.security.sasl-oauthbearer-jwt-validator-class", validatorClass);
+        return this;
+    }
+
+    /**
+     * Sets the SASL login connection timeout in milliseconds.
+     *
+     * @param timeout connection timeout in milliseconds
+     * @return this builder
+     */
+    public ConfigBuilder saslLoginConnectTimeoutMs(Duration timeout) {
+        overrides.put("ktestify.kafka.security.sasl-login-connect-timeout-ms", timeout.toMillis() + "ms");
+        return this;
+    }
+
+    /**
      * Sets the SSL truststore location and password.
      *
      * @param location truststore file path

@@ -485,6 +485,31 @@ class KafkaConfigTest {
             assertFalse(props.containsKey(SaslConfigs.SASL_JAAS_CONFIG));
             assertFalse(props.containsKey(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG));
         }
+
+        @Test
+        @DisplayName("Should include default OAuth bearer properties")
+        void shouldIncludeDefaultOAuthBearerProperties() {
+
+            KtestifyConfig config = ConfigBuilder.create()
+                    .saslMechanism("OAUTHBEARER")
+                    .saslLoginCallbackHandlerClass("callback.Handler")
+                    .saslOauthbearerClientCredentials("client-id", "client-secret")
+                    .saslOauthbearerScope("profile")
+                    .saslOauthbearerTokenEndpointUrl("https://oauth.example/token")
+                    .saslOauthbearerJwtValidatorClass("jwt.Validator")
+                    .saslLoginConnectTimeoutMs(Duration.ofMillis(12000))
+                    .build();
+
+            Properties props = config.getKafka().getCommonProperties();
+
+            assertEquals("OAUTHBEARER", props.get(SaslConfigs.SASL_MECHANISM));
+            assertEquals("callback.Handler", props.get(SaslConfigs.SASL_LOGIN_CALLBACK_HANDLER_CLASS));
+            assertEquals("client-id", props.get(SaslConfigs.SASL_OAUTHBEARER_CLIENT_CREDENTIALS_CLIENT_ID));
+            assertEquals("client-secret", props.get(SaslConfigs.SASL_OAUTHBEARER_CLIENT_CREDENTIALS_CLIENT_SECRET));
+            assertEquals("profile", props.get(SaslConfigs.SASL_OAUTHBEARER_SCOPE));
+            assertEquals("jwt.Validator", props.get(SaslConfigs.SASL_OAUTHBEARER_JWT_VALIDATOR_CLASS));
+            assertEquals(12000, props.get(SaslConfigs.SASL_LOGIN_CONNECT_TIMEOUT_MS));
+        }
     }
 
     // ==========================================

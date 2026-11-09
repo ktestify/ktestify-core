@@ -68,6 +68,13 @@ public final class KafkaConfig {
     // Security settings
     private final Optional<String> saslMechanism;
     private final Optional<String> saslJaasConfig;
+    private final Optional<String> saslLoginCallbackHandlerClass;
+    private final Optional<String> saslOauthbearerClientCredentialsClientId;
+    private final Optional<String> saslOauthbearerClientCredentialsClientSecret;
+    private final Optional<String> saslOauthbearerScope;
+    private final Optional<String> saslOauthbearerTokenEndpointUrl;
+    private final Optional<String> saslOauthbearerJwtValidatorClass;
+    private final Duration saslLoginConnectTimeoutMs;
     private final Optional<String> sslTruststoreLocation;
     private final Optional<String> sslTruststorePassword;
     private final Optional<String> sslKeystoreLocation;
@@ -107,6 +114,15 @@ public final class KafkaConfig {
         Config securityConfig = config.getConfig("security");
         this.saslMechanism = getOptionalString(securityConfig, "sasl-mechanism");
         this.saslJaasConfig = getOptionalString(securityConfig, "sasl-jaas-config");
+        this.saslLoginCallbackHandlerClass = getOptionalString(securityConfig, "sasl-login-callback-handler-class");
+        this.saslOauthbearerClientCredentialsClientId =
+                getOptionalString(securityConfig, "sasl-oauthbearer-client-credentials-client-id");
+        this.saslOauthbearerClientCredentialsClientSecret =
+                getOptionalString(securityConfig, "sasl-oauthbearer-client-credentials-client-secret");
+        this.saslOauthbearerScope = getOptionalString(securityConfig, "sasl-oauthbearer-scope");
+        this.saslOauthbearerTokenEndpointUrl = getOptionalString(securityConfig, "sasl-oauthbearer-token-endpoint-url");
+        this.saslOauthbearerJwtValidatorClass = getOptionalString(securityConfig, "sasl-oauthbearer-jwt-validator-class");
+        this.saslLoginConnectTimeoutMs = securityConfig.getDuration("sasl-login-connect-timeout-ms");
         this.sslTruststoreLocation = getOptionalString(securityConfig, "ssl-truststore-location");
         this.sslTruststorePassword = getOptionalString(securityConfig, "ssl-truststore-password");
         this.sslKeystoreLocation = getOptionalString(securityConfig, "ssl-keystore-location");
@@ -136,6 +152,15 @@ public final class KafkaConfig {
         // Add security properties if configured
         saslMechanism.ifPresent(v -> props.put(SaslConfigs.SASL_MECHANISM, v));
         saslJaasConfig.ifPresent(v -> props.put(SaslConfigs.SASL_JAAS_CONFIG, v));
+        saslLoginCallbackHandlerClass.ifPresent(v -> props.put(SaslConfigs.SASL_LOGIN_CALLBACK_HANDLER_CLASS, v));
+        saslOauthbearerClientCredentialsClientId.ifPresent(
+                v -> props.put(SaslConfigs.SASL_OAUTHBEARER_CLIENT_CREDENTIALS_CLIENT_ID, v));
+        saslOauthbearerClientCredentialsClientSecret.ifPresent(
+                v -> props.put(SaslConfigs.SASL_OAUTHBEARER_CLIENT_CREDENTIALS_CLIENT_SECRET, v));
+        saslOauthbearerScope.ifPresent(v -> props.put(SaslConfigs.SASL_OAUTHBEARER_SCOPE, v));
+        saslOauthbearerTokenEndpointUrl.ifPresent(v -> props.put(SaslConfigs.SASL_OAUTHBEARER_TOKEN_ENDPOINT_URL, v));
+        saslOauthbearerJwtValidatorClass.ifPresent(v -> props.put(SaslConfigs.SASL_OAUTHBEARER_JWT_VALIDATOR_CLASS, v));
+        props.put(SaslConfigs.SASL_LOGIN_CONNECT_TIMEOUT_MS, (int) saslLoginConnectTimeoutMs.toMillis());
         sslTruststoreLocation.ifPresent(v -> props.put(SslConfigs.SSL_TRUSTSTORE_LOCATION_CONFIG, v));
         sslTruststorePassword.ifPresent(v -> props.put(SslConfigs.SSL_TRUSTSTORE_PASSWORD_CONFIG, v));
         sslKeystoreLocation.ifPresent(v -> props.put(SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, v));
