@@ -121,7 +121,8 @@ public final class KafkaConfig {
                 getOptionalString(securityConfig, "sasl-oauthbearer-client-credentials-client-secret");
         this.saslOauthbearerScope = getOptionalString(securityConfig, "sasl-oauthbearer-scope");
         this.saslOauthbearerTokenEndpointUrl = getOptionalString(securityConfig, "sasl-oauthbearer-token-endpoint-url");
-        this.saslOauthbearerJwtValidatorClass = getOptionalString(securityConfig, "sasl-oauthbearer-jwt-validator-class");
+        this.saslOauthbearerJwtValidatorClass =
+                getOptionalString(securityConfig, "sasl-oauthbearer-jwt-validator-class");
         this.saslLoginConnectTimeoutMs = securityConfig.getDuration("sasl-login-connect-timeout-ms");
         this.sslTruststoreLocation = getOptionalString(securityConfig, "ssl-truststore-location");
         this.sslTruststorePassword = getOptionalString(securityConfig, "ssl-truststore-password");

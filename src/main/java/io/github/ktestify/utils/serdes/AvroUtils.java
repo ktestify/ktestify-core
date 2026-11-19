@@ -1266,8 +1266,8 @@ public final class AvroUtils {
         LOGGER.debug("Converting to ENUM {}", fieldSchema.getFullName());
 
         if (!jsonElement.isJsonPrimitive() || !jsonElement.getAsJsonPrimitive().isString()) {
-            throw new ProducerException("Expected a string symbol for enum '" + fieldSchema.getFullName()
-                    + "' but got: " + jsonElement);
+            throw new ProducerException(
+                    "Expected a string symbol for enum '" + fieldSchema.getFullName() + "' but got: " + jsonElement);
         }
 
         var symbol = jsonElement.getAsString();

@@ -195,10 +195,14 @@ class ConfigBuilderTest {
                     config.getKafka().getSaslLoginCallbackHandlerClass().get());
             assertEquals(
                     "client-id",
-                    config.getKafka().getSaslOauthbearerClientCredentialsClientId().get());
+                    config.getKafka()
+                            .getSaslOauthbearerClientCredentialsClientId()
+                            .get());
             assertEquals(
                     "client-secret",
-                    config.getKafka().getSaslOauthbearerClientCredentialsClientSecret().get());
+                    config.getKafka()
+                            .getSaslOauthbearerClientCredentialsClientSecret()
+                            .get());
             assertEquals("profile", config.getKafka().getSaslOauthbearerScope().get());
             assertEquals(
                     "https://oauth.example/token",
