@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### ✨ Features
+
+- Handle enum for producer record (#74) *(core)* — [@michaeldesroches](https://github.com/michaeldesroches) ([#74](https://github.com/ktestify/ktestify-core/pull/74))
+
+
+### 🎉 New Contributors
+
+- @michaeldesroches made their first contribution in [#74](https://github.com/ktestify/ktestify-core/pull/74)
+
+
 ## [1.2.9] — 2026-11-09
 
 ### ✨ Features
