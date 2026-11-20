@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.gson.*;
 import io.github.ktestify.exceptions.ComparisonException;
+import io.github.ktestify.exceptions.ProducerException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
@@ -1062,6 +1063,50 @@ class AvroUtilsTest {
         Object result = AvroUtils.convertJsonToAvro(jsonElement, bytesSchema);
 
         assertInstanceOf(Byte.class, result, "Should convert to Byte when BYTES schema has no logical type");
+    }
+
+    @Test
+    void testConvertJsonToAvroWithEnumFieldInRecord() {
+        Schema recordSchema = new Schema.Parser()
+                .parse("{\"type\":\"record\",\"name\":\"OrderFlowEvent\",\"namespace\":\"com.example\",\"fields\":["
+                        + "{\"name\":\"name\",\"type\":{\"type\":\"enum\",\"name\":\"Name\","
+                        + "\"symbols\":[\"RELEASE\",\"PURGE\"]}}]}");
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("name", "RELEASE");
+
+        GenericRecord record = (GenericRecord) AvroUtils.convertJsonToAvro(jsonObject, recordSchema);
+
+        Schema enumSchema = recordSchema.getField("name").schema();
+        assertEquals(new GenericData.EnumSymbol(enumSchema, "RELEASE"), record.get("name"));
+        assertTrue(GenericData.get().validate(recordSchema, record), "Record should be valid against its schema");
+    }
+
+    @Test
+    void testConvertJsonToAvroWithNullableEnum() {
+        Schema enumSchema = SchemaBuilder.enumeration("Name").symbols("RELEASE", "PURGE");
+        Schema unionSchema = Schema.createUnion(Schema.create(Schema.Type.NULL), enumSchema);
+
+        assertEquals(
+                new GenericData.EnumSymbol(enumSchema, "PURGE"),
+                AvroUtils.convertJsonToAvro(new JsonPrimitive("PURGE"), unionSchema));
+        assertNull(AvroUtils.convertJsonToAvro(JsonNull.INSTANCE, unionSchema));
+    }
+
+    @Test
+    void testConvertJsonToAvroWithInvalidEnumSymbol() {
+        Schema enumSchema = SchemaBuilder.enumeration("Name").symbols("RELEASE", "PURGE");
+
+        ProducerException ex = assertThrows(
+                ProducerException.class, () -> AvroUtils.convertJsonToAvro(new JsonPrimitive("UNKNOWN"), enumSchema));
+        assertTrue(ex.getMessage().contains("UNKNOWN"));
+        assertTrue(ex.getMessage().contains("[RELEASE, PURGE]"));
+    }
+
+    @Test
+    void testConvertJsonToAvroWithNonStringEnumValue() {
+        Schema enumSchema = SchemaBuilder.enumeration("Name").symbols("RELEASE", "PURGE");
+
+        assertThrows(ProducerException.class, () -> AvroUtils.convertJsonToAvro(new JsonPrimitive(1), enumSchema));
     }
 
     // Test convertJsonObjectToRecord with missing fields

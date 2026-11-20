@@ -1249,8 +1249,34 @@ public final class AvroUtils {
             case MAP -> convertJsonMapToAvroMap(jsonElement.getAsJsonObject(), fieldSchema.getValueType());
             case ARRAY -> convertJsonArrayToArray(jsonElement.getAsJsonArray(), fieldSchema);
             case BYTES -> handleBytesType(jsonElement, fieldSchema);
+            case ENUM -> handleEnumType(jsonElement, fieldSchema);
             default -> convertJsonPrimitiveToAvro(jsonElement, fieldSchema);
         };
+    }
+
+    /**
+     * Handles conversion of ENUM schema types.
+     *
+     * @param jsonElement the JSON element to convert, expected to be a JSON string holding the enum symbol
+     * @param fieldSchema the ENUM schema
+     * @return the corresponding {@link GenericData.EnumSymbol}
+     * @throws ProducerException if the JSON value is not a string or is not a symbol of the enum
+     */
+    private static GenericData.EnumSymbol handleEnumType(JsonElement jsonElement, Schema fieldSchema) {
+        LOGGER.debug("Converting to ENUM {}", fieldSchema.getFullName());
+
+        if (!jsonElement.isJsonPrimitive() || !jsonElement.getAsJsonPrimitive().isString()) {
+            throw new ProducerException(
+                    "Expected a string symbol for enum '" + fieldSchema.getFullName() + "' but got: " + jsonElement);
+        }
+
+        var symbol = jsonElement.getAsString();
+        if (!fieldSchema.hasEnumSymbol(symbol)) {
+            throw new ProducerException("Invalid symbol '" + symbol + "' for enum '" + fieldSchema.getFullName()
+                    + "'. Allowed symbols: " + fieldSchema.getEnumSymbols());
+        }
+
+        return new GenericData.EnumSymbol(fieldSchema, symbol);
     }
 
     /**
