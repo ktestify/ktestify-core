@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 - Handle enum for producer record (#74) *(core)* — [@michaeldesroches](https://github.com/michaeldesroches) ([#74](https://github.com/ktestify/ktestify-core/pull/74))
 
 
+### ⬆️ Dependency Updates
+
+- Bump ktestify-parent to 1.0.8 (#75) — [@nil-malh](https://github.com/nil-malh) ([#75](https://github.com/ktestify/ktestify-core/pull/75))
+
+
 ### 🎉 New Contributors
 
 - @michaeldesroches made their first contribution in [#74](https://github.com/ktestify/ktestify-core/pull/74)
