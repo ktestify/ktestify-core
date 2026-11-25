@@ -36,6 +36,7 @@ public final class ProducerContext<K, V> {
     private final String payload;
     private final String schemaName;
     private final String schemaVersion;
+    private final boolean tombstone;
 
     private ProducerContext(
             Topic topic,
@@ -46,7 +47,8 @@ public final class ProducerContext<K, V> {
             Map<String, String> headers,
             String payload,
             String schemaName,
-            String schemaVersion) {
+            String schemaVersion,
+            boolean tombstone) {
         this.topic = topic;
         this.properties = properties;
         this.producer = producer;
@@ -56,6 +58,7 @@ public final class ProducerContext<K, V> {
         this.payload = payload;
         this.schemaName = schemaName;
         this.schemaVersion = schemaVersion;
+        this.tombstone = tombstone;
     }
 
     public static <K, V> Builder<K, V> builder() {
@@ -73,6 +76,7 @@ public final class ProducerContext<K, V> {
         private String payload;
         private String schemaName;
         private String schemaVersion;
+        private boolean tombstone;
 
         public Builder<K, V> topic(Topic topic) {
             this.topic = topic;
@@ -119,6 +123,21 @@ public final class ProducerContext<K, V> {
             return this;
         }
 
+        /**
+         * Configures this context to produce a Kafka tombstone record ({@code null} value).
+         *
+         * <p>When enabled, {@code recordKey} must be non-blank and neither {@code payloadFile} nor {@code payload} may
+         * be set.
+         *
+         * @param tombstone {@code true} to produce a tombstone record
+         * @return this builder
+         * @since 1.2.11
+         */
+        public Builder<K, V> tombstone(boolean tombstone) {
+            this.tombstone = tombstone;
+            return this;
+        }
+
         public ProducerContext<K, V> build() {
             Topic validatedTopic = Topic.validateTopic(topic, Topic.Type.INPUT);
 
@@ -128,9 +147,16 @@ public final class ProducerContext<K, V> {
                     : KtestifyConfig.getOrLoad().getKafka().getProducerPropertiesAsMap();
 
             // Producer must still be provided (use KafkaClientFactory to create one)
-            Producer<K, V> validatedProducer = requireNonNull(
-                    producer,
-                    "Kafka producer must be provided. Use KafkaClientFactory.createRawProducer() or KafkaClientFactory.createAvroProducer()");
+            Producer<K, V> validatedProducer = requireNonNull(producer);
+
+            if (tombstone) {
+                if (recordKey == null || recordKey.isBlank()) {
+                    throw new ProducerException("A non-blank recordKey is required when producing a tombstone record.");
+                }
+                if (payloadFile != null || (payload != null && !payload.isBlank())) {
+                    throw new ProducerException("A tombstone record must not specify a payloadFile or inline payload.");
+                }
+            }
 
             File validatedFile = validateFile(payloadFile);
             Map<String, String> validatedHeaders = headers.isEmpty() ? Collections.emptyMap() : Map.copyOf(headers);
@@ -143,7 +169,8 @@ public final class ProducerContext<K, V> {
                     validatedHeaders,
                     payload,
                     schemaName,
-                    schemaVersion);
+                    schemaVersion,
+                    tombstone);
         }
 
         private static File validateFile(File file) {
@@ -162,9 +189,10 @@ public final class ProducerContext<K, V> {
             return file;
         }
 
-        private static <T> T requireNonNull(T value, String message) {
+        private static <T> T requireNonNull(T value) {
             if (value == null) {
-                throw new ProducerException(message);
+                throw new ProducerException(
+                        "Kafka producer must be provided. Use KafkaClientFactory.createRawProducer() or KafkaClientFactory.createAvroProducer()");
             }
             return value;
         }

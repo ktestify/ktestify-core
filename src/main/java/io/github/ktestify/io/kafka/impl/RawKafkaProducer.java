@@ -56,17 +56,25 @@ public class RawKafkaProducer extends AbstractKafkaProducer<String, String> {
     @Override
     protected void produce() {
         try {
-            String payload = resolvePayload();
             String key = context.getRecordKey();
-            logger.debug(
-                    "Producing raw record to topic '{}' with key '{}':\n{}",
-                    getTopic().getNamespacedTopic(),
-                    key,
-                    payload);
+            String payload = context.isTombstone() ? null : resolvePayload();
+            if (context.isTombstone()) {
+                logger.debug(
+                        "Producing tombstone record to topic '{}' with key '{}'.",
+                        getTopic().getNamespacedTopic(),
+                        key);
+            } else {
+                logger.debug(
+                        "Producing raw record to topic '{}' with key '{}':\n{}",
+                        getTopic().getNamespacedTopic(),
+                        key,
+                        payload);
+            }
             ProducerRecord<String, String> record = buildRecord(key, payload);
             RecordMetadata metadata = producer.send(record).get();
             logger.info(
-                    "Produced raw record to {} with key={} partition {} offset {} and timestamp {}",
+                    "Produced {} record to {} with key={} partition {} offset {} and timestamp {}",
+                    context.isTombstone() ? "tombstone" : "raw",
                     metadata.topic(),
                     record.key(),
                     metadata.partition(),

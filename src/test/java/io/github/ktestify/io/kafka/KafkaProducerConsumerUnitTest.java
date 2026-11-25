@@ -236,4 +236,143 @@ class KafkaProducerConsumerUnitTest {
                         .consumer(null)
                         .build());
     }
+
+    @Test
+    @DisplayName("RawKafkaProducer sends tombstone record with null value and headers")
+    void rawKafkaProducerSendsTombstone() {
+        MockProducer<String, String> mockProducer =
+                new MockProducer<>(true, null, new StringSerializer(), new StringSerializer());
+        Topic topic =
+                Topic.builder().topicName("orders").topicType(Topic.Type.INPUT).build();
+
+        ProducerContext<String, String> ctx = ProducerContext.<String, String>builder()
+                .topic(topic)
+                .producer(mockProducer)
+                .recordKey("order-42")
+                .headers(Map.of("reason", "deleted"))
+                .tombstone(true)
+                .build();
+
+        new RawKafkaProducer(ctx).send();
+
+        assertEquals(1, mockProducer.history().size());
+        var sent = mockProducer.history().getFirst();
+        assertEquals("order-42", sent.key());
+        assertNull(sent.value());
+        assertEquals("deleted", new String(sent.headers().lastHeader("reason").value(), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    @DisplayName("ProducerContext validates tombstone constraints")
+    void producerContextValidatesTombstoneConstraints() throws Exception {
+        MockProducer<String, String> mockProducer =
+                new MockProducer<>(true, null, new StringSerializer(), new StringSerializer());
+        Topic topic =
+                Topic.builder().topicName("orders").topicType(Topic.Type.INPUT).build();
+        File payloadFile = tempDir.resolve("payload.json").toFile();
+        Files.writeString(payloadFile.toPath(), "{\"id\":1}", StandardCharsets.UTF_8);
+
+        assertThrows(
+                ProducerException.class,
+                () -> ProducerContext.<String, String>builder()
+                        .topic(topic)
+                        .producer(mockProducer)
+                        .tombstone(true)
+                        .build());
+
+        assertThrows(
+                ProducerException.class,
+                () -> ProducerContext.<String, String>builder()
+                        .topic(topic)
+                        .producer(mockProducer)
+                        .recordKey("   ")
+                        .tombstone(true)
+                        .build());
+
+        assertThrows(
+                ProducerException.class,
+                () -> ProducerContext.<String, String>builder()
+                        .topic(topic)
+                        .producer(mockProducer)
+                        .recordKey("order-42")
+                        .payloadFile(payloadFile)
+                        .tombstone(true)
+                        .build());
+
+        assertThrows(
+                ProducerException.class,
+                () -> ProducerContext.<String, String>builder()
+                        .topic(topic)
+                        .producer(mockProducer)
+                        .recordKey("order-42")
+                        .payload("{\"id\":1}")
+                        .tombstone(true)
+                        .build());
+    }
+
+    @Test
+    @DisplayName("RawKafkaConsumer matches tombstone record and fails fast on non-tombstone")
+    void rawKafkaConsumerMatchesTombstoneAndFailsFastOnNonTombstone() {
+        KafkaRecordFetcher.clearMatchedRecords();
+        TopicPartition tp = new TopicPartition("tombstone-out", 0);
+        MockConsumer<String, String> passingConsumer = new MockConsumer<>(AutoOffsetResetStrategy.EARLIEST.name()) {
+            @Override
+            public Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes(
+                    Map<TopicPartition, Long> timestampsToSearch, Duration timeout) {
+                return Map.of(tp, new OffsetAndTimestamp(0L, System.currentTimeMillis()));
+            }
+        };
+        passingConsumer.schedulePollTask(() -> {
+            passingConsumer.rebalance(List.of(tp));
+            passingConsumer.updateBeginningOffsets(Map.of(tp, 0L));
+            passingConsumer.updateEndOffsets(Map.of(tp, 1L));
+        });
+        passingConsumer.schedulePollTask(
+                () -> passingConsumer.addRecord(new ConsumerRecord<>("tombstone-out", 0, 0L, "order-42", null)));
+
+        Topic topic = Topic.builder()
+                .topicName("tombstone-out")
+                .topicType(Topic.Type.OUTPUT)
+                .build();
+
+        ConsumerContext<String, String> passCtx = ConsumerContext.<String, String>builder()
+                .topic(topic)
+                .consumer(passingConsumer)
+                .matchMethod(RecordMatcherFactory.METHOD_MATCH_TOMBSTONE)
+                .expectedRecordKey("order-42")
+                .readTimeout(2000L)
+                .consumerDeltaTime(10000L)
+                .referenceTimestamp(System.currentTimeMillis())
+                .build();
+
+        assertTrue(new RawKafkaConsumer(passCtx).call());
+
+        KafkaRecordFetcher.clearMatchedRecords();
+        MockConsumer<String, String> failingConsumer = new MockConsumer<>(AutoOffsetResetStrategy.EARLIEST.name()) {
+            @Override
+            public Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes(
+                    Map<TopicPartition, Long> timestampsToSearch, Duration timeout) {
+                return Map.of(tp, new OffsetAndTimestamp(0L, System.currentTimeMillis()));
+            }
+        };
+        failingConsumer.schedulePollTask(() -> {
+            failingConsumer.rebalance(List.of(tp));
+            failingConsumer.updateBeginningOffsets(Map.of(tp, 0L));
+            failingConsumer.updateEndOffsets(Map.of(tp, 1L));
+        });
+        failingConsumer.schedulePollTask(() -> failingConsumer.addRecord(
+                new ConsumerRecord<>("tombstone-out", 0, 0L, "order-42", "{\"status\":\"ACTIVE\"}")));
+
+        ConsumerContext<String, String> failCtx = ConsumerContext.<String, String>builder()
+                .topic(topic)
+                .consumer(failingConsumer)
+                .matchMethod(RecordMatcherFactory.METHOD_MATCH_TOMBSTONE)
+                .expectedRecordKey("order-42")
+                .readTimeout(2000L)
+                .consumerDeltaTime(10000L)
+                .referenceTimestamp(System.currentTimeMillis())
+                .build();
+
+        assertThrows(AssertionError.class, () -> new RawKafkaConsumer(failCtx).call());
+    }
 }

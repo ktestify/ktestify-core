@@ -54,6 +54,14 @@ public final class RecordMatcherFactory {
      */
     public static final String METHOD_MATCH_ATTRIBUTES = "methodMatchAttributes";
 
+    /**
+     * Asserts that a consumed record is a tombstone ({@code null} value), optionally matching its key. Available for
+     * both raw and Avro transports.
+     *
+     * @since 1.2.11
+     */
+    public static final String METHOD_MATCH_TOMBSTONE = "methodMatchTombstone";
+
     private RecordMatcherFactory() {}
 
     // =========================================================================
@@ -82,10 +90,12 @@ public final class RecordMatcherFactory {
             case METHOD_MATCH_XPATH -> new XPathRecordMatcher();
             case METHOD_RECORD_KEY_MATCH -> new KeyRecordMatcher();
             case METHOD_MATCH_ATTRIBUTES -> new AttributeRecordMatcher<>();
+            case METHOD_MATCH_TOMBSTONE -> new TombstoneRecordMatcher<>();
             default ->
                 throw new ConfigException("Unknown raw matchMethod '" + matchMethod + "'. "
                         + "Valid values: methodMatchFile, methodMatchKeyValue, methodFieldsToMatch, "
-                        + "methodMatchXML, methodMatchXPath, methodRecordKeyMatch, methodMatchAttributes.");
+                        + "methodMatchXML, methodMatchXPath, methodRecordKeyMatch, methodMatchAttributes, "
+                        + "methodMatchTombstone.");
         };
     }
 
@@ -112,10 +122,11 @@ public final class RecordMatcherFactory {
             case METHOD_MATCH_KEY_FILE -> new AvroFileKeyRecordMatcher();
             case METHOD_FIELDS_TO_MATCH -> new AvroFieldsRecordMatcher();
             case METHOD_RECORD_KEY_MATCH -> new AvroKeyRecordMatcher();
+            case METHOD_MATCH_TOMBSTONE -> new TombstoneRecordMatcher<>();
             default ->
                 throw new ConfigException("Unknown Avro matchMethod '" + matchMethod + "'. "
                         + "Valid values: methodMatchFile, methodMatchKeyValue, "
-                        + "methodFieldsToMatch, methodRecordKeyMatch.");
+                        + "methodFieldsToMatch, methodRecordKeyMatch, methodMatchTombstone.");
         };
     }
 }

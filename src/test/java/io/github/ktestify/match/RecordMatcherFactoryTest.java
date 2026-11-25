@@ -80,6 +80,12 @@ class RecordMatcherFactoryTest {
         void matchAttributes() {
             assertInstanceOf(AttributeRecordMatcher.class, RecordMatcherFactory.forRaw(METHOD_MATCH_ATTRIBUTES));
         }
+
+        @Test
+        @DisplayName("METHOD_MATCH_TOMBSTONE → TombstoneRecordMatcher")
+        void matchTombstone() {
+            assertInstanceOf(TombstoneRecordMatcher.class, RecordMatcherFactory.forRaw(METHOD_MATCH_TOMBSTONE));
+        }
     }
 
     @Nested
@@ -135,6 +141,12 @@ class RecordMatcherFactoryTest {
         @DisplayName("METHOD_RECORD_KEY_MATCH → AvroKeyRecordMatcher")
         void matchKey() {
             assertInstanceOf(AvroKeyRecordMatcher.class, RecordMatcherFactory.forAvro(METHOD_RECORD_KEY_MATCH));
+        }
+
+        @Test
+        @DisplayName("METHOD_MATCH_TOMBSTONE → TombstoneRecordMatcher")
+        void matchTombstone() {
+            assertInstanceOf(TombstoneRecordMatcher.class, RecordMatcherFactory.forAvro(METHOD_MATCH_TOMBSTONE));
         }
     }
 
