@@ -19,12 +19,13 @@ import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.kafka.AbstractKafkaProducer;
 import io.github.ktestify.io.kafka.ProducerContext;
 import io.github.ktestify.models.Topic;
-import java.io.File;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+
+import java.io.File;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class RawKafkaProducer extends AbstractKafkaProducer<String, String> {
 
@@ -56,17 +57,25 @@ public class RawKafkaProducer extends AbstractKafkaProducer<String, String> {
     @Override
     protected void produce() {
         try {
-            String payload = resolvePayload();
             String key = context.getRecordKey();
-            logger.debug(
-                    "Producing raw record to topic '{}' with key '{}':\n{}",
-                    getTopic().getNamespacedTopic(),
-                    key,
-                    payload);
+            String payload = context.isTombstone() ? null : resolvePayload();
+            if (context.isTombstone()) {
+                logger.debug(
+                        "Producing tombstone record to topic '{}' with key '{}'.",
+                        getTopic().getNamespacedTopic(),
+                        key);
+            } else {
+                logger.debug(
+                        "Producing raw record to topic '{}' with key '{}':\n{}",
+                        getTopic().getNamespacedTopic(),
+                        key,
+                        payload);
+            }
             ProducerRecord<String, String> record = buildRecord(key, payload);
             RecordMetadata metadata = producer.send(record).get();
             logger.info(
-                    "Produced raw record to {} with key={} partition {} offset {} and timestamp {}",
+                    "Produced {} record to {} with key={} partition {} offset {} and timestamp {}",
+                    context.isTombstone() ? "tombstone" : "raw",
                     metadata.topic(),
                     record.key(),
                     metadata.partition(),
