@@ -8,6 +8,11 @@ All notable changes to this project will be documented in this file.
 - Added tombstone support  (#76) — [@nil-malh](https://github.com/nil-malh) ([#76](https://github.com/ktestify/ktestify-core/pull/76))
 
 
+### 🐛 Bug Fixes
+
+- Harden polling deadlines, delta conversion, and Avro producer tests (#77) *(core)* — [@nil-malh](https://github.com/nil-malh)
+
+
 ## [1.2.10] — 2026-11-24
 
 ### ✨ Features
