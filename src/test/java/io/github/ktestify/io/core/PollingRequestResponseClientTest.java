@@ -15,13 +15,11 @@
  */
 package io.github.ktestify.io.core;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import io.github.ktestify.exceptions.FetchException;
 import io.github.ktestify.exceptions.FetchTimeoutException;
 import io.github.ktestify.models.ConsumedRecord;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +29,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
-
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 @DisplayName("PollingRequestResponseClient")
 class PollingRequestResponseClientTest {

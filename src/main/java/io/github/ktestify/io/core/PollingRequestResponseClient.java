@@ -18,11 +18,10 @@ package io.github.ktestify.io.core;
 import io.github.ktestify.exceptions.FetchException;
 import io.github.ktestify.exceptions.FetchTimeoutException;
 import io.github.ktestify.models.ConsumedRecord;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.Predicate;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Generic {@link RequestResponseClient} decorator that retries {@link #execute(Object)} against a delegate client until
@@ -135,7 +134,7 @@ public class PollingRequestResponseClient<Req, V> implements RequestResponseClie
                         case RuntimeException re -> throw re;
                         case Error err -> throw err;
                         case null, default ->
-                                lastFailure = new FetchException("Polling attempt #" + attempt + " failed.", cause);
+                            lastFailure = new FetchException("Polling attempt #" + attempt + " failed.", cause);
                     }
                 }
 
