@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### ✨ Features
+
+- Added tombstone support  (#76) — [@nil-malh](https://github.com/nil-malh) ([#76](https://github.com/ktestify/ktestify-core/pull/76))
+
+
 ## [1.2.10] — 2026-11-24
 
 ### ✨ Features
