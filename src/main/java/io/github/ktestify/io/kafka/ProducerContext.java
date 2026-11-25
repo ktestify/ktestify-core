@@ -18,12 +18,11 @@ package io.github.ktestify.io.kafka;
 import io.github.ktestify.config.KtestifyConfig;
 import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.models.Topic;
-import lombok.Getter;
-import org.apache.kafka.clients.producer.Producer;
-
 import java.io.File;
 import java.util.Collections;
 import java.util.Map;
+import lombok.Getter;
+import org.apache.kafka.clients.producer.Producer;
 
 @Getter
 public final class ProducerContext<K, V> {
@@ -148,9 +147,7 @@ public final class ProducerContext<K, V> {
                     : KtestifyConfig.getOrLoad().getKafka().getProducerPropertiesAsMap();
 
             // Producer must still be provided (use KafkaClientFactory to create one)
-            Producer<K, V> validatedProducer = requireNonNull(
-                    producer
-            );
+            Producer<K, V> validatedProducer = requireNonNull(producer);
 
             if (tombstone) {
                 if (recordKey == null || recordKey.isBlank()) {
@@ -194,7 +191,8 @@ public final class ProducerContext<K, V> {
 
         private static <T> T requireNonNull(T value) {
             if (value == null) {
-                throw new ProducerException("Kafka producer must be provided. Use KafkaClientFactory.createRawProducer() or KafkaClientFactory.createAvroProducer()");
+                throw new ProducerException(
+                        "Kafka producer must be provided. Use KafkaClientFactory.createRawProducer() or KafkaClientFactory.createAvroProducer()");
             }
             return value;
         }
