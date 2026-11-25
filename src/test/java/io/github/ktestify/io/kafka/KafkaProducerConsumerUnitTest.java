@@ -15,17 +15,36 @@
  */
 package io.github.ktestify.io.kafka;
 
-import static org.junit.jupiter.api.Assertions.*;
-
+import io.confluent.kafka.schemaregistry.client.SchemaMetadata;
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
+import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
 import io.github.ktestify.exceptions.ConsumerException;
 import io.github.ktestify.exceptions.ProducerException;
 import io.github.ktestify.io.kafka.impl.AvroKafkaConsumer;
+import io.github.ktestify.io.kafka.impl.AvroKafkaProducer;
 import io.github.ktestify.io.kafka.impl.RawKafkaConsumer;
 import io.github.ktestify.io.kafka.impl.RawKafkaProducer;
 import io.github.ktestify.match.BatchMatchStrategy;
 import io.github.ktestify.match.KeyMatchStrategy;
 import io.github.ktestify.match.RecordMatcherFactory;
 import io.github.ktestify.models.Topic;
+import org.apache.avro.generic.GenericRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.MockConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
+import org.apache.kafka.clients.consumer.internals.AutoOffsetResetStrategy;
+import org.apache.kafka.clients.producer.MockProducer;
+import org.apache.kafka.clients.producer.Producer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.SerializationException;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.MockedStatic;
+
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -33,17 +52,12 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import org.apache.avro.generic.GenericRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.MockConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
-import org.apache.kafka.clients.consumer.internals.AutoOffsetResetStrategy;
-import org.apache.kafka.clients.producer.MockProducer;
-import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @DisplayName("Kafka Producer and Consumer Unit Tests")
 class KafkaProducerConsumerUnitTest {
@@ -374,5 +388,161 @@ class KafkaProducerConsumerUnitTest {
                 .build();
 
         assertThrows(AssertionError.class, () -> new RawKafkaConsumer(failCtx).call());
+    }
+
+    private static final String SIMPLE_AVRO_SCHEMA = """
+            {
+              "type": "record",
+              "name": "OrderEvent",
+              "namespace": "io.github.ktestify.test",
+              "fields": [
+                {"name": "orderId", "type": "string"},
+                {"name": "status", "type": {"type": "enum", "name": "OrderStatus", "symbols": ["CREATED", "CANCELLED"]}}
+              ]
+            }
+            """;
+
+    @Test
+    @DisplayName("AvroKafkaProducer wraps schema lookup failures and invalid schema version in ProducerException")
+    void avroKafkaProducerWrapsSchemaLookupFailures() throws Exception {
+        Topic topic = Topic.builder()
+                .topicName("orders-avro")
+                .topicType(Topic.Type.INPUT)
+                .build();
+        @SuppressWarnings("unchecked")
+        Producer<String, GenericRecord> mockProducer = mock(Producer.class);
+        SchemaRegistryClient srClient = mock(SchemaRegistryClient.class);
+        RestClientException restFailure = new RestClientException("Subject not found", 404, 40401);
+        when(srClient.getLatestSchemaMetadata("orders-avro-value")).thenThrow(restFailure);
+
+        try (MockedStatic<SchemaRegistryClientFactory> factoryMock = mockStatic(SchemaRegistryClientFactory.class)) {
+            factoryMock.when(SchemaRegistryClientFactory::createClient).thenReturn(srClient);
+
+            ProducerContext<String, GenericRecord> lookupCtx = ProducerContext.<String, GenericRecord>builder()
+                    .topic(topic)
+                    .producer(mockProducer)
+                    .payload("{\"orderId\":\"ORD-1\",\"status\":\"CREATED\"}")
+                    .build();
+
+            ProducerException lookupEx =
+                    assertThrows(ProducerException.class, () -> new AvroKafkaProducer(lookupCtx).send());
+            assertTrue(lookupEx.getMessage().contains("Failed to read schema or payload for Avro message"));
+            assertSame(restFailure, lookupEx.getCause());
+
+            ProducerContext<String, GenericRecord> badVersionCtx = ProducerContext.<String, GenericRecord>builder()
+                    .topic(topic)
+                    .producer(mockProducer)
+                    .payload("{\"orderId\":\"ORD-1\",\"status\":\"CREATED\"}")
+                    .schemaVersion("not-a-number")
+                    .build();
+
+            ProducerException versionEx =
+                    assertThrows(ProducerException.class, () -> new AvroKafkaProducer(badVersionCtx).send());
+            assertTrue(versionEx.getMessage().contains("Invalid schema version 'not-a-number'"));
+            assertInstanceOf(NumberFormatException.class, versionEx.getCause());
+        }
+    }
+
+    @Test
+    @DisplayName("AvroKafkaProducer throws ProducerException when payload fails Avro conversion")
+    void avroKafkaProducerFailsOnAvroConversionError() throws Exception {
+        Topic topic = Topic.builder()
+                .topicName("orders-avro")
+                .topicType(Topic.Type.INPUT)
+                .build();
+        @SuppressWarnings("unchecked")
+        Producer<String, GenericRecord> mockProducer = mock(Producer.class);
+        SchemaRegistryClient srClient = mock(SchemaRegistryClient.class);
+        when(srClient.getLatestSchemaMetadata("orders-avro-value"))
+                .thenReturn(new SchemaMetadata(1, 1, SIMPLE_AVRO_SCHEMA));
+
+        try (MockedStatic<SchemaRegistryClientFactory> factoryMock = mockStatic(SchemaRegistryClientFactory.class)) {
+            factoryMock.when(SchemaRegistryClientFactory::createClient).thenReturn(srClient);
+
+            ProducerContext<String, GenericRecord> ctx = ProducerContext.<String, GenericRecord>builder()
+                    .topic(topic)
+                    .producer(mockProducer)
+                    .payload("{\"orderId\":\"ORD-1\",\"status\":\"UNKNOWN_STATUS\"}")
+                    .build();
+
+            ProducerException ex = assertThrows(ProducerException.class, () -> new AvroKafkaProducer(ctx).send());
+            assertTrue(ex.getMessage().contains("UNKNOWN_STATUS"));
+            verify(mockProducer, never()).send(any());
+        }
+    }
+
+    @Test
+    @DisplayName("AvroKafkaProducer wraps send ExecutionException in ProducerException preserving cause")
+    void avroKafkaProducerWrapsSendFailure() throws Exception {
+        Topic topic = Topic.builder()
+                .topicName("orders-avro")
+                .topicType(Topic.Type.INPUT)
+                .build();
+        @SuppressWarnings("unchecked")
+        Producer<String, GenericRecord> mockProducer = mock(Producer.class);
+        @SuppressWarnings("unchecked")
+        Future<RecordMetadata> failedFuture = mock(Future.class);
+        SerializationException rootCause = new SerializationException("Avro serialization failed");
+        when(failedFuture.get()).thenThrow(new ExecutionException(rootCause));
+        when(mockProducer.send(any(ProducerRecord.class))).thenReturn(failedFuture);
+
+        SchemaRegistryClient srClient = mock(SchemaRegistryClient.class);
+        when(srClient.getLatestSchemaMetadata("orders-avro-value"))
+                .thenReturn(new SchemaMetadata(1, 1, SIMPLE_AVRO_SCHEMA));
+
+        try (MockedStatic<SchemaRegistryClientFactory> factoryMock = mockStatic(SchemaRegistryClientFactory.class)) {
+            factoryMock.when(SchemaRegistryClientFactory::createClient).thenReturn(srClient);
+
+            ProducerContext<String, GenericRecord> ctx = ProducerContext.<String, GenericRecord>builder()
+                    .topic(topic)
+                    .producer(mockProducer)
+                    .recordKey("key-1")
+                    .payload("{\"orderId\":\"ORD-1\",\"status\":\"CREATED\"}")
+                    .build();
+
+            ProducerException ex = assertThrows(ProducerException.class, () -> new AvroKafkaProducer(ctx).send());
+            assertTrue(ex.getMessage().contains("Failed to produce Avro message"));
+            assertSame(rootCause, ex.getCause());
+        }
+    }
+
+    @Test
+    @DisplayName("AvroKafkaProducer restores interrupt flag and wraps InterruptedException in ProducerException")
+    void avroKafkaProducerRestoresInterruptFlagOnInterruptedSend() throws Exception {
+        Topic topic = Topic.builder()
+                .topicName("orders-avro")
+                .topicType(Topic.Type.INPUT)
+                .build();
+        @SuppressWarnings("unchecked")
+        Producer<String, GenericRecord> mockProducer = mock(Producer.class);
+        @SuppressWarnings("unchecked")
+        Future<RecordMetadata> interruptedFuture = mock(Future.class);
+        InterruptedException interrupted = new InterruptedException("send interrupted");
+        when(interruptedFuture.get()).thenThrow(interrupted);
+        when(mockProducer.send(any(ProducerRecord.class))).thenReturn(interruptedFuture);
+
+        SchemaRegistryClient srClient = mock(SchemaRegistryClient.class);
+        when(srClient.getLatestSchemaMetadata("orders-avro-value"))
+                .thenReturn(new SchemaMetadata(1, 1, SIMPLE_AVRO_SCHEMA));
+
+        try (MockedStatic<SchemaRegistryClientFactory> factoryMock = mockStatic(SchemaRegistryClientFactory.class)) {
+            factoryMock.when(SchemaRegistryClientFactory::createClient).thenReturn(srClient);
+
+            ProducerContext<String, GenericRecord> ctx = ProducerContext.<String, GenericRecord>builder()
+                    .topic(topic)
+                    .producer(mockProducer)
+                    .recordKey("key-1")
+                    .payload("{\"orderId\":\"ORD-1\",\"status\":\"CREATED\"}")
+                    .build();
+
+            try {
+                ProducerException ex = assertThrows(ProducerException.class, () -> new AvroKafkaProducer(ctx).send());
+                assertTrue(ex.getMessage().contains("Interrupted while producing Avro message"));
+                assertSame(interrupted, ex.getCause());
+                assertTrue(Thread.currentThread().isInterrupted(), "Interrupt flag must be restored");
+            } finally {
+                Thread.interrupted();
+            }
+        }
     }
 }

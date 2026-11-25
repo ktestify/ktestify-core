@@ -127,15 +127,15 @@ public class PollingRequestResponseClient<Req, V> implements RequestResponseClie
                     throw new FetchException("Interrupted while polling for a response.", e);
                 } catch (ExecutionException e) {
                     Throwable cause = e.getCause();
-                    if (cause instanceof FetchException fe) {
-                        log.debug("Polling attempt #{} failed: {}", attempt, fe.getMessage());
-                        lastFailure = fe;
-                    } else if (cause instanceof RuntimeException re) {
-                        throw re;
-                    } else if (cause instanceof Error err) {
-                        throw err;
-                    } else {
-                        lastFailure = new FetchException("Polling attempt #" + attempt + " failed.", cause);
+                    switch (cause) {
+                        case FetchException fe -> {
+                            log.debug("Polling attempt #{} failed: {}", attempt, fe.getMessage());
+                            lastFailure = fe;
+                        }
+                        case RuntimeException re -> throw re;
+                        case Error err -> throw err;
+                        case null, default ->
+                                lastFailure = new FetchException("Polling attempt #" + attempt + " failed.", cause);
                     }
                 }
 
