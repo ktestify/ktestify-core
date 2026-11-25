@@ -17,6 +17,7 @@ package io.github.ktestify.io.kafka;
 
 import io.github.ktestify.config.FrameworkConfig;
 import io.github.ktestify.config.KtestifyConfig;
+import io.github.ktestify.exceptions.ConfigException;
 import io.github.ktestify.exceptions.FetchException;
 import io.github.ktestify.exceptions.FetchTimeoutException;
 import io.github.ktestify.io.core.RecordFetcher;
@@ -227,7 +228,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
 
         // 1. Explicit value from context (already in ms)
         if (context.getConsumerDeltaTime() != null) {
-            long delta = now - context.getConsumerDeltaTime();
+            long delta = computeSeekTimestamp(now, context.getConsumerDeltaTime(), context.getConsumerDeltaTime());
             log.debug("Using consumer delta time from context: {}ms", context.getConsumerDeltaTime());
             return delta;
         }
@@ -238,7 +239,21 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         if (deltaTimeStr != null && !deltaTimeStr.isEmpty()) {
             log.debug(MESSAGE_CONSUMER_DELTA_TIME_FROM_DATATABLE, deltaTimeStr);
             try {
-                long delta = now - (Long.parseLong(deltaTimeStr) * 1000);
+                long seconds = Long.parseLong(deltaTimeStr);
+                if (seconds < 0L) {
+                    throw new ConfigException(
+                            "Invalid consumerDeltaTime '" + deltaTimeStr + "': value must not be negative.");
+                }
+                long deltaMs;
+                try {
+                    deltaMs = Math.multiplyExact(seconds, 1000L);
+                } catch (ArithmeticException e) {
+                    throw new ConfigException(
+                            "Invalid consumerDeltaTime '" + deltaTimeStr
+                                    + "': seconds-to-milliseconds conversion overflowed.",
+                            e);
+                }
+                long delta = computeSeekTimestamp(now, deltaMs, deltaTimeStr);
                 log.debug(MESSAGE_CONSUMER_DELTA_TIME_IN_TIMESTAMP, delta);
                 return delta;
             } catch (NumberFormatException e) {
@@ -248,7 +263,25 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
 
         // 3. Framework default
         log.debug(MESSAGE_CONSUMER_NO_DELTA_TIME_FOUND, defaultDeltaMs);
-        return now - defaultDeltaMs;
+        return computeSeekTimestamp(now, defaultDeltaMs, defaultDeltaMs);
+    }
+
+    private long computeSeekTimestamp(long now, long deltaMs, Object rawInput) {
+        if (deltaMs < 0L) {
+            throw new ConfigException("Invalid consumerDeltaTime '" + rawInput + "': value must not be negative.");
+        }
+        long seekTimestamp;
+        try {
+            seekTimestamp = Math.subtractExact(now, deltaMs);
+        } catch (ArithmeticException e) {
+            throw new ConfigException(
+                    "Invalid consumerDeltaTime '" + rawInput + "': seek timestamp calculation overflowed.", e);
+        }
+        if (seekTimestamp < 0L) {
+            throw new ConfigException("Invalid consumerDeltaTime '" + rawInput
+                    + "': resulting seek timestamp is negative (" + seekTimestamp + ").");
+        }
+        return seekTimestamp;
     }
 
     /**
