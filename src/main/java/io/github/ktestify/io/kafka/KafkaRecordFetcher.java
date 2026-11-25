@@ -19,6 +19,7 @@ import static io.github.ktestify.constants.LogMessagesConstants.*;
 
 import io.github.ktestify.config.FrameworkConfig;
 import io.github.ktestify.config.KtestifyConfig;
+import io.github.ktestify.exceptions.ConfigException;
 import io.github.ktestify.exceptions.FetchException;
 import io.github.ktestify.exceptions.FetchTimeoutException;
 import io.github.ktestify.io.core.RecordFetcher;
@@ -36,6 +37,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.errors.WakeupException;
 
 /**
@@ -123,6 +125,12 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
                     "Kafka consumer was woken up for shutdown on topic '"
                             + context.getTopic().getNamespacedTopic() + "'",
                     e);
+        } catch (InterruptException e) {
+            Thread.currentThread().interrupt();
+            throw new FetchException(
+                    "Kafka consumer was interrupted on topic '"
+                            + context.getTopic().getNamespacedTopic() + "'",
+                    e);
         } catch (org.apache.kafka.common.errors.TimeoutException e) {
             throw new FetchException(
                     "Kafka operation timed out on topic '" + context.getTopic().getNamespacedTopic() + "': "
@@ -181,7 +189,9 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
 
         long pollIntervalMs = frameworkConfig.getPollIntervalMillis();
         while (kafkaConsumer.assignment().isEmpty()) {
-            if (System.nanoTime() >= deadlineNanos) {
+            checkInterrupted(namespacedTopic);
+            Duration pollDuration = nextPollDuration(deadlineNanos, pollIntervalMs);
+            if (pollDuration.isZero()) {
                 log.error(
                         "Timed out after {}ms waiting for partition assignment on topic '{}'.",
                         readTimeoutMs,
@@ -190,7 +200,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
                         + "ms waiting for partition assignment on topic '" + namespacedTopic
                         + "'. Check that the broker is reachable and the topic exists.");
             }
-            kafkaConsumer.poll(Duration.ofMillis(pollIntervalMs));
+            kafkaConsumer.poll(pollDuration);
         }
         log.info("Assigned partition(s) {} for topic '{}'.", kafkaConsumer.assignment(), namespacedTopic);
     }
@@ -217,7 +227,7 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
 
         // 1. Explicit value from context (already in ms)
         if (context.getConsumerDeltaTime() != null) {
-            long delta = now - context.getConsumerDeltaTime();
+            long delta = computeSeekTimestamp(now, context.getConsumerDeltaTime(), context.getConsumerDeltaTime());
             log.debug("Using consumer delta time from context: {}ms", context.getConsumerDeltaTime());
             return delta;
         }
@@ -228,7 +238,21 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
         if (deltaTimeStr != null && !deltaTimeStr.isEmpty()) {
             log.debug(MESSAGE_CONSUMER_DELTA_TIME_FROM_DATATABLE, deltaTimeStr);
             try {
-                long delta = now - (Long.parseLong(deltaTimeStr) * 1000);
+                long seconds = Long.parseLong(deltaTimeStr);
+                if (seconds < 0L) {
+                    throw new ConfigException(
+                            "Invalid consumerDeltaTime '" + deltaTimeStr + "': value must not be negative.");
+                }
+                long deltaMs;
+                try {
+                    deltaMs = Math.multiplyExact(seconds, 1000L);
+                } catch (ArithmeticException e) {
+                    throw new ConfigException(
+                            "Invalid consumerDeltaTime '" + deltaTimeStr
+                                    + "': seconds-to-milliseconds conversion overflowed.",
+                            e);
+                }
+                long delta = computeSeekTimestamp(now, deltaMs, deltaTimeStr);
                 log.debug(MESSAGE_CONSUMER_DELTA_TIME_IN_TIMESTAMP, delta);
                 return delta;
             } catch (NumberFormatException e) {
@@ -238,7 +262,25 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
 
         // 3. Framework default
         log.debug(MESSAGE_CONSUMER_NO_DELTA_TIME_FOUND, defaultDeltaMs);
-        return now - defaultDeltaMs;
+        return computeSeekTimestamp(now, defaultDeltaMs, defaultDeltaMs);
+    }
+
+    private long computeSeekTimestamp(long now, long deltaMs, Object rawInput) {
+        if (deltaMs < 0L) {
+            throw new ConfigException("Invalid consumerDeltaTime '" + rawInput + "': value must not be negative.");
+        }
+        long seekTimestamp;
+        try {
+            seekTimestamp = Math.subtractExact(now, deltaMs);
+        } catch (ArithmeticException e) {
+            throw new ConfigException(
+                    "Invalid consumerDeltaTime '" + rawInput + "': seek timestamp calculation overflowed.", e);
+        }
+        if (seekTimestamp < 0L) {
+            throw new ConfigException("Invalid consumerDeltaTime '" + rawInput
+                    + "': resulting seek timestamp is negative (" + seekTimestamp + ").");
+        }
+        return seekTimestamp;
     }
 
     /**
@@ -248,7 +290,16 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
      * @param deltaTimestamp the epoch-millisecond timestamp to seek to
      * @param deadlineNanos absolute {@link System#nanoTime()} deadline bounding the offset lookup
      */
-    private void seekToOffset(long deltaTimestamp, long deadlineNanos) {
+    private void seekToOffset(long deltaTimestamp, long deadlineNanos) throws FetchException {
+        String namespacedTopic = context.getTopic().getNamespacedTopic();
+        checkInterrupted(namespacedTopic);
+        long remainingNanos = remainingNanos(deadlineNanos);
+        if (remainingNanos <= 0L) {
+            log.error("Timed out after {}ms before offset lookup on topic '{}'.", readTimeoutMs, namespacedTopic);
+            throw new FetchTimeoutException("Timed out after " + readTimeoutMs
+                    + "ms waiting for offset lookup on topic '" + namespacedTopic + "'.");
+        }
+
         Set<TopicPartition> assignments = kafkaConsumer.assignment();
         log.info(
                 "Seeking partitions {} to timestamp {} ({})",
@@ -258,9 +309,8 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
 
         Map<TopicPartition, Long> timestampMap =
                 assignments.stream().collect(Collectors.toMap(tp -> tp, tp -> deltaTimestamp));
-        long remainingMs = Math.max(1L, TimeUnit.NANOSECONDS.toMillis(deadlineNanos - System.nanoTime()));
         Map<TopicPartition, OffsetAndTimestamp> offsets =
-                kafkaConsumer.offsetsForTimes(timestampMap, Duration.ofMillis(remainingMs));
+                kafkaConsumer.offsetsForTimes(timestampMap, Duration.ofNanos(remainingNanos));
         log.trace(MESSAGE_CONSUMER_RETRIEVED_OFFSETS, timestampMap);
 
         offsets.forEach((topicPartition, offsetAndTimestamp) -> {
@@ -322,48 +372,66 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
                 readTimeoutMs,
                 keyFilterDesc);
 
-        while (System.nanoTime() < deadlineNanos) {
-            ConsumerRecords<K, V> batch = kafkaConsumer.poll(Duration.ofMillis(pollIntervalMs));
+        try {
+            while (true) {
+                checkInterrupted(namespacedTopic);
+                Duration pollDuration = nextPollDuration(deadlineNanos, pollIntervalMs);
+                if (pollDuration.isZero()) {
+                    break;
+                }
+                ConsumerRecords<K, V> batch = kafkaConsumer.poll(pollDuration);
 
-            if (!batch.isEmpty()) {
-                log.debug(MESSAGE_CONSUMER_RECORDS_IN_TOPIC_NOT_EMPTY, namespacedTopic);
+                if (!batch.isEmpty()) {
+                    log.debug(MESSAGE_CONSUMER_RECORDS_IN_TOPIC_NOT_EMPTY, namespacedTopic);
 
-                for (ConsumerRecord<K, V> record : batch) {
-                    if (!passesKeyFilter(record)) {
-                        continue;
-                    }
-                    ConsumedRecord<V> consumed = ConsumedRecord.fromKafkaRecord(record);
-                    if (!tryClaim(consumed)) {
-                        log.info(MESSAGE_CONSUMER_RECORD_ALREADY_MATCHED, consumed.toMatchedRecord());
-                        continue;
-                    }
+                    for (ConsumerRecord<K, V> record : batch) {
+                        if (!passesKeyFilter(record)) {
+                            continue;
+                        }
+                        ConsumedRecord<V> consumed = ConsumedRecord.fromKafkaRecord(record);
+                        if (!tryClaim(consumed)) {
+                            log.info(MESSAGE_CONSUMER_RECORD_ALREADY_MATCHED, consumed.toMatchedRecord());
+                            continue;
+                        }
 
-                    log.info(
-                            "Claimed record from topic '{}' [partition={}, offset={}, key={}, timestamp={}].",
-                            namespacedTopic,
-                            record.partition(),
-                            record.offset(),
-                            record.key(),
-                            Instant.ofEpochMilli(record.timestamp()));
-                    log.debug(MESSAGE_CONSUMER_GOT_RECORD_WITH_KEY_AND_VALUE, record.key(), record.value());
-                    accumulated.add(consumed);
-
-                    // In SINGLE mode return immediately on the first passing record.
-                    // In BATCH mode stop as soon as targetSize is reached: do NOT
-                    // continue draining the current poll batch beyond the target.
-                    if (!batchMode) {
-                        return Collections.unmodifiableList(accumulated);
-                    }
-                    if (accumulated.size() >= targetSize) {
                         log.info(
-                                "Batch complete: collected {} / {} records from topic '{}'.",
-                                accumulated.size(),
-                                targetSize,
-                                namespacedTopic);
-                        return Collections.unmodifiableList(accumulated);
+                                "Claimed record from topic '{}' [partition={}, offset={}, key={}, timestamp={}].",
+                                namespacedTopic,
+                                record.partition(),
+                                record.offset(),
+                                record.key(),
+                                Instant.ofEpochMilli(record.timestamp()));
+                        log.debug(MESSAGE_CONSUMER_GOT_RECORD_WITH_KEY_AND_VALUE, record.key(), record.value());
+                        accumulated.add(consumed);
+
+                        // In SINGLE mode return immediately on the first passing record.
+                        // In BATCH mode stop as soon as targetSize is reached: do NOT
+                        // continue draining the current poll batch beyond the target.
+                        if (!batchMode) {
+                            return Collections.unmodifiableList(accumulated);
+                        }
+                        if (accumulated.size() >= targetSize) {
+                            log.info(
+                                    "Batch complete: collected {} / {} records from topic '{}'.",
+                                    accumulated.size(),
+                                    targetSize,
+                                    namespacedTopic);
+                            return Collections.unmodifiableList(accumulated);
+                        }
                     }
                 }
+
+                if (remainingNanos(deadlineNanos) <= 0L) {
+                    break;
+                }
             }
+        } catch (InterruptException e) {
+            releasePartialBatch(accumulated);
+            Thread.currentThread().interrupt();
+            throw new FetchException("Kafka consumer was interrupted on topic '" + namespacedTopic + "'", e);
+        } catch (FetchException e) {
+            releasePartialBatch(accumulated);
+            throw e;
         }
 
         if (!accumulated.isEmpty()) {
@@ -410,6 +478,31 @@ public class KafkaRecordFetcher<K, V> implements RecordFetcher<V> {
     /** Removes a previously claimed record from the shared deduplication registry. */
     private void release(ConsumedRecord<V> record) {
         MATCHED_RECORDS.remove(record.toMatchedRecord());
+    }
+
+    private void releasePartialBatch(List<ConsumedRecord<V>> accumulated) {
+        if (!accumulated.isEmpty()) {
+            accumulated.forEach(this::release);
+        }
+    }
+
+    private long remainingNanos(long deadlineNanos) {
+        return deadlineNanos - System.nanoTime();
+    }
+
+    private Duration nextPollDuration(long deadlineNanos, long pollIntervalMs) {
+        long remaining = remainingNanos(deadlineNanos);
+        if (remaining <= 0L) {
+            return Duration.ZERO;
+        }
+        long pollIntervalNanos = TimeUnit.MILLISECONDS.toNanos(Math.max(1L, pollIntervalMs));
+        return Duration.ofNanos(Math.min(pollIntervalNanos, remaining));
+    }
+
+    private void checkInterrupted(String namespacedTopic) throws FetchException {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new FetchException("Kafka consumer was interrupted on topic '" + namespacedTopic + "'");
+        }
     }
 
     /**

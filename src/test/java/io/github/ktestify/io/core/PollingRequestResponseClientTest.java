@@ -18,9 +18,16 @@ package io.github.ktestify.io.core;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.github.ktestify.exceptions.FetchException;
+import io.github.ktestify.exceptions.FetchTimeoutException;
 import io.github.ktestify.models.ConsumedRecord;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -131,6 +138,123 @@ class PollingRequestResponseClientTest {
                 FetchException exception = assertThrows(FetchException.class, () -> polling.execute("request"));
                 assertEquals("connection refused", exception.getMessage());
             }
+        }
+
+        @Test
+        @DisplayName("bounds a blocking delegate call to timeoutMs, cancels it, and leaves no worker thread alive")
+        void boundsBlockingDelegateAndShutsDownWorker() throws InterruptedException {
+            CountDownLatch interruptedLatch = new CountDownLatch(1);
+            AtomicReference<Thread> workerRef = new AtomicReference<>();
+
+            RequestResponseClient<String, String> blockingDelegate = new RequestResponseClient<>() {
+                @Override
+                public List<ConsumedRecord<String>> execute(String request) {
+                    workerRef.set(Thread.currentThread());
+                    try {
+                        Thread.sleep(30_000L);
+                    } catch (InterruptedException e) {
+                        interruptedLatch.countDown();
+                        Thread.currentThread().interrupt();
+                    }
+                    return List.of();
+                }
+
+                @Override
+                public void close() {}
+            };
+
+            long startNanos = System.nanoTime();
+            try (PollingRequestResponseClient<String, String> polling =
+                    new PollingRequestResponseClient<>(blockingDelegate, STATUS_200, 150L, 20L)) {
+                FetchTimeoutException ex = assertThrows(FetchTimeoutException.class, () -> polling.execute("request"));
+                assertTrue(ex.getMessage().contains("attempt #1"), ex.getMessage());
+            }
+            long elapsedMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startNanos);
+
+            assertTrue(elapsedMs < 1500L, "Expected strict timeout around 150ms, took " + elapsedMs + "ms");
+            assertTrue(interruptedLatch.await(1, TimeUnit.SECONDS), "Blocking delegate should be interrupted");
+            Thread worker = workerRef.get();
+            assertNotNull(worker);
+            worker.join(1000L);
+            assertFalse(worker.isAlive(), "Worker thread must terminate after timeout");
+        }
+
+        @Test
+        @DisplayName("returns last observed result when a subsequent attempt blocks past the total deadline")
+        void returnsLastResultWhenLaterAttemptBlocks() {
+            AtomicInteger calls = new AtomicInteger();
+            RequestResponseClient<String, String> delegate = new RequestResponseClient<>() {
+                @Override
+                public List<ConsumedRecord<String>> execute(String request) {
+                    if (calls.incrementAndGet() == 1) {
+                        return List.of(ConsumedRecord.<String>builder()
+                                .source("http")
+                                .partition(0)
+                                .offset(-1)
+                                .value("pending")
+                                .timestamp(Instant.now())
+                                .attributes(Map.of("statusCode", "202"))
+                                .build());
+                    }
+                    try {
+                        Thread.sleep(30_000L);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return List.of();
+                }
+
+                @Override
+                public void close() {}
+            };
+
+            try (PollingRequestResponseClient<String, String> polling =
+                    new PollingRequestResponseClient<>(delegate, STATUS_200, 150L, 10L)) {
+                List<ConsumedRecord<String>> result = polling.execute("request");
+                assertEquals("202", result.getFirst().getAttributes().get("statusCode"));
+            }
+        }
+
+        @Test
+        @DisplayName("restores interrupt flag when calling thread is interrupted during a blocking delegate call")
+        void restoresInterruptFlagOnCallingThreadInterrupt() throws InterruptedException {
+            CountDownLatch started = new CountDownLatch(1);
+            RequestResponseClient<String, String> blockingDelegate = new RequestResponseClient<>() {
+                @Override
+                public List<ConsumedRecord<String>> execute(String request) {
+                    started.countDown();
+                    try {
+                        Thread.sleep(30_000L);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    return List.of();
+                }
+
+                @Override
+                public void close() {}
+            };
+
+            AtomicBoolean interruptPreserved = new AtomicBoolean(false);
+            AtomicReference<Throwable> thrown = new AtomicReference<>();
+
+            Thread caller = new Thread(() -> {
+                try (PollingRequestResponseClient<String, String> polling =
+                        new PollingRequestResponseClient<>(blockingDelegate, STATUS_200, 5_000L, 20L)) {
+                    polling.execute("request");
+                } catch (Throwable t) {
+                    thrown.set(t);
+                    interruptPreserved.set(Thread.currentThread().isInterrupted());
+                }
+            });
+            caller.start();
+            assertTrue(started.await(1, TimeUnit.SECONDS));
+            caller.interrupt();
+            caller.join(2_000L);
+
+            assertInstanceOf(FetchException.class, thrown.get());
+            assertInstanceOf(InterruptedException.class, thrown.get().getCause());
+            assertTrue(interruptPreserved.get(), "Interrupt flag must be restored on calling thread");
         }
     }
 
